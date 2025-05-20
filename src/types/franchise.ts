@@ -29,7 +29,7 @@ export interface ChatMessage {
 
 export interface Case {
   updatedAt: string | number | Date;
-  _id: any;
+   _id?: string;
   id: string;
   srNo: string;
   ownerName: string;
