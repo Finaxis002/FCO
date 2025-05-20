@@ -184,12 +184,15 @@ export default function CaseDetailPage() {
   }
 
   const assignedUserObjects = (caseData.assignedUsers ?? [])
-    .filter((user): user is { userId: string; name?: string; avatarUrl?: string } => typeof user === "object" && user !== null && "userId" in user)
+    .filter(
+      (user): user is { userId: string; _id: string; name?: string; avatarUrl?: string } =>
+        typeof user === "object" && user !== null && "userId" in user && "_id" in user
+    )
     .map((user) => ({
-      id: user.userId, // Use userId as ID
+      id: user.userId,
       name: user.name,
-      role: "Team Member", // You can customize or fetch actual role if available
-      avatarUrl: user.avatarUrl || "", // Optional fallback
+      role: "Team Member",
+      avatarUrl: user.avatarUrl || "",
     }));
 
   return (
@@ -323,7 +326,7 @@ export default function CaseDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Current Status:</span>
                 <StatusIndicator
-                  status={caseData.overallStatus}
+                  status={caseData.status ?? "Pending"}
                   showText={true}
                   className="text-sm px-3 py-1"
                 />

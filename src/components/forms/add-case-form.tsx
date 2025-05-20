@@ -404,6 +404,8 @@ export default function AddCaseForm() {
         status: data.status, // <-- include this
         overallStatus: data.status, // or set a default/logic if needed
         lastUpdate: new Date().toISOString(), // or use Date.now() if backend expects a number
+        _id: "", // Placeholder for new case, backend should assign real _id
+        updatedAt: new Date().toISOString(), // Placeholder, backend should update this
       };
 
       if (isEditing) {

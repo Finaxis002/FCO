@@ -85,7 +85,7 @@ export default function AddEditUserDialog({
         userId: user.userId || "", // ✅ Added
         name: user.name,
         email: user.email,
-        role: user.role.toLowerCase() as (typeof USER_ROLES)[number],
+        role: (user.role ? user.role.toLowerCase() : USER_ROLES[1]) as (typeof USER_ROLES)[number],
       });
     } else {
       form.reset({
