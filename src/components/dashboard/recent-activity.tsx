@@ -34,9 +34,9 @@ function getRelativeTime(dateString: string) {
 }
 
 interface RecentCase {
-  _id: string;
-  unitName: string;
-  overallStatus: string;
+  _id?: string;
+  unitName?: string;
+  overallStatus?: string;
   lastUpdate: string;
 }
 

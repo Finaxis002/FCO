@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/ui/page-header";
-import {
-  APP_NAME,
-} from "@/lib/constants";
+import { APP_NAME } from "@/lib/constants";
 import type {
   Case,
   User,
@@ -39,11 +37,15 @@ export default function DashboardPage() {
       setLoading(true);
       try {
         // Fetch cases from API
-        const casesResponse = await fetch("https://fcobackend-23v7.onrender.com/api/cases");
+        const casesResponse = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/cases"
+        );
         const casesData = await casesResponse.json();
 
         // Fetch users from API
-        const usersResponse = await fetch("https://fcobackend-23v7.onrender.com/api/users");
+        const usersResponse = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/users"
+        );
         const usersData = await usersResponse.json();
 
         setCases(casesData);
@@ -97,7 +99,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchCases = async () => {
       try {
-        const res = await fetch("https://fcobackend-23v7.onrender.com/api/cases");
+        const res = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/cases"
+        );
         if (!res.ok) throw new Error("Failed to fetch cases");
 
         const data = await res.json();
@@ -216,12 +220,16 @@ export default function DashboardPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RecentActivity
-            recentCases={cases.map((c) => ({
-              _id: c._id,
-              unitName: c.unitName,
-              overallStatus: c.status ?? "", // Ensure string, fallback to empty string if undefined
-              lastUpdate: c.lastUpdate, // or c.updatedAt if that's the field
-            }))}
+            recentCases={cases
+              .filter(
+                (c) => typeof c._id === "string" && c._id.trim().length > 0
+              ) // only keep valid _id
+              .map((c) => ({
+                _id: c._id!,
+                unitName: c.unitName,
+                overallStatus: c.status ?? "",
+                lastUpdate: c.lastUpdate,
+              }))}
             loading={loading}
           />
         </div>
