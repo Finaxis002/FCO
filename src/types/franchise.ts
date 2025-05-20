@@ -30,18 +30,18 @@ export interface ChatMessage {
 export interface Case {
   updatedAt: string | number | Date;
    _id?: string;
-  id: string;
-  srNo: string;
-  ownerName: string;
-  unitName: string; // Project Name
-  franchiseAddress: string;
-  promoters: string;
-  authorizedPerson: string;
-  services: Service[];
-  overallStatus: ServiceStatus; // Can be derived or manually set
+  id?: string;
+  srNo?: string;
+  ownerName?: string;
+  unitName?: string; // Project Name
+  franchiseAddress?: string;
+  promoters?: string;
+  authorizedPerson?: string;
+  services?: Service[];
+  overallStatus?: ServiceStatus; // Can be derived or manually set
   assignedUsers?: (string | {
-    userId: string | undefined;
-    _id: string | undefined; name?: string 
+    userId?: string | undefined;
+    _id?: string | undefined; name?: string 
 })[]; // User IDs for back office, local area head etc.
   viewLink?: string; // Optional link for external viewers
   lastUpdate: string; // Timestamp or formatted date string
