@@ -59,6 +59,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     () => {
       const initialStatuses: Record<string, string> = {};
       cases.forEach((c: Case) => {
+        if (!c.id) return;
         initialStatuses[c.id] = c.status || c.overallStatus || "Pending";
       });
 
@@ -82,7 +83,9 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   useEffect(() => {
     const updatedStatuses: Record<string, string> = {};
     cases.forEach((c: Case) => {
+      if (c.id) {
       updatedStatuses[c.id] = c.status || c.overallStatus || "Pending";
+      }
     });
     setCaseStatuses(updatedStatuses);
   }, [cases]);
@@ -144,7 +147,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     const newCache: Record<string, string> = {};
     cases.forEach((caseData) => {
       if (caseData.lastUpdate) {
-        newCache[caseData.id] = new Date(
+        newCache[caseData.id ?? ""] = new Date(
           caseData.lastUpdate
         ).toLocaleDateString("en-US", {
           year: "numeric",
@@ -154,7 +157,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
           minute: "2-digit",
         });
       } else {
-        newCache[caseData.id] = "N/A";
+        newCache[caseData.id ?? ""] = "N/A";
       }
     });
     setLastUpdateDisplayCache(newCache);
@@ -225,8 +228,8 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
             {displayCases.map((caseData) => {
              
 
-              const lastUpdateDisplay =
-                lastUpdateDisplayCache[caseData.id] || "Loading...";
+             const lastUpdateDisplay = lastUpdateDisplayCache[caseData.id ?? ""] || "Loading...";
+
 
               return (
                 <TableRow
@@ -238,14 +241,14 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                   <TableCell>{caseData.ownerName}</TableCell>
                   <TableCell>
                     <Select
-                      value={caseStatuses[caseData.id]}
+                      value={caseStatuses[caseData.id ?? ""]}
                       onValueChange={(value) =>
-                        handleStatusChange(caseData.id, value)
+                        handleStatusChange(caseData.id ?? "", value)
                       }
                     >
                       <SelectTrigger
                         className={`w-[150px] rounded-md case-table ${
-                          statusStyles[caseStatuses[caseData.id]] || ""
+                          statusStyles[caseStatuses[caseData.id ?? ""]] || ""
                         }`}
                       >
                         <SelectValue placeholder="Select status" />
@@ -337,7 +340,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => onDelete(caseData.id)}
+                          onClick={() => onDelete && onDelete(caseData.id!)}
                           aria-label="Delete Case"
                           className="text-red-600 hover:text-red-800"
                         >

@@ -247,7 +247,7 @@ export default function CaseDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {caseData.services.length > 0 ? (
+              {caseData.services && caseData.services.length > 0 ? (
                 <ul className="space-y-4">
                   {caseData.services.map((service: Service) => {
                     const statusConfig =

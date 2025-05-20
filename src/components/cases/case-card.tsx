@@ -189,7 +189,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onDelete && onDelete(caseData.id)}
+             onClick={() => onDelete && onDelete(caseData.id!)}
               aria-label="Delete Case"
               className="text-red-600 hover:text-red-800"
             >

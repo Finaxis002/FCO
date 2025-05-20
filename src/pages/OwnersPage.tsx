@@ -209,7 +209,8 @@ export default function OwnersPage() {
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <StatusIndicator status={c.overallStatus} showText />
+                          <StatusIndicator status={c.overallStatus ? c.overallStatus : "Pending"} showText />
+
                           <Button
                             variant="ghost"
                             size="sm"
