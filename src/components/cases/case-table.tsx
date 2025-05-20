@@ -101,7 +101,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       console.log(`Updating status for case ${caseId} to ${newStatus}`);
 
       const response = await axios.put(
-        `http://localhost:5000/api/cases/${caseId}`,
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
         {
           status: newStatus,
         }

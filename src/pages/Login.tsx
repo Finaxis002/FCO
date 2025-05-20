@@ -17,7 +17,7 @@ const Login = () => {
 //   setError("");
 
 //   try {
-//     const res = await axios.post("http://localhost:5000/api/auth/login", {
+//     const res = await axios.post("https://fcobackend-23v7.onrender.com/api/auth/login", {
 //       userId,
 //       password,
 //       isAdminLogin // Send this flag to backend
@@ -43,7 +43,7 @@ const handleLogin = async (e: React.FormEvent) => {
   setError("");
 
   try {
-    const res = await axios.post("http://localhost:5000/api/auth/login", {
+    const res = await axios.post("https://fcobackend-23v7.onrender.com/api/auth/login", {
       userId,
       password,
       isAdminLogin,
@@ -56,7 +56,7 @@ const handleLogin = async (e: React.FormEvent) => {
     // If not admin, fetch full user details
     if (role !== "Admin") {
       try {
-        const userRes = await axios.get(`http://localhost:5000/api/users/${user._id}`, {
+        const userRes = await axios.get(`https://fcobackend-23v7.onrender.com/api/users/${user._id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

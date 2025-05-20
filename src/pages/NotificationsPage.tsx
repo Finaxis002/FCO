@@ -56,7 +56,7 @@ useEffect(() => {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/notifications', {
+      const res = await fetch('https://fcobackend-23v7.onrender.com/api/notifications', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -92,7 +92,7 @@ useEffect(() => {
  const markAsRead = async (id: string) => {
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+    const res = await fetch(`https://fcobackend-23v7.onrender.com/api/notifications/${id}/read`, {
       method: "PUT", // Use PUT as per your existing API
       headers: {
         "Content-Type": "application/json",
