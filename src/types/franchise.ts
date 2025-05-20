@@ -42,6 +42,7 @@ export interface Case {
   lastUpdate: string; // Timestamp or formatted date string
   reasonForStatus?: string; // For PMEGP status or other specific reasons
   chatMessages?: ChatMessage[];
+  status?:string;
 }
 
 export type UserRole =
@@ -55,7 +56,7 @@ export interface User {
   _id?: string; // MongoDB ID
   id: string;   // Make this required as primary identifier
   userId?: string; // Deprecated, kept for backward compatibility
-  name: string;
+   name: string;
   email: string;
   role: UserRole;
   avatarUrl?: string;
