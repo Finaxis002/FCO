@@ -43,6 +43,11 @@ const statusStyles: Record<string, string> = {
     "bg-purple-100 text-purple-800 hover:!bg-purple-200 hover:!text-purple-900",
 };
 
+interface CaseCardViewProps {
+  cases: Case[]; // array of Case objects
+  onDelete: (caseId: string) => void; // function called when delete happens
+}
+
 export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   const { toast } = useToast();
   const [displayCases, setDisplayCases] = useState<Case[]>(cases);
@@ -53,9 +58,10 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>(
     () => {
       const initialStatuses: Record<string, string> = {};
-      cases.forEach((c) => {
+      cases.forEach((c: Case) => {
         initialStatuses[c.id] = c.status || c.overallStatus || "Pending";
       });
+
       return initialStatuses;
     }
   );
@@ -75,7 +81,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
 
   useEffect(() => {
     const updatedStatuses: Record<string, string> = {};
-    cases.forEach((c) => {
+    cases.forEach((c: Case) => {
       updatedStatuses[c.id] = c.status || c.overallStatus || "Pending";
     });
     setCaseStatuses(updatedStatuses);
@@ -103,7 +109,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
 
       console.log("API response:", response.data);
 
-      setDisplayCases((prev) =>
+      setDisplayCases((prev: Case[]) =>
         prev.map((c) => (c.id === caseId ? { ...c, status: newStatus } : c))
       );
 
@@ -121,7 +127,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
 
       setCaseStatuses((prev) => ({
         ...prev,
-        [caseId]: cases.find((c) => c.id === caseId)?.status || "Pending",
+        [caseId]: cases.find((c: Case) => c.id === caseId)?.status || "Pending",
       }));
     }
   };
@@ -214,7 +220,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayCases.map((caseData) => {
+            {displayCases.map((caseData: Case) => {
               const assignedUserObjects = caseData.assignedUsers
                 .map((userId) => MOCK_USERS.find((u) => u.id === userId))
                 .filter(Boolean);

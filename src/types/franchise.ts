@@ -37,12 +37,12 @@ export interface Case {
   authorizedPerson: string;
   services: Service[];
   overallStatus: ServiceStatus; // Can be derived or manually set
-  assignedUsers: string[]; // User IDs for back office, local area head etc.
+  assignedUsers?: (string | { name?: string })[]; // User IDs for back office, local area head etc.
   viewLink?: string; // Optional link for external viewers
   lastUpdate: string; // Timestamp or formatted date string
   reasonForStatus?: string; // For PMEGP status or other specific reasons
   chatMessages?: ChatMessage[];
-  status?:string;
+ status?: ServiceStatus;
 }
 
 export type UserRole =

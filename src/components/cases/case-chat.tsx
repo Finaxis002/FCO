@@ -49,9 +49,16 @@ function getRandomColorFromName(name: string): string {
     "bg-teal-500",
     "bg-orange-500",
   ];
-  const hash = name;
-  return colors[hash % colors.length];
+
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
 }
+
 
 export default function CaseChat({
   caseId,
@@ -193,7 +200,7 @@ export default function CaseChat({
       const tempMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         caseId,
-        senderId: currentUser.userId,
+       senderId: currentUser.userId!,
         senderName: currentUser.name,
         message: messageContent,
         timestamp: new Date().toISOString(),
