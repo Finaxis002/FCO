@@ -85,8 +85,6 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
     }
   };
 
-
-
   return (
     <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="pb-3">
@@ -118,18 +116,20 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
           <Users className="h-4 w-4 shrink-0 mt-0.5" />
           <div className="flex flex-col text-sm text-muted-foreground">
             {caseData.assignedUsers?.length ? (
-              caseData.assignedUsers.map((user, index) => {
-                const userName =
-                  typeof user === "string"
-                    ? user.trim()
-                    : user?.name?.trim() || "Unknown";
-                const formattedName =
-                  userName.length > 0
-                    ? userName.charAt(0).toUpperCase() +
-                      userName.slice(1).toLowerCase()
-                    : "Unknown";
-                return <span key={index}>{formattedName}</span>;
-              })
+              (caseData.assignedUsers as (string | { name?: string })[]).map(
+                (user, index) => {
+                  const userName =
+                    typeof user === "string"
+                      ? user.trim()
+                      : user?.name?.trim() || "Unknown";
+                  const formattedName =
+                    userName.length > 0
+                      ? userName.charAt(0).toUpperCase() +
+                        userName.slice(1).toLowerCase()
+                      : "Unknown";
+                  return <span key={index}>{formattedName}</span>;
+                }
+              )
             ) : (
               <span>N/A</span>
             )}
@@ -155,7 +155,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => handleGenerateLink(caseData)}
+              onClick={handleGenerateLink}
               aria-label="Share Case"
             >
               <LinkIcon className="h-4 w-4" />
@@ -181,7 +181,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onDelete(caseData.id)}
+              onClick={() => onDelete && onDelete(caseData.id)}
               aria-label="Delete Case"
               className="text-red-600 hover:text-red-800"
             >
