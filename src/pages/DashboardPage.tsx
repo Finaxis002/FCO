@@ -1,75 +1,238 @@
-import React, { useState, useEffect } from "react";
-import { Link as RouterLink } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Filter } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/ui/page-header";
-import CaseTable from "@/components/cases/case-table";
-import { MOCK_CASES } from "@/lib/constants";
-import type { Case } from "@/types/franchise";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  MOCK_CASES,
+  MOCK_USERS,
+  MOCK_NOTIFICATIONS,
+  APP_NAME,
+} from "@/lib/constants";
+import type {
+  Case,
+  User,
+  AppNotification,
+  ServiceStatus,
+  DashboardFilterStatus,
+} from "@/types/franchise";
 import { Skeleton } from "@/components/ui/skeleton";
+import StatCard from "@/components/dashboard/stat-card";
+import RecentActivity from "@/components/dashboard/recent-activity";
+import ComplianceStatusOverview from "@/components/dashboard/compliance-status-overview";
+import { Briefcase, Users, Clock, Loader } from "lucide-react"; // Removed Activity, BarChart3 for now
+
+interface CaseStats {
+  totalCases: number;
+  completedCases: number; // Includes "Approved"
+  pendingCases: number;
+  inProgressCases: number;
+  rejectedCases: number;
+  completionPercentage: number;
+}
 
 export default function DashboardPage() {
   const [cases, setCases] = useState<Case[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = `Dashboard | ${APP_NAME}`;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch cases from API
+        const casesResponse = await fetch("http://localhost:5000/api/cases");
+        const casesData = await casesResponse.json();
+
+        // Fetch users from API
+        const usersResponse = await fetch("http://localhost:5000/api/users");
+        const usersData = await usersResponse.json();
+
+        setCases(casesData);
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const caseStats: CaseStats = useMemo(() => {
+    const totalCases = cases.length;
+    const completedCases = cases.filter(
+      (c) => c.status === "Completed" || c.status === "Approved"
+    ).length;
+    const pendingCases = cases.filter((c) => c.status === "Pending").length;
+    const inProgressCases = cases.filter(
+      (c) => c.status === "In-Progress"
+    ).length;
+    const rejectedCases = cases.filter((c) => c.status === "Rejected").length;
+    const completionPercentage =
+      totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0;
+
+    return {
+      totalCases,
+      completedCases,
+      pendingCases,
+      inProgressCases,
+      rejectedCases,
+      completionPercentage,
+    };
+  }, [cases]);
+
+  const [complianceStatusCounts, setComplianceStatusCounts] = useState<{
+    Pending: number;
+    "In-Progress": number;
+    Completed: number;
+    Approved: number;
+    Rejected: number;
+  }>({
+    Pending: 0,
+    "In-Progress": 0,
+    Completed: 0,
+    Approved: 0,
+    Rejected: 0,
+  });
 
   useEffect(() => {
     const fetchCases = async () => {
-      setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(() => {
-        setCases(MOCK_CASES);
-        resolve(null);
-      }, 500));
-      setLoading(false);
+      try {
+        const res = await fetch("http://localhost:5000/api/cases");
+        if (!res.ok) throw new Error("Failed to fetch cases");
+
+        const data = await res.json();
+        setCases(data);
+
+        // 🔍 Count by `status`
+        const counts = {
+          Pending: 0,
+          "In-Progress": 0,
+          Completed: 0,
+          Approved: 0,
+          Rejected: 0,
+        };
+
+        data.forEach((c: any) => {
+          const rawStatus = c.status?.trim().toLowerCase();
+
+          switch (rawStatus) {
+            case "pending":
+              counts.Pending++;
+              break;
+            case "in-progress":
+              counts["In-Progress"]++;
+              break;
+            case "completed":
+              counts.Completed++;
+              break;
+            case "approved":
+              counts.Approved++;
+              counts.Completed++; // Optional: Count Approved as Completed too
+              break;
+            case "rejected":
+              counts.Rejected++;
+              break;
+          }
+        });
+
+        setComplianceStatusCounts(counts);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      }
     };
+
     fetchCases();
   }, []);
+
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
+
+  const handleStatCardClick = (filterStatus?: DashboardFilterStatus) => {
+    navigate("/cases", { state: { filter: filterStatus || "Total" } });
+  };
 
   if (loading) {
     return (
       <>
-        <PageHeader title="Case Dashboard" description="Overview of all compliance cases in a table format.">
-           <div className="flex items-center gap-2">
-            <Button variant="outline" disabled>
-              <Filter className="mr-2 h-4 w-4" /> Filter
-            </Button>
-            <Button asChild disabled>
-              <RouterLink to="/cases/new">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Case
-              </RouterLink>
-            </Button>
+        <PageHeader
+          title="Loading Dashboard..."
+          description="Please wait while we gather the latest data."
+        />
+        <div className="grid gap-6 mb-6 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-[120px] rounded-lg" />
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <Skeleton className="h-[380px] rounded-lg" />
           </div>
-        </PageHeader>
-        <Card>
-          <CardContent className="p-0">
-            <div className="space-y-2 p-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </CardContent>
-        </Card>
+          <div>
+            <Skeleton className="h-[380px] rounded-lg" />
+          </div>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader title="Case Dashboard" description="Manage and track all franchise compliance cases.">
-        <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Filter className="mr-2 h-4 w-4" /> Filter
-          </Button>
-          <Button asChild>
-            <RouterLink to="/cases/new">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New Case
-            </RouterLink>
-          </Button>
+      <PageHeader
+        title={`Welcome back, ${currentUser.name}!`}
+        description="Here's an overview of your franchise compliance operations."
+      />
+
+      <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Cases"
+          value={caseStats.totalCases.toString()}
+          icon={Briefcase}
+          description={`${caseStats.completionPercentage}% overall completion`}
+          progress={caseStats.completionPercentage}
+          onClick={() => handleStatCardClick("Total")}
+        />
+        <StatCard
+          title="Pending Cases"
+          value={caseStats.pendingCases.toString()}
+          icon={Clock}
+          description="Awaiting action"
+          onClick={() => handleStatCardClick("Pending")}
+        />
+        <StatCard
+          title="In-Progress Cases"
+          value={caseStats.inProgressCases.toString()}
+          icon={Loader}
+          description="Currently being processed"
+          onClick={() => handleStatCardClick("In-Progress")}
+        />
+        <StatCard
+          title="Total Users"
+          value={users.length.toString()}
+          icon={Users}
+          description="Across all roles"
+          onClick={() => navigate("/users")} // Direct navigation, no filter
+        />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <RecentActivity recentCases={cases} loading={loading} />
         </div>
-      </PageHeader>
-      <CaseTable cases={cases} />
+        <div>
+          <ComplianceStatusOverview
+            totalCases={cases.length}
+            pendingCount={complianceStatusCounts.Pending}
+            inProgressCount={complianceStatusCounts["In-Progress"]}
+            completedCount={
+              complianceStatusCounts.Completed + complianceStatusCounts.Approved
+            }
+            rejectedCount={complianceStatusCounts.Rejected}
+            onStatusClick={(status) => handleStatCardClick(status)}
+          />
+        </div>
+      </div>
     </>
   );
 }

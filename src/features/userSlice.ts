@@ -1,0 +1,175 @@
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import axios from "axios";
+
+// 👇 Define your User type
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarUrl?: string;
+  dataAIHint?: string;
+}
+
+// 👇 Define User roles
+export type UserRole = "Admin" | "Back Office" | "Frontend" | "Developer"; // adjust according to your app
+
+// Base URL
+const API_BASE_URL = "http://localhost:5000/api/users"; // replace with your backend
+
+// Async Thunks
+export const getAllUsers = createAsyncThunk<User[]>(
+  "users/getAll",
+  async () => {
+    const response = await axios.get(API_BASE_URL);
+    return response.data;
+  }
+);
+
+export const addUser = createAsyncThunk<
+  User,
+  Omit<User, "_id" | "avatarUrl" | "dataAIHint">
+>("users/add", async (userData) => {
+  const response = await axios.post(API_BASE_URL, userData);
+  return response.data;
+});
+
+export const editUser = createAsyncThunk<
+  User,
+  { id: string; user: Partial<User> }
+>("users/edit", async ({ id, user }) => {
+  const response = await axios.put(`${API_BASE_URL}/${id}`, user);
+  return response.data;
+});
+
+export const deleteUser = createAsyncThunk<string, string>(
+  "users/delete",
+  async (id) => {
+    await axios.delete(`${API_BASE_URL}/${id}`);
+    return id;
+  }
+);
+
+export const fetchCurrentUser = createAsyncThunk<
+  { user: User; permissions: Permissions },
+  void,
+  { rejectValue: string }
+>("users/fetchCurrentUser", async (_, { rejectWithValue }) => {
+  try {
+    const token = localStorage.getItem("token");
+    const userString = localStorage.getItem("user");
+    if (!token || !userString) return rejectWithValue("Missing token or user");
+
+    const user = JSON.parse(userString);
+    const userId = user?._id || user?.id || user?.userId;
+    if (!userId) return rejectWithValue("User ID not found");
+
+    const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.data) return rejectWithValue("No user data returned");
+
+    return {
+      user: res.data,
+      permissions: res.data.permissions,
+    };
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Failed to fetch current user");
+  }
+});
+
+// State shape
+interface UserState {
+  users: User[];
+  currentUser: User | null; // For logged-in user data
+  permissions: Permissions | null; // For logged-in user's permissions
+  loading: boolean;
+  error: string | null;
+}
+
+interface Permissions {
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canViewReports: boolean;
+  canAssignTasks: boolean;
+}
+
+const initialState: UserState = {
+  users: [],
+  currentUser: null,
+  permissions: null,
+  loading: false,
+  error: null,
+};
+// Slice
+const userSlice = createSlice({
+  name: "users",
+  initialState,
+  reducers: {
+    resetUsers: (state) => {
+      state.users = [];
+      state.loading = false;
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch
+      .addCase(getAllUsers.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(
+        getAllUsers.fulfilled,
+        (state, action: PayloadAction<User[]>) => {
+          state.loading = false;
+          state.users = action.payload;
+        }
+      )
+      .addCase(getAllUsers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to fetch users";
+      })
+
+      // Add
+      .addCase(addUser.fulfilled, (state, action: PayloadAction<User>) => {
+        state.users.unshift(action.payload);
+      })
+
+      // Edit
+      .addCase(editUser.fulfilled, (state, action: PayloadAction<User>) => {
+        const index = state.users.findIndex(
+          (u) => u._id === action.payload._id
+        );
+        if (index !== -1) {
+          state.users[index] = action.payload;
+        }
+      })
+
+      // Delete
+      .addCase(deleteUser.fulfilled, (state, action: PayloadAction<string>) => {
+        state.users = state.users.filter((user) => user._id !== action.payload);
+      })
+
+      // Current user fetch
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentUser = action.payload.user;
+        state.permissions = action.payload.permissions;
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to load current user";
+        state.currentUser = null;
+        state.permissions = null;
+      });
+  },
+});
+
+export const { resetUsers } = userSlice.actions;
+export default userSlice.reducer;
