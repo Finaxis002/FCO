@@ -58,7 +58,7 @@ export default function CaseDetailPage() {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:5000/api/cases/${caseId}`
+          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`
         );
         if (!response.ok) {
           setCaseData(undefined);

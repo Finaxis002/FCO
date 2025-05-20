@@ -17,7 +17,7 @@ export interface User {
 export type UserRole = "Admin" | "Back Office" | "Frontend" | "Developer"; // adjust according to your app
 
 // Base URL
-const API_BASE_URL = "http://localhost:5000/api/users"; // replace with your backend
+const API_BASE_URL = "https://fcobackend-23v7.onrender.com/api/users"; // replace with your backend
 
 // Async Thunks
 export const getAllUsers = createAsyncThunk<User[]>(
@@ -66,7 +66,7 @@ export const fetchCurrentUser = createAsyncThunk<
     const userId = user?._id || user?.id || user?.userId;
     if (!userId) return rejectWithValue("User ID not found");
 
-    const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+    const res = await axios.get(`https://fcobackend-23v7.onrender.com/api/users/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

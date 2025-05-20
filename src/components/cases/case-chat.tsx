@@ -80,7 +80,7 @@ export default function CaseChat({
     const loadMessages = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/cases/${caseId}/messages`
+          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/messages`
         );
         const data = await response.json();
 
@@ -104,7 +104,7 @@ export default function CaseChat({
 
   // Socket connection and event handlers
   useEffect(() => {
-    socket = io("http://localhost:5000", {
+    socket = io("https://fcobackend-23v7.onrender.com", {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });

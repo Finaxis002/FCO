@@ -162,7 +162,7 @@ export default function UserList() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/users/${userId}/reset-password`,
+        `https://fcobackend-23v7.onrender.com/api/users/${userId}/reset-password`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

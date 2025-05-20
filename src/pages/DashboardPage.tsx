@@ -39,11 +39,11 @@ export default function DashboardPage() {
       setLoading(true);
       try {
         // Fetch cases from API
-        const casesResponse = await fetch("http://localhost:5000/api/cases");
+        const casesResponse = await fetch("https://fcobackend-23v7.onrender.com/api/cases");
         const casesData = await casesResponse.json();
 
         // Fetch users from API
-        const usersResponse = await fetch("http://localhost:5000/api/users");
+        const usersResponse = await fetch("https://fcobackend-23v7.onrender.com/api/users");
         const usersData = await usersResponse.json();
 
         setCases(casesData);
@@ -97,7 +97,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchCases = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/cases");
+        const res = await fetch("https://fcobackend-23v7.onrender.com/api/cases");
         if (!res.ok) throw new Error("Failed to fetch cases");
 
         const data = await res.json();

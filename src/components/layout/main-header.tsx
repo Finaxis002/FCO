@@ -64,7 +64,7 @@ export default function MainHeader() {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:5000/api/notifications", {
+        const res = await fetch("https://fcobackend-23v7.onrender.com/api/notifications", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

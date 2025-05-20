@@ -25,7 +25,7 @@ export default function UserPermissionsPage() {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${userId}/permissions`);
+      const res = await fetch(`https://fcobackend-23v7.onrender.com/api/users/${userId}/permissions`);
       if (!res.ok) {
         setUser(undefined);
         return;
@@ -55,7 +55,7 @@ useEffect(() => {
 const handleSaveChanges = async () => {
   if (!user || !user._id) return;
   try {
-    const res = await fetch(`http://localhost:5000/api/users/${user._id}/permissions`, {
+    const res = await fetch(`https://fcobackend-23v7.onrender.com/api/users/${user._id}/permissions`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ permissions }),

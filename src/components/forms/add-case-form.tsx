@@ -132,7 +132,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/services");
+        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/services");
         setGlobalServices(res.data);
       } catch (e) {
         console.error("Failed to fetch services", e);
@@ -188,7 +188,7 @@ export default function AddCaseForm() {
       setLoadingEdit(true);
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/cases/${caseId}`
+          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`
         );
         const caseData = res.data;
 
@@ -250,7 +250,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/owners");
+        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/owners");
         setOwnerOptions(
           res.data.map((o: any) => ({
             label: o.name,
@@ -268,7 +268,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/clients");
+        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/clients");
         setClientOptions(
           res.data.map((c: any) => ({
             label: c.name,
@@ -290,7 +290,7 @@ export default function AddCaseForm() {
   // Create Owner if not exists
   const createOwner = async (name: string) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/owners", {
+      const res = await axios.post("https://fcobackend-23v7.onrender.com/api/owners", {
         name,
       });
       const newOption = { label: name, value: name }; // Create proper option object
@@ -310,7 +310,7 @@ export default function AddCaseForm() {
   const createClient = async (name: string) => {
     console.log("Attempting to create client:", name);
     try {
-      const res = await axios.post("http://localhost:5000/api/clients", {
+      const res = await axios.post("https://fcobackend-23v7.onrender.com/api/clients", {
         name,
       });
       console.log("Client creation response:", res.data);
@@ -410,7 +410,7 @@ export default function AddCaseForm() {
 
       if (isEditing) {
         await axios.put(
-          `http://localhost:5000/api/cases/${caseId}`,
+          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
           casePayload
         );
         toast({
