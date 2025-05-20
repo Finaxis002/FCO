@@ -103,107 +103,107 @@ const MOCK_CHAT_MESSAGES_CASE2: ChatMessage[] = [
 ];
 
 
-export const MOCK_CASES: Case[] = [
-  {
-    id: "case1",
-    srNo: "GWL-001",
-    ownerName: "Mrs. Karuna Brijwani",
-    unitName: "M/s Radha Soami Enterprises",
-    franchiseAddress: "City Center, Gwalior, Madhya Pradesh – 474001",
-    promoters: "Mrs. Karuna Brijwani",
-    authorizedPerson: "Mr. Ajit Singh (Manager)",
-    services: [
-      { id: "s1-1", name: "DPR (Detailed Project Report)", status: "Approved" as ServiceStatus, remarks: "DPR finalized and submitted.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-2", name: "UDYAM Registration", status: "Approved" as ServiceStatus, remarks: "UDYAM registration obtained.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-3", name: "GST Registration", status: "Approved" as ServiceStatus, remarks: "GSTIN received.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-4", name: "PMEGP Application", status: "Approved" as ServiceStatus, remarks: "Loan sanctioned under PMEGP.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-5", name: "Store Setup & Branding", status: "Approved" as ServiceStatus, remarks: "Store live and operational.", completionPercentage: 100, assignedUser: "user3" },
-    ],
-    overallStatus: "Approved",
-    assignedUsers: ["user2", "user3", "user1"],
-    lastUpdate: "2024-03-15T10:00:00Z",
-    reasonForStatus: "All services completed and store is live.",
-    viewLink: "/view/public/case1_token_xyz",
-    chatMessages: MOCK_CHAT_MESSAGES_CASE1,
-  },
-  {
-    id: "case2",
-    srNo: "JPR-005",
-    ownerName: "Mr. Rohan Verma",
-    unitName: "Verma Dry Cleaners",
-    franchiseAddress: "Malviya Nagar, Jaipur, Rajasthan - 302017",
-    promoters: "Mr. Rohan Verma, Mrs. Sunita Verma",
-    authorizedPerson: "Mr. Rohan Verma",
-    services: (() => {
-        const services = generateServices();
-        return services.map(s => ({...s, id: `s2-${s.id.substring(7)}`, status: s.status as ServiceStatus }));
-    })(),
-    overallStatus: "In-Progress",
-    assignedUsers: ["user2", "user5"],
-    lastUpdate: "2024-05-10T14:30:00Z",
-    reasonForStatus: "PMEGP application pending bank approval.",
-    chatMessages: MOCK_CHAT_MESSAGES_CASE2,
-  },
-  {
-    id: "case3",
-    srNo: "PUN-012",
-    ownerName: "Ms. Anjali Mehta",
-    unitName: "Sparkle Laundry Services",
-    franchiseAddress: "Koregaon Park, Pune, Maharashtra - 411007",
-    promoters: "Ms. Anjali Mehta",
-    authorizedPerson: "Ms. Anjali Mehta",
-    services: (() => {
-        const services = generateServices();
-        return services.map(s => ({...s, id: `s3-${s.id.substring(7)}`, status: s.status as ServiceStatus }));
-    })(),
-    overallStatus: "Pending",
-    assignedUsers: ["user5", "user3"],
-    lastUpdate: "2024-05-20T09:15:00Z",
-    reasonForStatus: "Initial documents collection phase.",
-    chatMessages: [],
-  },
-   {
-    id: "case4",
-    srNo: "LKO-003",
-    ownerName: "Mr. Sameer Khan",
-    unitName: "Khan's Quick Wash",
-    franchiseAddress: "Hazratganj, Lucknow, Uttar Pradesh - 226001",
-    promoters: "Mr. Sameer Khan",
-    authorizedPerson: "Mr. Sameer Khan",
-    services: [
-        { id: "s4-1", name: "DPR (Detailed Project Report)", status: "Completed" as ServiceStatus, remarks: "DPR approved.", completionPercentage: 100, assignedUser: "user2" },
-        { id: "s4-2", name: "UDYAM Registration", status: "Pending" as ServiceStatus, remarks: "Awaiting Aadhar link.", completionPercentage: 10, assignedUser: "user2" },
-        { id: "s4-3", name: "GST Registration", status: "Pending" as ServiceStatus, remarks: "PAN card details required.", completionPercentage: 5, assignedUser: "user5" },
-    ],
-    overallStatus: "Pending",
-    assignedUsers: ["user2", "user5"],
-    lastUpdate: "2024-05-22T11:00:00Z",
-    reasonForStatus: "Awaiting client documentation for UDYAM and GST.",
-    chatMessages: [],
-  },
-  {
-    id: "case5",
-    srNo: "IND-007",
-    ownerName: "Mrs. Priya Sharma",
-    unitName: "Indore Laundry Hub",
-    franchiseAddress: "Vijay Nagar, Indore, Madhya Pradesh - 452010",
-    promoters: "Mrs. Priya Sharma, Mr. Alok Sharma",
-    authorizedPerson: "Mrs. Priya Sharma",
-    services: [
-        { id: "s5-1", name: "DPR (Detailed Project Report)", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user3" },
-        { id: "s5-2", name: "UDYAM Registration", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user3" },
-        { id: "s5-3", name: "GST Registration", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user2" },
-        { id: "s5-4", name: "PMEGP Application", status: "Completed" as ServiceStatus, remarks: "Submitted to bank, awaiting sanction.", completionPercentage: 90, assignedUser: "user2" },
-        { id: "s5-5", name: "Store Setup & Branding", status: "In-Progress" as ServiceStatus, remarks: "Interior work ongoing.", completionPercentage: 60, assignedUser: "user3" },
-        { id: "s5-6", name: "Bank Loan Application", status: "In-Progress" as ServiceStatus, remarks: "Awaiting PMEGP sanction for final disbursement.", completionPercentage: 75, assignedUser: "user2"},
-    ],
-    overallStatus: "In-Progress",
-    assignedUsers: ["user2", "user3"],
-    lastUpdate: "2024-05-18T16:45:00Z",
-    reasonForStatus: "Store setup and loan disbursement in progress.",
-    chatMessages: [],
-  }
-].map(c => ({ ...c, overallStatus: calculateOverallStatus(c.services) }));
+// export const MOCK_CASES: Case[] = [
+//   {
+//     id: "case1",
+//     srNo: "GWL-001",
+//     ownerName: "Mrs. Karuna Brijwani",
+//     unitName: "M/s Radha Soami Enterprises",
+//     franchiseAddress: "City Center, Gwalior, Madhya Pradesh – 474001",
+//     promoters: "Mrs. Karuna Brijwani",
+//     authorizedPerson: "Mr. Ajit Singh (Manager)",
+//     services: [
+//       { id: "s1-1", name: "DPR (Detailed Project Report)", status: "Approved" as ServiceStatus, remarks: "DPR finalized and submitted.", completionPercentage: 100, assignedUser: "user2" },
+//       { id: "s1-2", name: "UDYAM Registration", status: "Approved" as ServiceStatus, remarks: "UDYAM registration obtained.", completionPercentage: 100, assignedUser: "user2" },
+//       { id: "s1-3", name: "GST Registration", status: "Approved" as ServiceStatus, remarks: "GSTIN received.", completionPercentage: 100, assignedUser: "user2" },
+//       { id: "s1-4", name: "PMEGP Application", status: "Approved" as ServiceStatus, remarks: "Loan sanctioned under PMEGP.", completionPercentage: 100, assignedUser: "user2" },
+//       { id: "s1-5", name: "Store Setup & Branding", status: "Approved" as ServiceStatus, remarks: "Store live and operational.", completionPercentage: 100, assignedUser: "user3" },
+//     ],
+//     overallStatus: "Approved",
+//     assignedUsers: ["user2", "user3", "user1"],
+//     lastUpdate: "2024-03-15T10:00:00Z",
+//     reasonForStatus: "All services completed and store is live.",
+//     viewLink: "/view/public/case1_token_xyz",
+//     chatMessages: MOCK_CHAT_MESSAGES_CASE1,
+//   },
+//   {
+//     id: "case2",
+//     srNo: "JPR-005",
+//     ownerName: "Mr. Rohan Verma",
+//     unitName: "Verma Dry Cleaners",
+//     franchiseAddress: "Malviya Nagar, Jaipur, Rajasthan - 302017",
+//     promoters: "Mr. Rohan Verma, Mrs. Sunita Verma",
+//     authorizedPerson: "Mr. Rohan Verma",
+//     services: (() => {
+//         const services = generateServices();
+//         return services.map(s => ({...s, id: `s2-${s.id.substring(7)}`, status: s.status as ServiceStatus }));
+//     })(),
+//     overallStatus: "In-Progress",
+//     assignedUsers: ["user2", "user5"],
+//     lastUpdate: "2024-05-10T14:30:00Z",
+//     reasonForStatus: "PMEGP application pending bank approval.",
+//     chatMessages: MOCK_CHAT_MESSAGES_CASE2,
+//   },
+//   {
+//     id: "case3",
+//     srNo: "PUN-012",
+//     ownerName: "Ms. Anjali Mehta",
+//     unitName: "Sparkle Laundry Services",
+//     franchiseAddress: "Koregaon Park, Pune, Maharashtra - 411007",
+//     promoters: "Ms. Anjali Mehta",
+//     authorizedPerson: "Ms. Anjali Mehta",
+//     services: (() => {
+//         const services = generateServices();
+//         return services.map(s => ({...s, id: `s3-${s.id.substring(7)}`, status: s.status as ServiceStatus }));
+//     })(),
+//     overallStatus: "Pending",
+//     assignedUsers: ["user5", "user3"],
+//     lastUpdate: "2024-05-20T09:15:00Z",
+//     reasonForStatus: "Initial documents collection phase.",
+//     chatMessages: [],
+//   },
+//    {
+//     id: "case4",
+//     srNo: "LKO-003",
+//     ownerName: "Mr. Sameer Khan",
+//     unitName: "Khan's Quick Wash",
+//     franchiseAddress: "Hazratganj, Lucknow, Uttar Pradesh - 226001",
+//     promoters: "Mr. Sameer Khan",
+//     authorizedPerson: "Mr. Sameer Khan",
+//     services: [
+//         { id: "s4-1", name: "DPR (Detailed Project Report)", status: "Completed" as ServiceStatus, remarks: "DPR approved.", completionPercentage: 100, assignedUser: "user2" },
+//         { id: "s4-2", name: "UDYAM Registration", status: "Pending" as ServiceStatus, remarks: "Awaiting Aadhar link.", completionPercentage: 10, assignedUser: "user2" },
+//         { id: "s4-3", name: "GST Registration", status: "Pending" as ServiceStatus, remarks: "PAN card details required.", completionPercentage: 5, assignedUser: "user5" },
+//     ],
+//     overallStatus: "Pending",
+//     assignedUsers: ["user2", "user5"],
+//     lastUpdate: "2024-05-22T11:00:00Z",
+//     reasonForStatus: "Awaiting client documentation for UDYAM and GST.",
+//     chatMessages: [],
+//   },
+//   {
+//     id: "case5",
+//     srNo: "IND-007",
+//     ownerName: "Mrs. Priya Sharma",
+//     unitName: "Indore Laundry Hub",
+//     franchiseAddress: "Vijay Nagar, Indore, Madhya Pradesh - 452010",
+//     promoters: "Mrs. Priya Sharma, Mr. Alok Sharma",
+//     authorizedPerson: "Mrs. Priya Sharma",
+//     services: [
+//         { id: "s5-1", name: "DPR (Detailed Project Report)", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user3" },
+//         { id: "s5-2", name: "UDYAM Registration", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user3" },
+//         { id: "s5-3", name: "GST Registration", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user2" },
+//         { id: "s5-4", name: "PMEGP Application", status: "Completed" as ServiceStatus, remarks: "Submitted to bank, awaiting sanction.", completionPercentage: 90, assignedUser: "user2" },
+//         { id: "s5-5", name: "Store Setup & Branding", status: "In-Progress" as ServiceStatus, remarks: "Interior work ongoing.", completionPercentage: 60, assignedUser: "user3" },
+//         { id: "s5-6", name: "Bank Loan Application", status: "In-Progress" as ServiceStatus, remarks: "Awaiting PMEGP sanction for final disbursement.", completionPercentage: 75, assignedUser: "user2"},
+//     ],
+//     overallStatus: "In-Progress",
+//     assignedUsers: ["user2", "user3"],
+//     lastUpdate: "2024-05-18T16:45:00Z",
+//     reasonForStatus: "Store setup and loan disbursement in progress.",
+//     chatMessages: [],
+//   }
+// ].map(c => ({ ...c, overallStatus: calculateOverallStatus(c.services) }));
 
 
 export const MOCK_STATES: StateItem[] = [
