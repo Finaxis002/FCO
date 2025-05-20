@@ -14,6 +14,8 @@ export interface Service {
   assignedUser?: string; // User ID
 }
 
+export type MessageStatus = "sending" | "sent" | "failed"; // More specific than just string
+
 export interface ChatMessage {
   id: string;
   caseId: string;
@@ -21,6 +23,8 @@ export interface ChatMessage {
   senderName: string;
   message: string;
   timestamp: string; // ISO string
+  status?: MessageStatus; // More specific type instead of string
+  readBy?: string[]; // Optional array of user IDs who have read the message
 }
 
 export interface Case {
@@ -49,7 +53,8 @@ export type UserRole =
 
 export interface User {
   _id?: string; // MongoDB ID
-  id?: string; // Alternative ID field
+  id: string;   // Make this required as primary identifier
+  userId?: string; // Deprecated, kept for backward compatibility
   name: string;
   email: string;
   role: UserRole;
@@ -64,8 +69,10 @@ export interface User {
     canViewAllCases?: boolean;
   };
   assignedCases?: string[];
+  // Consider adding:
+  lastActive?: string; // ISO timestamp
+  socketId?: string; // For real-time features
 }
-
 export interface AppNotification {
   _id?: string; // ✅ Add this if you're using MongoDB
   timestamp: string;
@@ -93,6 +100,44 @@ export interface AppNotification {
   dataAIHint?: string;
   user?: string;
 }
+
+export interface CaseChatProps {
+  caseId: string;
+  currentUser: User;
+  assignedUsers: User[];
+  initialMessages?: ChatMessage[];
+  // Consider adding:
+  onNewMessage?: (message: ChatMessage) => void;
+  isConnected?: boolean;
+  loading?: boolean;
+}
+
+
+export interface SocketEvents {
+  // Client emits these:
+  'register': (userId: string, username: string) => void;
+  'joinCase': (caseId: string) => void;
+  'sendMessage': (payload: { caseId: string; message: string }) => void;
+  
+  // Server emits these:
+  'registered': () => void;
+  'newMessage': (msg: ChatMessage) => void;
+  'messageStatus': (payload: { messageId: string; status: MessageStatus }) => void;
+  'userTyping': (payload: { caseId: string; userId: string }) => void;
+  'error': (errMsg: string) => void;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface ChatApiResponse extends ApiResponse<{
+  messages: ChatMessage[];
+  participants: User[];
+}> {}
 
 // For "Advanced Section"
 export interface StateItem {

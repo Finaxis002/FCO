@@ -85,17 +85,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
     }
   };
 
-  const handleDeleteClick = () => {
-    if (onDelete) {
-      if (window.confirm("Are you sure you want to delete this case?")) {
-        onDelete(caseData.id);
-      }
-    }
-  };
 
-  const assignedUserObjects = caseData.assignedUsers
-    .map((userId) => MOCK_USERS.find((u) => u.id === userId))
-    .filter(Boolean);
 
   return (
     <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
