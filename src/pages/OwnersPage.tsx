@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import PageHeader from "@/components/ui/page-header";
-import { MOCK_CASES, APP_NAME } from "@/lib/constants";
+import {APP_NAME } from "@/lib/constants";
 import type { Case } from "@/types/franchise";
 import {
   Card,
@@ -41,11 +41,6 @@ export default function OwnersPage() {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const ownersMap = new Map<string, Case[]>();
-      MOCK_CASES.forEach((c) => {
-        const ownerCases = ownersMap.get(c.ownerName) || [];
-        ownerCases.push(c);
-        ownersMap.set(c.ownerName, ownerCases);
-      });
 
       const formattedOwners: OwnerWithCases[] = Array.from(
         ownersMap.entries()

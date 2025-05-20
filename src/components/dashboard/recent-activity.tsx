@@ -1,7 +1,5 @@
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
-import type { AppNotification, Case } from "@/types/franchise";
-import { MOCK_CASES } from "@/lib/constants";
 import {
   Card,
   CardContent,

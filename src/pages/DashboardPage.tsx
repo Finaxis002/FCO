@@ -2,9 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/ui/page-header";
 import {
-  MOCK_CASES,
-  MOCK_USERS,
-  MOCK_NOTIFICATIONS,
   APP_NAME,
 } from "@/lib/constants";
 import type {

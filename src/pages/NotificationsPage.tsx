@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PageHeader from "@/components/ui/page-header";
-import { MOCK_NOTIFICATIONS, APP_NAME, MOCK_CASES } from "@/lib/constants";
+import { MOCK_NOTIFICATIONS, APP_NAME } from "@/lib/constants";
 import type { AppNotification } from "@/types/franchise";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -85,7 +85,7 @@ useEffect(() => {
 
   const getCaseName = (caseId?: string): string | undefined => {
     if (!caseId) return undefined;
-    const caseItem = MOCK_CASES.find(c => c.id === caseId);
+    const caseItem = notifications.find(c => c.id === caseId);
     return caseItem?.unitName;
   };
 
