@@ -1,6 +1,9 @@
 "use client"; // This directive is not strictly necessary in Vite but doesn't harm.
 
 import type { Case } from "@/types/franchise";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store"; // adjust path as per your project
+
 import {
   Table,
   TableBody,
@@ -9,47 +12,152 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
-import { Edit, Link as LinkIcon, Eye } from "lucide-react";
+import { Edit, Link as LinkIcon, Eye, Trash } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom"; // Changed import
-import StatusIndicator from "@/components/dashboard/status-indicator";
 import { MOCK_USERS } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect } from "react"; // Import React
 import { Card, CardContent } from "@/components/ui/card";
+import axios from "axios";
+import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
+import { fetchCurrentUser } from "../../features/userSlice";
 
+const statusStyles: Record<string, string> = {
+  Pending:
+    "bg-yellow-100 text-yellow-800 hover:!bg-yellow-200 hover:!text-yellow-900",
+  "In-Progress":
+    "bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
+  Completed:
+    "bg-green-100 text-green-800 hover:!bg-green-200 hover:!text-green-900",
+  Rejected: "bg-red-100 text-red-800 hover:!bg-red-200 hover:!text-red-900",
+  Approved:
+    "bg-purple-100 text-purple-800 hover:!bg-purple-200 hover:!text-purple-900",
+};
 
-interface CaseTableProps {
-  cases: Case[];
-}
-
-export default function CaseTable({ cases }: CaseTableProps) {
+export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   const { toast } = useToast();
   const [displayCases, setDisplayCases] = useState<Case[]>(cases);
-  const [lastUpdateDisplayCache, setLastUpdateDisplayCache] = useState<Record<string, string>>({});
+  const [lastUpdateDisplayCache, setLastUpdateDisplayCache] = useState<
+    Record<string, string>
+  >({});
+
+  const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>(
+    () => {
+      const initialStatuses: Record<string, string> = {};
+      cases.forEach((c) => {
+        initialStatuses[c.id] = c.status || c.overallStatus || "Pending";
+      });
+      return initialStatuses;
+    }
+  );
+
+  const permissions = useSelector(
+    (state: RootState) => state.users.permissions
+  );
+
+  const userRole = localStorage.getItem("userRole");
+
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    dispatch(fetchCurrentUser());
+  }, [dispatch]);
 
   useEffect(() => {
-    setDisplayCases(cases);
+    const updatedStatuses: Record<string, string> = {};
+    cases.forEach((c) => {
+      updatedStatuses[c.id] = c.status || c.overallStatus || "Pending";
+    });
+    setCaseStatuses(updatedStatuses);
+  }, [cases]);
+
+  const allowedStatuses = [
+    "Pending",
+    "In-Progress",
+    "Completed",
+    "Rejected",
+    "Approved",
+  ];
+
+  const handleStatusChange = async (caseId: string, newStatus: string) => {
+    try {
+      setCaseStatuses((prev) => ({ ...prev, [caseId]: newStatus }));
+      console.log(`Updating status for case ${caseId} to ${newStatus}`);
+
+      const response = await axios.put(
+        `http://localhost:5000/api/cases/${caseId}`,
+        {
+          status: newStatus,
+        }
+      );
+
+      console.log("API response:", response.data);
+
+      setDisplayCases((prev) =>
+        prev.map((c) => (c.id === caseId ? { ...c, status: newStatus } : c))
+      );
+
+      toast({
+        title: "Status Updated",
+        description: `Case status updated to "${newStatus}".`,
+      });
+    } catch (error) {
+      console.error("Update failed:", error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update case status. Please try again.",
+        variant: "destructive",
+      });
+
+      setCaseStatuses((prev) => ({
+        ...prev,
+        [caseId]: cases.find((c) => c.id === caseId)?.status || "Pending",
+      }));
+    }
+  };
+
+  useEffect(() => {
+    const sortedCases = [...cases].sort((a, b) => a.srNo - b.srNo);
+    setDisplayCases(sortedCases);
   }, [cases]);
 
   useEffect(() => {
     // This effect is client-side only
     const newCache: Record<string, string> = {};
-    cases.forEach(caseData => {
-      if (caseData.lastUpdate) { 
-        newCache[caseData.id] = new Date(caseData.lastUpdate).toLocaleDateString('en-US', {
-          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    cases.forEach((caseData) => {
+      if (caseData.lastUpdate) {
+        newCache[caseData.id] = new Date(
+          caseData.lastUpdate
+        ).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
         });
       } else {
-        newCache[caseData.id] = 'N/A';
+        newCache[caseData.id] = "N/A";
       }
     });
     setLastUpdateDisplayCache(newCache);
   }, [cases]);
 
-
   const handleGenerateLink = (caseData: Case) => {
-    const viewLink = caseData.viewLink || `/view/case/${caseData.id}?token=${Math.random().toString(36).substring(7)}`;
+    const viewLink =
+      caseData.viewLink ||
+      `/view/case/${caseData.id}?token=${Math.random()
+        .toString(36)
+        .substring(7)}`;
     // Ensure window and navigator are available (standard for client-side)
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(`${window.location.origin}${viewLink}`);
@@ -61,7 +169,7 @@ export default function CaseTable({ cases }: CaseTableProps) {
       toast({
         title: "Clipboard Error",
         description: "Could not copy link to clipboard.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -71,10 +179,16 @@ export default function CaseTable({ cases }: CaseTableProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-lg">
-            <p className="text-xl font-semibold text-muted-foreground">No cases found.</p>
-            <p className="text-sm text-muted-foreground">Try adjusting your filters or add a new case.</p>
+            <p className="text-xl font-semibold text-muted-foreground">
+              No cases found.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Try adjusting your filters or add a new case.
+            </p>
             <Button asChild className="mt-4">
-              <RouterLink to="/cases/new"> {/* Changed Link */}
+              <RouterLink to="/cases/new">
+                {" "}
+                {/* Changed Link */}
                 Add New Case
               </RouterLink>
             </Button>
@@ -102,59 +216,128 @@ export default function CaseTable({ cases }: CaseTableProps) {
           <TableBody>
             {displayCases.map((caseData) => {
               const assignedUserObjects = caseData.assignedUsers
-                .map(userId => MOCK_USERS.find(u => u.id === userId))
+                .map((userId) => MOCK_USERS.find((u) => u.id === userId))
                 .filter(Boolean);
-              
-              const lastUpdateDisplay = lastUpdateDisplayCache[caseData.id] || 'Loading...';
+
+              const lastUpdateDisplay =
+                lastUpdateDisplayCache[caseData.id] || "Loading...";
 
               return (
-                <TableRow key={caseData.id} data-testid={`case-row-${caseData.id}`}>
+                <TableRow
+                  key={caseData.id}
+                  data-testid={`case-row-${caseData.id}`}
+                >
                   <TableCell className="font-medium">{caseData.srNo}</TableCell>
                   <TableCell>{caseData.unitName}</TableCell>
                   <TableCell>{caseData.ownerName}</TableCell>
                   <TableCell>
-                    <StatusIndicator status={caseData.overallStatus} showText />
+                    <Select
+                      value={caseStatuses[caseData.id]}
+                      onValueChange={(value) =>
+                        handleStatusChange(caseData.id, value)
+                      }
+                    >
+                      <SelectTrigger
+                        className={`w-[150px] rounded-md case-table ${
+                          statusStyles[caseStatuses[caseData.id]] || ""
+                        }`}
+                      >
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {allowedStatuses.map((status) => (
+                          <SelectItem
+                            key={status}
+                            value={status}
+                            className={`flex items-center rounded-md px-2 py-1 ${statusStyles[status]}`}
+                          >
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
+
                   <TableCell>{lastUpdateDisplay}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                       {assignedUserObjects.length > 0 
-                        ? (
-                            <div className="flex -space-x-2 overflow-hidden">
-                                {assignedUserObjects.slice(0,3).map(u => u && (
-                                    <img 
-                                         key={u.id} 
-                                         className="inline-block h-6 w-6 rounded-full ring-2 ring-background" 
-                                         src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}&background=random`} 
-                                         alt={u.name}
-                                         data-ai-hint="user avatar" />
-                                ))}
-                                {assignedUserObjects.length > 3 && (
-                                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-muted-foreground ring-2 ring-background text-xs">
-                                        +{assignedUserObjects.length - 3}
-                                    </span>
-                                )}
-                            </div>
-                        )
-                        : "N/A"}
+                    <div className="flex flex-col text-sm text-muted-foreground">
+                      {caseData.assignedUsers?.length ? (
+                        caseData.assignedUsers.map((user, index) => {
+                          const userName =
+                            typeof user === "string"
+                              ? user.trim()
+                              : user?.name?.trim() || "Unknown";
+                          const formattedName =
+                            userName.length > 0
+                              ? userName.charAt(0).toUpperCase() +
+                                userName.slice(1).toLowerCase()
+                              : "Unknown";
+                          return <span key={index}>{formattedName}</span>;
+                        })
+                      ) : (
+                        <span>N/A</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                       <Button variant="outline" size="icon" asChild aria-label="View Case Details">
-                        <RouterLink to={`/cases/${caseData.id}`}> {/* Changed Link */}
+                      {/* View button - assuming everyone can view */}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        asChild
+                        aria-label="View Case Details"
+                      >
+                        <RouterLink
+                          to={`/cases/${
+                            ((caseData as any)._id ?? caseData.id) as string
+                          }`}
+                        >
                           <Eye className="h-4 w-4" />
                         </RouterLink>
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => handleGenerateLink(caseData)} aria-label="Share Case">
-                        <LinkIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" asChild aria-label="Edit Case">
-                        {/* Assuming edit page route, if not, this can be a modal trigger */}
-                        <RouterLink to={`/cases/${caseData.id}/edit`}> {/* Changed Link */}
-                          <Edit className="h-4 w-4" />
-                        </RouterLink>
-                      </Button>
+
+                      {/* Share button */}
+                      {isAdmin ||
+                      permissions?.canCreate ||
+                      permissions?.canAssignTasks ? (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleGenerateLink(caseData)}
+                          aria-label="Share Case"
+                        >
+                          <LinkIcon className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+
+                      {/* Edit button */}
+                      {isAdmin || permissions?.canEdit ? (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          asChild
+                          aria-label="Edit Case"
+                        >
+                          <RouterLink to={`/cases/${caseData.id}/edit`}>
+                            <Edit className="h-4 w-4" />
+                          </RouterLink>
+                        </Button>
+                      ) : null}
+
+                      {/* Delete button */}
+                      {isAdmin || permissions?.canDelete ? (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => onDelete(caseData.id)}
+                          aria-label="Delete Case"
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      ) : null}
                     </div>
                   </TableCell>
                 </TableRow>

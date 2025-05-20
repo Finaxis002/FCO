@@ -1,7 +1,7 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -31,15 +31,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { User, UserRole } from "@/types/franchise";
-import { USER_ROLES } from "@/lib/constants";
 import { useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
+export const USER_ROLES = ["admin", "user"] as const;
 
 const userFormSchema = z.object({
+  userId: z.string().min(2, "User ID is required."), 
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
-  role: z.enum(USER_ROLES as [UserRole, ...UserRole[]], { // Cast to ensure Zod knows it's a non-empty array
+  role: z.enum(USER_ROLES, {
     required_error: "User role is required.",
   }),
+ password: z.string().optional(),  
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -47,7 +50,10 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 interface AddEditUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (user: Omit<User, 'id' | 'avatarUrl' | 'dataAIHint'> & { id?: string }, isEditing: boolean) => void;
+  onSave: (
+    user: Omit<User, "id" | "avatarUrl" | "dataAIHint"> & { id?: string },
+    isEditing: boolean
+  ) => void;
   user?: User | null;
 }
 
@@ -57,6 +63,8 @@ export default function AddEditUserDialog({
   onSave,
   user,
 }: AddEditUserDialogProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   const isEditing = !!user;
 
   const form = useForm<UserFormValues>({
@@ -65,18 +73,23 @@ export default function AddEditUserDialog({
       name: "",
       email: "",
       role: USER_ROLES[1], // Default to "Back Office" or another sensible default
+      password: "",
     },
   });
+
+  
 
   useEffect(() => {
     if (user) {
       form.reset({
+        userId: user.userId || "", // ✅ Added
         name: user.name,
         email: user.email,
         role: user.role,
       });
     } else {
       form.reset({
+        userId: "",
         name: "",
         email: "",
         role: USER_ROLES[1],
@@ -100,7 +113,24 @@ export default function AddEditUserDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6 py-4"
+          >
+            <FormField
+              control={form.control}
+              name="userId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>User ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., user001 or john_doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"
@@ -121,19 +151,61 @@ export default function AddEditUserDialog({
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="e.g., john.doe@example.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="e.g., john.doe@example.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter a secure password"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground focus:outline-none"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>User Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
@@ -158,7 +230,13 @@ export default function AddEditUserDialog({
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Changes" : "Add User")}
+                {form.formState.isSubmitting
+                  ? isEditing
+                    ? "Saving..."
+                    : "Adding..."
+                  : isEditing
+                  ? "Save Changes"
+                  : "Add User"}
               </Button>
             </DialogFooter>
           </form>

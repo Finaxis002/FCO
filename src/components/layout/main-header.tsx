@@ -1,4 +1,6 @@
 import { Link as RouterLink } from "react-router-dom"; // Changed import
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   PanelLeft,
   Search,
@@ -7,6 +9,11 @@ import {
   LogOut,
   Bell,
   Building2,
+  CheckCircle2,
+  FilePlus,
+  UserPlus,
+  AlertCircle,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,12 +26,81 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import MainSidebarNavigation from "./main-sidebar-navigation"; 
-import { APP_NAME, MOCK_USERS } from "@/lib/constants";
-import React from "react"; // Import React
+import MainSidebarNavigation from "./main-sidebar-navigation";
+import { APP_NAME, MOCK_USERS, MOCK_NOTIFICATIONS } from "@/lib/constants";
+import React, { useMemo } from "react";
+import type { AppNotification } from "@/types/franchise";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added AvatarImage
+
+function getRelativeTimeShort(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return `${diffInSeconds}s`;
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays}d`;
+}
+
+const NOTIFICATION_ICONS_DROPDOWN: Record<
+  AppNotification["type"],
+  React.ElementType
+> = {
+  update: CheckCircle2,
+  creation: FilePlus,
+  assign: UserPlus,
+  deletion: AlertCircle,
+};
 
 export default function MainHeader() {
-  const currentUser = MOCK_USERS[0]; 
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/notifications", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch notifications");
+
+        const data = await res.json();
+
+        setRecentNotifications(data);
+
+        const unreadCount = data.filter((n) => !n.read).length;
+        setUnreadNotificationCount(unreadCount);
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear localStorage or any auth tokens/state
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("user");
+
+    // Optionally clear other app state or context if needed
+
+    // Redirect to login page
+    navigate("/login");
+  };
+
+  const userStr = localStorage.getItem("user");
+  const currentUser = userStr ? JSON.parse(userStr) : null;
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 print:hidden">
@@ -35,9 +111,12 @@ export default function MainHeader() {
             <span className="sr-only">Toggle Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground">
+        <SheetContent
+          side="left"
+          className="sm:max-w-xs bg-sidebar text-sidebar-foreground"
+        >
           <nav className="grid gap-6 text-lg font-medium">
-            <RouterLink // Changed Link
+            <RouterLink
               to="/"
               className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
             >
@@ -48,7 +127,7 @@ export default function MainHeader() {
           </nav>
         </SheetContent>
       </Sheet>
-      
+
       <div className="relative ml-auto flex-1 md:grow-0">
         {/* Placeholder for Breadcrumbs or Page Title if needed */}
       </div>
@@ -66,27 +145,98 @@ export default function MainHeader() {
           </div>
         </form>
       </div>
-      
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-            </span>
+            {unreadNotificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+              </span>
+            )}
             <span className="sr-only">Toggle notifications</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+        <DropdownMenuContent align="end" className="w-96">
+          <DropdownMenuLabel className="flex justify-between items-center">
+            <span>Notifications</span>
+            {unreadNotificationCount > 0 && (
+              <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                {unreadNotificationCount} New
+              </span>
+            )}
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <div className="text-xs text-muted-foreground">No new notifications</div>
-          </DropdownMenuItem>
+          {recentNotifications.length > 0 ? (
+            recentNotifications
+              .slice(0, 3) // ✅ Limit to latest 3
+              .map((notification) => {
+                const Icon =
+                  NOTIFICATION_ICONS_DROPDOWN?.[notification?.type] || Activity;
+
+                return (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    asChild
+                    className="cursor-pointer !p-0"
+                  >
+                    <RouterLink
+                      to={
+                        notification.caseId
+                          ? `/cases/${notification.caseId}`
+                          : "/notifications"
+                      }
+                      className="flex items-start gap-2 p-2 w-full"
+                    >
+                      <Avatar className="h-8 w-8 mt-0.5 shrink-0">
+                        {" "}
+                        {/* Added shrink-0 */}
+                        <AvatarFallback
+                          className={
+                            notification.read
+                              ? "bg-muted"
+                              : "bg-primary/10 text-primary"
+                          }
+                        >
+                          <Icon className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 overflow-hidden">
+                        {" "}
+                        {/* Added overflow-hidden */}
+                        <p
+                          className={`text-xs leading-snug ${
+                            !notification.read ? "font-medium" : ""
+                          } truncate`}
+                        >
+                          {notification.message}
+                        </p>{" "}
+                        {/* Added truncate */}
+                        <p className="text-xs text-muted-foreground">
+                          {getRelativeTimeShort(notification.timestamp)}
+                        </p>
+                      </div>
+                    </RouterLink>
+                  </DropdownMenuItem>
+                );
+              })
+          ) : (
+            <DropdownMenuItem disabled>
+              <div className="text-xs text-muted-foreground text-center py-2 w-full">
+                No new notifications
+              </div>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
-           <DropdownMenuItem asChild>
-            <RouterLink to="/notifications" className="flex items-center justify-center py-2 text-sm">View all notifications</RouterLink> {/* Changed Link */}
+          <DropdownMenuItem asChild className="!p-0">
+            <RouterLink
+              to="/notifications"
+              className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
+            >
+              View all notifications
+            </RouterLink>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -98,37 +248,44 @@ export default function MainHeader() {
             size="icon"
             className="overflow-hidden rounded-full"
           >
-            {currentUser.avatarUrl ? (
-              <img // Changed from next/image
-                src={currentUser.avatarUrl}
-                width={36}
-                height={36}
-                alt="User Avatar"
-                className="overflow-hidden rounded-full object-cover" // Added object-cover
-                data-ai-hint={currentUser.dataAIHint || "user avatar"}
-              />
-            ) : (
-              <UserCircle className="h-5 w-5" />
-            )}
+            <Avatar className="h-full w-full">
+              {currentUser.avatarUrl ? (
+                <AvatarImage
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name}
+                  data-ai-hint={currentUser.dataAIHint || "user avatar"}
+                />
+              ) : (
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {currentUser.name
+                    ? currentUser.name.charAt(0).toUpperCase()
+                    : "U"}
+                </AvatarFallback>
+              )}
+            </Avatar>
             <span className="sr-only">Toggle user menu</span>
           </Button>
         </DropdownMenuTrigger>
+
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <RouterLink to="/profile" className="flex items-center gap-2"> {/* Changed Link */}
+            <RouterLink to="/profile" className="flex items-center gap-2">
               <UserCircle className="h-4 w-4" /> Profile
             </RouterLink>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <RouterLink to="/settings" className="flex items-center gap-2"> {/* Changed Link */}
+            <RouterLink to="/settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" /> Settings
             </RouterLink>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem> {/* onClick for logout would be needed */}
-            <LogOut className="mr-2 h-4 w-4" />
+          <DropdownMenuItem
+            onClick={handleLogout}
+            className="cursor-pointer flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
             Logout
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -1,46 +1,96 @@
-"use client"; // Not strictly needed for Vite
-import { Link as RouterLink } from "react-router-dom"; // Changed import
-import { Building2, Settings } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+"use client";
+import React, { useState, useEffect } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { Building2, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import MainSidebarNavigation from "./main-sidebar-navigation";
 import { APP_NAME } from "@/lib/constants";
-// Sidebar context and trigger are specific to shadcn/ui sidebar, ensure it's compatible or adjust
-// For now, assuming basic structure without advanced SidebarProvider interactions from shadcn/ui advanced sidebar
-import React from "react"; // Import React
 
 export default function MainSidebar() {
-  return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-sidebar text-sidebar-foreground sm:flex print:hidden group-data-[state=expanded]:w-60 transition-all duration-300 ease-in-out">
-      <div className="flex h-14 items-center justify-center border-b p-2 group-data-[state=expanded]:justify-start group-data-[state=expanded]:px-4 group-data-[state=expanded]:gap-2">
-        <RouterLink // Changed Link
-          to="/" // Changed href to to
-          className="flex items-center justify-center font-semibold text-sidebar-foreground"
-        >
-          <Building2 className="h-6 w-6" />
-          <span className="sr-only group-data-[state=expanded]:not-sr-only group-data-[state=expanded]:ml-2">{APP_NAME}</span>
-        </RouterLink>
-      </div>
-      
-      <MainSidebarNavigation />
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-      <nav className="mt-auto grid gap-1 p-2 group-data-[state=expanded]:grid group-data-[state=expanded]:gap-2 group-data-[state=expanded]:p-4">
-        <TooltipProvider delayDuration={0}>
+  useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    setUserRole(role);
+  }, []);
+
+  return (
+    <aside
+      className={`fixed inset-y-0 left-0 z-10 hidden sm:flex flex-col border-r bg-gradient-to-b from-sidebar to-sidebar/90 text-sidebar-foreground print:hidden transition-all duration-300 ease-in-out ${
+        isExpanded ? "w-64" : "w-16"
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Header with logo and expand/collapse button */}
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border/50 p-4">
+        <RouterLink
+          to="/"
+          className="flex items-center gap-2 font-semibold text-sidebar-foreground hover:text-sidebar-primary-foreground transition-colors"
+        >
+          <Building2 className="h-6 w-6 shrink-0" />
+          {isExpanded && (
+            <span className="text-lg font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+              {APP_NAME}
+            </span>
+          )}
+        </RouterLink>
+
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="p-1 rounded-full hover:bg-sidebar-accent transition-colors"
+          aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {isExpanded ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+
+      {/* Main Navigation */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+        <MainSidebarNavigation userRole={userRole} />
+      </div>
+
+      {/* Footer with Settings */}
+      <div className="border-t border-sidebar-border/50 p-2">
+        <TooltipProvider delayDuration={100}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <RouterLink // Changed Link
-                to="/settings" // Changed href to to
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground transition-colors hover:text-sidebar-primary-foreground hover:bg-sidebar-accent md:h-8 md:w-8 group-data-[state=expanded]:w-full group-data-[state=expanded]:justify-start group-data-[state=expanded]:px-2.5 group-data-[state=expanded]:py-2"
+              <RouterLink
+                to="/settings"
+                className={`flex items-center rounded-lg text-sidebar-foreground transition-colors hover:text-sidebar-primary-foreground hover:bg-sidebar-accent ${
+                  isExpanded
+                    ? "w-full justify-start px-3 py-2 gap-2"
+                    : "h-9 w-9 justify-center"
+                }`}
               >
-                <Settings className="h-5 w-5" />
-                <span className="sr-only group-data-[state=expanded]:not-sr-only group-data-[state=expanded]:ml-2">Settings</span>
+                <Settings className="h-5 w-5 shrink-0" />
+                {isExpanded && <span>Settings</span>}
               </RouterLink>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5} className="group-data-[state=expanded]:hidden">
-              Settings
-            </TooltipContent>
+            {!isExpanded && (
+              <TooltipContent side="right" sideOffset={10}>
+                Settings
+              </TooltipContent>
+            )}
           </Tooltip>
         </TooltipProvider>
-      </nav>
+      </div>
+
+      {/* Hover indicator for collapsed state */}
+      {!isExpanded && isHovered && (
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-2 h-16 bg-primary rounded-r-full opacity-50"></div>
+      )}
     </aside>
   );
 }

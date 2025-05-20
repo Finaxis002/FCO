@@ -1,14 +1,14 @@
+// src/pages/EditCasePage.tsx
 import AddCaseForm from "@/components/forms/add-case-form";
 import PageHeader from "@/components/ui/page-header";
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-export default function NewCasePage() {
+export default function EditCasePage() {
   const navigate = useNavigate();
   return (
-    <>
+    <div>
       <div className="mb-4">
         <Button
           variant="outline"
@@ -20,12 +20,12 @@ export default function NewCasePage() {
         </Button>
       </div>
       <PageHeader
-        title="Create New Case"
-        description="Provide the necessary details to register a new franchise compliance case."
+        title="Edit Case"
+        description="Update details for the selected case."
       />
       <div className="max-w-4xl mx-auto">
         <AddCaseForm />
       </div>
-    </>
+    </div>
   );
 }

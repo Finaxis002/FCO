@@ -7,6 +7,20 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+[data-radix-popper-content-wrapper] {
+  z-index: 1000 !important;
+}
+
+/* In your global styles.css or index.css */
+[data-radix-select-item-indicator] {
+  display: none !important;
+}
+
+.case-table [data-radix-select-item-indicator] {
+  display: none !important;
+}
+
+
 @layer base {
   :root {
     --background: 220 30% 97%; /* Lighter, slightly bluer cool gray */
@@ -107,4 +121,7 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+[data-radix-select-item-indicator] {
+  display: none !important;
 }

@@ -1,61 +1,108 @@
 import AppLayout from "@/components/layout/app-layout";
-import { Routes, Route, Navigate } from 'react-router-dom';
-import DashboardPage from './pages/DashboardPage';
-import CasesPage from './pages/CasesPage';
-import NewCasePage from './pages/NewCasePage';
-import CaseDetailPage from './pages/CaseDetailPage';
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import ProtectedRoute from "@/components/routes/ProtectedRoute";
+import Login from "./pages/Login";
+import DashboardPage from "./pages/DashboardPage";
+import CasesPage from "./pages/CasesPage";
+import NewCasePage from "./pages/NewCasePage";
+import CaseDetailPage from "./pages/CaseDetailPage";
 // import CaseEditPage from './pages/CaseEditPage'; // Placeholder for edit page
-import UsersPage from './pages/UsersPage';
-import SettingsPage from './pages/SettingsPage';
-import { APP_NAME } from "@/lib/constants"; // For document title
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import UsersPage from "./pages/UsersPage";
+import UserPermissionsPage from "./pages/UserPermissionsPage";
+import SettingsPage from "./pages/SettingsPage";
+import OwnersPage from "./pages/OwnersPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
+import { APP_NAME } from "@/lib/constants";
+import React, { useEffect } from "react";
+import EditCasePage from "./pages/EditCasePage";
 
-// GeistSans and GeistMono fonts should be imported in globals.css or linked in index.html
-// For simplicity, assuming they are globally available via CSS.
-
-const PlaceholderPage = ({ title }: { title: string }) => {
-  useEffect(() => {
-    document.title = `${title} | ${APP_NAME}`;
-  }, [title]);
-  return <div className="p-4 text-xl">{title} Page - To be implemented</div>;
-};
-
+// Simplified PlaceholderPage for debugging
 
 export default function App() {
   const location = useLocation();
 
   useEffect(() => {
-    // Basic title setting based on path, can be made more sophisticated
     const path = location.pathname;
-    let title = APP_NAME;
-    if (path === '/') title = `Dashboard | ${APP_NAME}`;
-    else if (path.startsWith('/cases/new')) title = `New Case | ${APP_NAME}`;
-    else if (path.startsWith('/cases/')) title = `Case Details | ${APP_NAME}`;
-    else if (path.startsWith('/cases')) title = `Cases | ${APP_NAME}`;
-    else if (path.startsWith('/users')) title = `Users | ${APP_NAME}`;
-    else if (path.startsWith('/settings')) title = `Settings | ${APP_NAME}`;
-    // Add more specific titles as needed
-    document.title = title;
+
+    if (path === "/login") {
+      document.title = `Login | ${APP_NAME}`;
+      return;
+    }
+
+    let pageTitleSegment = "Dashboard"; // Default title segment
+
+    if (path === "/") {
+      pageTitleSegment = "Dashboard";
+    } else if (path.startsWith("/cases/new")) {
+      pageTitleSegment = "New Case";
+    } else if (
+      path.startsWith("/cases/") &&
+      path.split("/").length > 2 &&
+      !path.endsWith("/edit")
+    ) {
+      // This will be handled by CaseDetailPage's own useEffect
+      return;
+    } else if (path.startsWith("/cases")) {
+      pageTitleSegment = "Cases";
+    } else if (path.startsWith("/owners")) {
+      pageTitleSegment = "Owners";
+    } else if (path.startsWith("/users/") && path.endsWith("/permissions")) {
+      // UserPermissionsPage will set its own title
+      return;
+    } else if (path.startsWith("/users")) {
+      pageTitleSegment = "Users";
+    } else if (path.startsWith("/settings")) {
+      pageTitleSegment = "Settings";
+    } else if (path.startsWith("/profile")) {
+      // ProfilePage will set its own title
+      return;
+    } else if (path.startsWith("/notifications")) {
+      // NotificationsPage will set its own title
+      return;
+    }
+
+    document.title = `${pageTitleSegment} | ${APP_NAME}`;
   }, [location.pathname]);
 
   return (
-    <AppLayout>
+   
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/cases" element={<CasesPage />} />
-        <Route path="/cases/new" element={<NewCasePage />} />
-        <Route path="/cases/:caseId" element={<CaseDetailPage />} />
-        {/* Example for an edit page, if created:
-        <Route path="/cases/:caseId/edit" element={<CaseEditPage />} /> */}
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/users/:userId/permissions" element={<PlaceholderPage title="User Permissions"/>} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/profile" element={<PlaceholderPage title="Profile"/>} />
-        <Route path="/notifications" element={<PlaceholderPage title="Notifications"/>} />
-        {/* Add a catch-all or a 404 component */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/login" element={<Login />} />
+        {/* Protected Routes */}
+        <Route
+          path="*"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/cases" element={<CasesPage />} />
+                  <Route path="/cases/new" element={<NewCasePage />} />
+                  <Route path="/cases/:caseId" element={<CaseDetailPage />} />
+                  <Route
+                    path="/cases/:caseId/edit"
+                    element={<EditCasePage />}
+                  />
+                  <Route path="/owners" element={<OwnersPage />} />
+                  <Route path="/users" element={<UsersPage />} />
+                  <Route
+                    path="/users/:userId/permissions"
+                    element={<UserPermissionsPage />}
+                  />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route
+                    path="/notifications"
+                    element={<NotificationsPage />}
+                  />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </AppLayout>
+   
   );
 }
