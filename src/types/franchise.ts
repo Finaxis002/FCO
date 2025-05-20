@@ -28,6 +28,8 @@ export interface ChatMessage {
 }
 
 export interface Case {
+  updatedAt: string | number | Date;
+  _id: any;
   id: string;
   srNo: string;
   ownerName: string;
@@ -37,7 +39,10 @@ export interface Case {
   authorizedPerson: string;
   services: Service[];
   overallStatus: ServiceStatus; // Can be derived or manually set
-  assignedUsers?: (string | { name?: string })[]; // User IDs for back office, local area head etc.
+  assignedUsers?: (string | {
+    userId: string | undefined;
+    _id: string | undefined; name?: string 
+})[]; // User IDs for back office, local area head etc.
   viewLink?: string; // Optional link for external viewers
   lastUpdate: string; // Timestamp or formatted date string
   reasonForStatus?: string; // For PMEGP status or other specific reasons
@@ -45,12 +50,7 @@ export interface Case {
  status?: ServiceStatus;
 }
 
-export type UserRole =
-  | "Admin"
-  | "Back Office"
-  | "Local Area Head"
-  | "Franchise Owner"
-  | "Viewer";
+export type UserRole = "Admin" | "Frontend" | "Backend" | "Manager" | "User" | string;
 
 export interface User {
   _id?: string; // MongoDB ID
@@ -58,7 +58,7 @@ export interface User {
   userId?: string; // Deprecated, kept for backward compatibility
    name: string;
   email: string;
-  role: UserRole;
+  role?: UserRole;
   avatarUrl?: string;
   dataAIHint?: string;
   permissions?: {

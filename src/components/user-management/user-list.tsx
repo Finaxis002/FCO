@@ -50,6 +50,9 @@ import {
 import { Eye, EyeOff } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@/features/userSlice";
+
+
 
 export default function UserList() {
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -105,13 +108,30 @@ export default function UserList() {
     try {
       if (isEditing && (userData.id || (editingUser && editingUser._id))) {
         const userId = userData.id ?? editingUser!._id;
-        await dispatch(editUser({ id: userId, user: userData })).unwrap();
+        if (!userId) {
+          throw new Error("User ID is required for editing.");
+        }
+        await dispatch(
+          editUser({
+            id: userId,
+           user: { ...userData, role: userData.role as UserRole },
+          })
+        ).unwrap();
         toast({
           title: "User Updated",
           description: `${userData.name}'s details updated.`,
         });
       } else {
-        await dispatch(addUser(userData)).unwrap();
+        // Ensure id is present when adding a user (can be empty string if backend generates it)
+        const { id, _id, ...userDataWithoutIds } = userData;
+        await dispatch(
+          addUser({
+            ...userDataWithoutIds,
+            id: id ?? "",
+            userId: userData.userId ?? "", // Ensure userId is always a string
+             role: userData.role as UserRole // Ensure role is always defined and cast to correct type
+          })
+        ).unwrap();
         toast({
           title: "User Added",
           description: `${userData.name} has been added.`,
@@ -247,7 +267,14 @@ export default function UserList() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditUser(user)}
+                        onClick={() =>
+                          handleEditUser({
+                            ...user,
+                            id: user.id ?? user._id ?? "",
+                            // Optionally ensure role is cast to the correct type if needed:
+                            role: user.role as UserRole,
+                          })
+                        }
                         className="text-blue-600 hover:!bg-blue-600 hover:!text-white"
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -267,7 +294,12 @@ export default function UserList() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleResetPasswordClick(user)}
+                        onClick={() =>
+                          handleResetPasswordClick({
+                            ...user,
+                            role: user.role as UserRole,
+                          })
+                        }
                         className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white"
                       >
                         <ShieldCheck className="h-4 w-4 mr-1" />

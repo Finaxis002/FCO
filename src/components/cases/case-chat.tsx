@@ -65,6 +65,7 @@ export default function CaseChat({
   currentUser,
   assignedUsers,
   initialMessages = [],
+  
 }: CaseChatProps) {
   console.log("Assigned users prop:", assignedUsers);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);

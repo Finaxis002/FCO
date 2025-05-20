@@ -254,7 +254,7 @@ useEffect(() => {
                             <Button
                               variant="secondary"
                               size="xs"
-                              onClick={() => markAsRead(notification.id)}
+                              onClick={() => notification.id && markAsRead(notification.id)}
                             >
                               Mark as Read
                             </Button>
@@ -274,7 +274,7 @@ useEffect(() => {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteNotification(notification.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Delete</AlertDialogAction>
+                                  <AlertDialogAction onClick={() => notification.id && deleteNotification(notification.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>

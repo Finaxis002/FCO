@@ -17,6 +17,7 @@ interface MainSidebarNavigationProps {
 
 export default function MainSidebarNavigation({
   isMobile = false,
+  
 }: MainSidebarNavigationProps) {
   const location = useLocation();
   const pathname = location.pathname;

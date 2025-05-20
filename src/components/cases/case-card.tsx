@@ -27,10 +27,18 @@ import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
 import { useState, useEffect } from "react";
 
+export interface CaseCardViewProps {
+  cases: Case[];
+  onDelete?: (caseId: string) => void | Promise<void>; // add this line
+}
+
 interface CaseCardProps {
   caseData: Case;
   onDelete?: (caseId: string) => void; // new optional prop
 }
+
+
+
 export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
   const { toast } = useToast();
   const [lastUpdateDisplay, setLastUpdateDisplay] =

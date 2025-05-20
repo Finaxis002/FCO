@@ -43,6 +43,7 @@ import CreatableSelect from "react-select/creatable";
 import { Controller } from "react-hook-form";
 import { getAllUsers } from "@/features/userSlice"; // adjust path if needed
 import { AddServiceDialog } from "../ui/AddServiceDialog";
+import type { ServiceStatus } from "@/types/franchise"; // <-- Adjust the import path as needed
 
 const allowedStatuses = [
   "Pending",
@@ -85,6 +86,7 @@ const defaultServices = MOCK_SERVICES_TEMPLATES.map((service) => ({
 }));
 
 export default function AddCaseForm() {
+  const [globalServices, setGlobalServices] = useState<{ name: string }[]>([]);
   const { caseId } = useParams();
   const isEditing = !!caseId;
   const [loadingEdit, setLoadingEdit] = useState(false);
@@ -97,13 +99,16 @@ export default function AddCaseForm() {
   >([]);
 
   // For debounce search
-  const [clientSearch, setClientSearch] = useState("");
 
   const navigate = useNavigate();
   const { toast } = useToast();
   const dispatch = useDispatch<AppDispatch>();
   const { users } = useAppSelector((state) => state.users);
   console.log("Loaded users:", users);
+    const defaultServices = globalServices.map((service) => ({
+    name: service.name,
+    selected: false,
+  }));
 
   const form = useForm<CaseFormValues>({
     resolver: zodResolver(caseFormSchema),
@@ -121,6 +126,26 @@ export default function AddCaseForm() {
       status: "Pending",
     },
   });
+  
+
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/services");
+        setGlobalServices(res.data);
+      } catch (e) {
+        console.error("Failed to fetch services", e);
+        toast({
+          title: "Error",
+          description: "Failed to load services",
+          variant: "destructive",
+        });
+      }
+    };
+    fetchServices();
+  }, []);
+
 
   // Inside the AddCaseForm component, add this function:
   const handleAddNewService = (serviceName: string) => {
@@ -167,14 +192,31 @@ export default function AddCaseForm() {
         );
         const caseData = res.data;
 
-        // Map service names to checkbox structure
-        const serviceDefaults = MOCK_SERVICES_TEMPLATES.map((s) => ({
+        // Extract service names from MOCK_SERVICES_TEMPLATES
+        const templateServiceNames = MOCK_SERVICES_TEMPLATES.map((s) => s.name);
+
+        // Extract service names from saved case data
+        const savedServices = caseData.services || [];
+        const savedServiceNames = savedServices.map((s: any) => s.name);
+
+        // Find any additional services saved but NOT in template
+        const additionalServices = savedServices.filter(
+          (s: any) => !templateServiceNames.includes(s.name)
+        );
+
+        // Create combined services list: template + any additional
+        const combinedServices = [
+          ...MOCK_SERVICES_TEMPLATES,
+          ...additionalServices,
+        ];
+
+        // Now map combined list to checkbox form, mark selected if present in saved services
+        const serviceDefaults = combinedServices.map((s: any) => ({
           name: s.name,
-          selected:
-            caseData.services?.some((cs: any) => cs.name === s.name) || false,
+          selected: savedServiceNames.includes(s.name),
         }));
 
-        // Handle assignedUsers whether they're stored as strings or objects
+        // Handle assignedUsers as before...
         const assignedUserIds =
           caseData.assignedUsers?.map((u: any) =>
             typeof u === "string" ? u : u._id
@@ -183,7 +225,7 @@ export default function AddCaseForm() {
         form.reset({
           srNo: caseData.srNo,
           ownerName: caseData.ownerName,
-          clientName: caseData.clientName, // Add this line
+          clientName: caseData.clientName,
           unitName: caseData.unitName,
           franchiseAddress: caseData.franchiseAddress,
           promoters: Array.isArray(caseData.promoters)
@@ -276,15 +318,25 @@ export default function AddCaseForm() {
       setClientOptions((prev) => [...prev, newOption]);
       return name;
     } catch (err) {
-      console.error(
-        "Client creation error:",
-        err.response?.data || err.message
-      );
+      let errorMessage = "Unknown error";
+      if (typeof err === "object" && err !== null) {
+        if (
+          "response" in err &&
+          typeof (err as any).response === "object" &&
+          (err as any).response !== null
+        ) {
+          errorMessage =
+            (err as any).response.data?.message ||
+            (err as any).message ||
+            "Unknown error";
+        } else if ("message" in err) {
+          errorMessage = (err as any).message;
+        }
+      }
+      console.error("Client creation error:", errorMessage);
       toast({
         title: "Error",
-        description:
-          "Failed to create client: " +
-          (err.response?.data?.message || err.message),
+        description: "Failed to create client: " + errorMessage,
         variant: "destructive",
       });
       return null;
@@ -312,14 +364,13 @@ export default function AddCaseForm() {
         const createdClient = await createClient(data.clientName);
         if (!createdClient) throw new Error("Failed to create client.");
       }
-
       // Step 2: Prepare service details
       const newCaseServices = data.services
         .filter((s) => s.selected)
         .map((s, index) => ({
           id: `service-${index}-${Date.now()}`,
           name: s.name,
-          status: "Pending",
+          status: "Pending" as ServiceStatus, // <-- Cast to ServiceStatus
           remarks: "",
           completionPercentage: 0,
         }));
@@ -351,6 +402,8 @@ export default function AddCaseForm() {
         }),
         reasonForStatus: data.reasonForStatus,
         status: data.status, // <-- include this
+        overallStatus: data.status, // or set a default/logic if needed
+        lastUpdate: new Date().toISOString(), // or use Date.now() if backend expects a number
       };
 
       if (isEditing) {
@@ -396,320 +449,89 @@ export default function AddCaseForm() {
         });
       }
     }
-    return (
-      <>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Basic Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Franchise & Owner Details</CardTitle>
-                <CardDescription>
-                  Provide the basic information about the franchise unit and its
-                  owner.
-                </CardDescription>
-              </CardHeader>
+  };
+  return (
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Basic Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Franchise & Owner Details</CardTitle>
+              <CardDescription>
+                Provide the basic information about the franchise unit and its
+                owner.
+              </CardDescription>
+            </CardHeader>
 
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-x-6 gap-y-8">
-                  {/* SR No */}
-                  <FormField
-                    control={form.control}
-                    name="srNo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SR. No.</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 123" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Unit Name */}
-                  <FormField
-                    control={form.control}
-                    name="unitName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit Name / Project Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., M/s Tumbledry Hub"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Owner Name */}
-                  <FormField
-                    control={form.control}
-                    name="ownerName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Owner's Name</FormLabel>
-                        <FormControl>
-                          <Controller
-                            control={form.control}
-                            name="ownerName"
-                            render={({ field: { onChange, value, ref } }) => (
-                              <CreatableSelect
-                                isClearable
-                                isSearchable
-                                options={ownerOptions}
-                                onChange={(selectedOption) =>
-                                  onChange(
-                                    selectedOption ? selectedOption.value : ""
-                                  )
-                                }
-                                value={
-                                  value
-                                    ? ownerOptions.find(
-                                        (opt) => opt.value === value
-                                      ) || {
-                                        label: value,
-                                        value: value,
-                                      }
-                                    : null
-                                }
-                                placeholder="Select or create owner..."
-                                ref={ref}
-                                classNamePrefix="react-select"
-                              />
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Client Name */}
-                  <FormField
-                    control={form.control}
-                    name="clientName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client's Name</FormLabel>
-                        <FormControl>
-                          <Controller
-                            control={form.control}
-                            name="clientName"
-                            render={({ field: { onChange, value, ref } }) => (
-                              <CreatableSelect
-                                isClearable
-                                isSearchable
-                                options={clientOptions}
-                                onChange={(selectedOption) =>
-                                  onChange(
-                                    selectedOption ? selectedOption.value : ""
-                                  )
-                                }
-                                value={
-                                  value
-                                    ? clientOptions.find(
-                                        (opt) => opt.value === value
-                                      ) || {
-                                        label: value,
-                                        value: value,
-                                      }
-                                    : null
-                                }
-                                placeholder="Select or create client..."
-                                ref={ref}
-                                classNamePrefix="react-select"
-                              />
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Franchise Address */}
-                  <FormField
-                    control={form.control}
-                    name="franchiseAddress"
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Franchise Address</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Full address of the franchise unit"
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Promoters */}
-                  <FormField
-                    control={form.control}
-                    name="promoters"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Promoters (Optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., Self, Co-promoter"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Authorized Person */}
-                  <FormField
-                    control={form.control}
-                    name="authorizedPerson"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Authorized Person (Optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., Contact person"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Services */}
-
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Services Opted</CardTitle>
-                    <CardDescription>
-                      Select applicable services.
-                    </CardDescription>
-                  </div>
-                  <AddServiceDialog onAddService={handleAddNewService}>
-                    <Button variant="outline" size="sm">
-                      Add Service
-                    </Button>
-                  </AddServiceDialog>
-                </div>
-              </CardHeader>
-              <CardContent>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-x-6 gap-y-8">
+                {/* SR No */}
                 <FormField
                   control={form.control}
-                  name="services"
-                  render={() => (
+                  name="srNo"
+                  render={({ field }) => (
                     <FormItem>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                        {form.getValues("services").map((service, index) => (
-                          <FormField
-                            key={index}
-                            control={form.control}
-                            name={`services.${index}.selected`}
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center space-x-3 rounded-md border p-4 shadow-sm hover:shadow-md transition-shadow">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  {form.getValues("services")[index].name}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-                      <FormMessage className="mt-2">
-                        {form.formState.errors.services?.message}
-                      </FormMessage>
+                      <FormLabel>SR. No.</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 123" {...field} />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allowedStatuses.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Assignments & Notes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Assignment & Notes</CardTitle>
-                <CardDescription>Assign users and add notes.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+                {/* Unit Name */}
                 <FormField
                   control={form.control}
-                  name="assignedUsers"
+                  name="unitName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Assign Users</FormLabel>
+                      <FormLabel>Unit Name / Project Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., M/s Tumbledry Hub"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Owner Name */}
+                <FormField
+                  control={form.control}
+                  name="ownerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner's Name</FormLabel>
                       <FormControl>
                         <Controller
                           control={form.control}
-                          name="assignedUsers"
+                          name="ownerName"
                           render={({ field: { onChange, value, ref } }) => (
-                            <SelectReact
-                              inputRef={ref}
-                              isMulti
-                              options={users.map((user) => ({
-                                label: `${user.name} (${user.userId})`, // format: name (userId)
-                                value: user._id,
-                              }))}
-                              value={
-                                value
-                                  ? users
-                                      .filter((u) => value.includes(u._id))
-                                      .map((u) => ({
-                                        label: `${u.name} (${u.userId})`, // same format for selected values
-                                        value: u._id,
-                                      }))
-                                  : []
-                              }
-                              onChange={(selectedOptions) =>
+                            <CreatableSelect
+                              isClearable
+                              isSearchable
+                              options={ownerOptions}
+                              onChange={(selectedOption) =>
                                 onChange(
-                                  selectedOptions.map((opt) => opt.value)
+                                  selectedOption ? selectedOption.value : ""
                                 )
                               }
-                              placeholder="Select one or more users"
+                              value={
+                                value
+                                  ? ownerOptions.find(
+                                      (opt) => opt.value === value
+                                    ) || {
+                                      label: value,
+                                      value: value,
+                                    }
+                                  : null
+                              }
+                              placeholder="Select or create owner..."
+                              ref={ref}
                               classNamePrefix="react-select"
                             />
                           )}
@@ -720,53 +542,277 @@ export default function AddCaseForm() {
                   )}
                 />
 
+                {/* Client Name */}
                 <FormField
                   control={form.control}
-                  name="reasonForStatus"
+                  name="clientName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Initial Note / Reason (Optional)</FormLabel>
+                      <FormLabel>Client's Name</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="e.g., PMEGP status reason..."
-                          {...field}
-                          rows={4}
+                        <Controller
+                          control={form.control}
+                          name="clientName"
+                          render={({ field: { onChange, value, ref } }) => (
+                            <CreatableSelect
+                              isClearable
+                              isSearchable
+                              options={clientOptions}
+                              onChange={(selectedOption) =>
+                                onChange(
+                                  selectedOption ? selectedOption.value : ""
+                                )
+                              }
+                              value={
+                                value
+                                  ? clientOptions.find(
+                                      (opt) => opt.value === value
+                                    ) || {
+                                      label: value,
+                                      value: value,
+                                    }
+                                  : null
+                              }
+                              placeholder="Select or create client..."
+                              ref={ref}
+                              classNamePrefix="react-select"
+                            />
+                          )}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
 
-            {/* Submit Buttons */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={() => navigate(-1)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                size="lg"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting
-                  ? isEditing
-                    ? "Updating Case..."
-                    : "Creating Case..."
-                  : isEditing
-                  ? "Update Case"
-                  : "Create Case"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </>
-    );
-  };
+                {/* Franchise Address */}
+                <FormField
+                  control={form.control}
+                  name="franchiseAddress"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Franchise Address</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Full address of the franchise unit"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Promoters */}
+                <FormField
+                  control={form.control}
+                  name="promoters"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Promoters (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Self, Co-promoter"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Authorized Person */}
+                <FormField
+                  control={form.control}
+                  name="authorizedPerson"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Authorized Person (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Contact person" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Services */}
+
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Services Opted</CardTitle>
+                  <CardDescription>Select applicable services.</CardDescription>
+                </div>
+                <AddServiceDialog onAddService={handleAddNewService}>
+                  <Button variant="outline" size="sm">
+                    Add Service
+                  </Button>
+                </AddServiceDialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="services"
+                render={() => (
+                  <FormItem>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                      {form.getValues("services").map((service, index) => (
+                        <FormField
+                          key={index}
+                          control={form.control}
+                          name={`services.${index}.selected`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 rounded-md border p-4 shadow-sm hover:shadow-md transition-shadow">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {form.getValues("services")[index].name}
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage className="mt-2">
+                      {form.formState.errors.services?.message}
+                    </FormMessage>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allowedStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Assignments & Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Assignment & Notes</CardTitle>
+              <CardDescription>Assign users and add notes.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="assignedUsers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign Users</FormLabel>
+                    <FormControl>
+                      <Controller
+                        control={form.control}
+                        name="assignedUsers"
+                        render={({ field: { onChange, value, ref } }) => (
+                          <SelectReact
+                            ref={ref}
+                            isMulti
+                            options={users.map((user) => ({
+                              label: `${user.name} (${user.userId})`, // format: name (userId)
+                              value: user._id,
+                            }))}
+                            value={
+                              value
+                                ? users
+                                    .filter((u) => value.includes(u._id))
+                                    .map((u) => ({
+                                      label: `${u.name} (${u.userId})`, // same format for selected values
+                                      value: u._id,
+                                    }))
+                                : []
+                            }
+                            onChange={(selectedOptions) =>
+                              onChange(selectedOptions.map((opt) => opt.value))
+                            }
+                            placeholder="Select one or more users"
+                            classNamePrefix="react-select"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reasonForStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Initial Note / Reason (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g., PMEGP status reason..."
+                        {...field}
+                        rows={4}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Submit Buttons */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting
+                ? isEditing
+                  ? "Updating Case..."
+                  : "Creating Case..."
+                : isEditing
+                ? "Update Case"
+                : "Create Case"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
+  );
 }

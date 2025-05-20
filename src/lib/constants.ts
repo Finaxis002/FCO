@@ -74,7 +74,7 @@ const generateServices = (): Service[] => {
     selectedServices.push({
       id: `service${Date.now()}${i}`,
       name: template.name,
-      status: randomStatus,
+      status: randomStatus as ServiceStatus,
       remarks: randomStatus === "Rejected" ? "Missing document X, please resubmit." : (Math.random() > 0.7 ? "Awaiting client feedback for final review." : ""),
       completionPercentage: completionPercentage,
       assignedUser: MOCK_USERS.filter(u => u.role === "Back Office" || u.role === "Local Area Head")[Math.floor(Math.random() * 3)].id,
@@ -113,11 +113,11 @@ export const MOCK_CASES: Case[] = [
     promoters: "Mrs. Karuna Brijwani",
     authorizedPerson: "Mr. Ajit Singh (Manager)",
     services: [
-      { id: "s1-1", name: "DPR (Detailed Project Report)", status: "Approved", remarks: "DPR finalized and submitted.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-2", name: "UDYAM Registration", status: "Approved", remarks: "UDYAM registration obtained.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-3", name: "GST Registration", status: "Approved", remarks: "GSTIN received.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-4", name: "PMEGP Application", status: "Approved", remarks: "Loan sanctioned under PMEGP.", completionPercentage: 100, assignedUser: "user2" },
-      { id: "s1-5", name: "Store Setup & Branding", status: "Approved", remarks: "Store live and operational.", completionPercentage: 100, assignedUser: "user3" },
+      { id: "s1-1", name: "DPR (Detailed Project Report)", status: "Approved" as ServiceStatus, remarks: "DPR finalized and submitted.", completionPercentage: 100, assignedUser: "user2" },
+      { id: "s1-2", name: "UDYAM Registration", status: "Approved" as ServiceStatus, remarks: "UDYAM registration obtained.", completionPercentage: 100, assignedUser: "user2" },
+      { id: "s1-3", name: "GST Registration", status: "Approved" as ServiceStatus, remarks: "GSTIN received.", completionPercentage: 100, assignedUser: "user2" },
+      { id: "s1-4", name: "PMEGP Application", status: "Approved" as ServiceStatus, remarks: "Loan sanctioned under PMEGP.", completionPercentage: 100, assignedUser: "user2" },
+      { id: "s1-5", name: "Store Setup & Branding", status: "Approved" as ServiceStatus, remarks: "Store live and operational.", completionPercentage: 100, assignedUser: "user3" },
     ],
     overallStatus: "Approved",
     assignedUsers: ["user2", "user3", "user1"],
@@ -136,7 +136,7 @@ export const MOCK_CASES: Case[] = [
     authorizedPerson: "Mr. Rohan Verma",
     services: (() => {
         const services = generateServices();
-        return services.map(s => ({...s, id: `s2-${s.id.substring(7)}`}));
+        return services.map(s => ({...s, id: `s2-${s.id.substring(7)}`, status: s.status as ServiceStatus }));
     })(),
     overallStatus: "In-Progress",
     assignedUsers: ["user2", "user5"],
@@ -154,7 +154,7 @@ export const MOCK_CASES: Case[] = [
     authorizedPerson: "Ms. Anjali Mehta",
     services: (() => {
         const services = generateServices();
-        return services.map(s => ({...s, id: `s3-${s.id.substring(7)}`}));
+        return services.map(s => ({...s, id: `s3-${s.id.substring(7)}`, status: s.status as ServiceStatus }));
     })(),
     overallStatus: "Pending",
     assignedUsers: ["user5", "user3"],
@@ -171,9 +171,9 @@ export const MOCK_CASES: Case[] = [
     promoters: "Mr. Sameer Khan",
     authorizedPerson: "Mr. Sameer Khan",
     services: [
-        { id: "s4-1", name: "DPR (Detailed Project Report)", status: "Completed", remarks: "DPR approved.", completionPercentage: 100, assignedUser: "user2" },
-        { id: "s4-2", name: "UDYAM Registration", status: "Pending", remarks: "Awaiting Aadhar link.", completionPercentage: 10, assignedUser: "user2" },
-        { id: "s4-3", name: "GST Registration", status: "Pending", remarks: "PAN card details required.", completionPercentage: 5, assignedUser: "user5" },
+        { id: "s4-1", name: "DPR (Detailed Project Report)", status: "Completed" as ServiceStatus, remarks: "DPR approved.", completionPercentage: 100, assignedUser: "user2" },
+        { id: "s4-2", name: "UDYAM Registration", status: "Pending" as ServiceStatus, remarks: "Awaiting Aadhar link.", completionPercentage: 10, assignedUser: "user2" },
+        { id: "s4-3", name: "GST Registration", status: "Pending" as ServiceStatus, remarks: "PAN card details required.", completionPercentage: 5, assignedUser: "user5" },
     ],
     overallStatus: "Pending",
     assignedUsers: ["user2", "user5"],
@@ -190,12 +190,12 @@ export const MOCK_CASES: Case[] = [
     promoters: "Mrs. Priya Sharma, Mr. Alok Sharma",
     authorizedPerson: "Mrs. Priya Sharma",
     services: [
-        { id: "s5-1", name: "DPR (Detailed Project Report)", status: "Approved", remarks: "", completionPercentage: 100, assignedUser: "user3" },
-        { id: "s5-2", name: "UDYAM Registration", status: "Approved", remarks: "", completionPercentage: 100, assignedUser: "user3" },
-        { id: "s5-3", name: "GST Registration", status: "Approved", remarks: "", completionPercentage: 100, assignedUser: "user2" },
-        { id: "s5-4", name: "PMEGP Application", status: "Completed", remarks: "Submitted to bank, awaiting sanction.", completionPercentage: 90, assignedUser: "user2" },
-        { id: "s5-5", name: "Store Setup & Branding", status: "In-Progress", remarks: "Interior work ongoing.", completionPercentage: 60, assignedUser: "user3" },
-        { id: "s5-6", name: "Bank Loan Application", status: "In-Progress", remarks: "Awaiting PMEGP sanction for final disbursement.", completionPercentage: 75, assignedUser: "user2"},
+        { id: "s5-1", name: "DPR (Detailed Project Report)", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user3" },
+        { id: "s5-2", name: "UDYAM Registration", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user3" },
+        { id: "s5-3", name: "GST Registration", status: "Approved" as ServiceStatus, remarks: "", completionPercentage: 100, assignedUser: "user2" },
+        { id: "s5-4", name: "PMEGP Application", status: "Completed" as ServiceStatus, remarks: "Submitted to bank, awaiting sanction.", completionPercentage: 90, assignedUser: "user2" },
+        { id: "s5-5", name: "Store Setup & Branding", status: "In-Progress" as ServiceStatus, remarks: "Interior work ongoing.", completionPercentage: 60, assignedUser: "user3" },
+        { id: "s5-6", name: "Bank Loan Application", status: "In-Progress" as ServiceStatus, remarks: "Awaiting PMEGP sanction for final disbursement.", completionPercentage: 75, assignedUser: "user2"},
     ],
     overallStatus: "In-Progress",
     assignedUsers: ["user2", "user3"],
@@ -228,12 +228,84 @@ export const MOCK_SERVICE_DEFINITIONS: ServiceDefinition[] = MOCK_SERVICES_TEMPL
 }));
 
 export const MOCK_NOTIFICATIONS: AppNotification[] = [
-  { id: "notif1", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), caseId: "case1", message: "GST status updated to Approved.", type: "update", read: false, userId: "user2" },
-  { id: "notif2", timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), caseId: "case2", message: "New case created.", type: "creation", read: false, userId: "user1" },
-  { id: "notif3", timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), caseId: "case3", message: "Deepak Sharma assigned.", type: "assign", read: true, userId: "user1" },
-  { id: "notif4", timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(), caseId: "case5", message: "Bank Loan Application moved to In-Progress.", type: "update", read: false, userId: "user2" },
-  { id: "notif5", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), message: "New user 'John Doe' added.", type: "assign", read: false, userId: "user1" }, // 'assign' type for user creation as well
-  { id: "notif6", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), caseId: "case4", message: "UDYAM Registration status is Pending.", type: "update", read: true, userId: "user5" },
+  {
+    id: "notif1", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), caseId: "case1", message: "GST status updated to Approved.", type: "update", read: false, userId: "user2",
+    srNo: "",
+    unitName: "",
+    ownerName: "",
+    franchiseAddress: "",
+    services: [],
+    assignedUsers: [],
+    overallStatus: "",
+    name: "",
+    email: "",
+    role: ""
+  },
+  {
+    id: "notif2", timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), caseId: "case2", message: "New case created.", type: "creation", read: false, userId: "user1",
+    srNo: "",
+    unitName: "",
+    ownerName: "",
+    franchiseAddress: "",
+    services: [],
+    assignedUsers: [],
+    overallStatus: "",
+    name: "",
+    email: "",
+    role: ""
+  },
+  {
+    id: "notif3", timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), caseId: "case3", message: "Deepak Sharma assigned.", type: "assign", read: true, userId: "user1",
+    srNo: "",
+    unitName: "",
+    ownerName: "",
+    franchiseAddress: "",
+    services: [],
+    assignedUsers: [],
+    overallStatus: "",
+    name: "",
+    email: "",
+    role: ""
+  },
+  {
+    id: "notif4", timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(), caseId: "case5", message: "Bank Loan Application moved to In-Progress.", type: "update", read: false, userId: "user2",
+    srNo: "",
+    unitName: "",
+    ownerName: "",
+    franchiseAddress: "",
+    services: [],
+    assignedUsers: [],
+    overallStatus: "",
+    name: "",
+    email: "",
+    role: ""
+  },
+  {
+    id: "notif5", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), message: "New user 'John Doe' added.", type: "assign", read: false, userId: "user1",
+    srNo: "",
+    unitName: "",
+    ownerName: "",
+    franchiseAddress: "",
+    services: [],
+    assignedUsers: [],
+    overallStatus: "",
+    name: "",
+    email: "",
+    role: ""
+  }, // 'assign' type for user creation as well
+  {
+    id: "notif6", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), caseId: "case4", message: "UDYAM Registration status is Pending.", type: "update", read: true, userId: "user5",
+    srNo: "",
+    unitName: "",
+    ownerName: "",
+    franchiseAddress: "",
+    services: [],
+    assignedUsers: [],
+    overallStatus: "",
+    name: "",
+    email: "",
+    role: ""
+  },
 ];
 
 

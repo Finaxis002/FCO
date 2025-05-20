@@ -110,7 +110,9 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       console.log("API response:", response.data);
 
       setDisplayCases((prev: Case[]) =>
-        prev.map((c) => (c.id === caseId ? { ...c, status: newStatus } : c))
+        prev.map((c) =>
+          c.id === caseId ? { ...c, status: newStatus as Case["status"] } : c
+        )
       );
 
       toast({
@@ -133,7 +135,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   };
 
   useEffect(() => {
-    const sortedCases = [...cases].sort((a, b) => a.srNo - b.srNo);
+    const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
     setDisplayCases(sortedCases);
   }, [cases]);
 
@@ -220,10 +222,8 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayCases.map((caseData: Case) => {
-              const assignedUserObjects = caseData.assignedUsers
-                .map((userId) => MOCK_USERS.find((u) => u.id === userId))
-                .filter(Boolean);
+            {displayCases.map((caseData) => {
+             
 
               const lastUpdateDisplay =
                 lastUpdateDisplayCache[caseData.id] || "Loading...";

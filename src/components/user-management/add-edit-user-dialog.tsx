@@ -85,7 +85,7 @@ export default function AddEditUserDialog({
         userId: user.userId || "", // ✅ Added
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.role.toLowerCase() as (typeof USER_ROLES)[number],
       });
     } else {
       form.reset({
@@ -98,7 +98,10 @@ export default function AddEditUserDialog({
   }, [user, form, isOpen]); // Re-run effect if isOpen changes to reset form for new additions
 
   function onSubmit(data: UserFormValues) {
-    onSave(data, isEditing);
+    // Convert role to match UserRole type (e.g., "Admin" | "User")
+    const mappedRole =
+      data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase();
+    onSave({ ...data, role: mappedRole as UserRole }, isEditing);
   }
 
   return (

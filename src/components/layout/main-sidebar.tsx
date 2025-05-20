@@ -58,7 +58,7 @@ export default function MainSidebar() {
 
       {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-2">
-        <MainSidebarNavigation userRole={userRole} />
+        <MainSidebarNavigation />
       </div>
 
       {/* Footer with Settings */}

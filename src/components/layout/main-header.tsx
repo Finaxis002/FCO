@@ -57,7 +57,7 @@ const NOTIFICATION_ICONS_DROPDOWN: Record<
 };
 
 export default function MainHeader() {
-  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [recentNotifications, setRecentNotifications] = useState<AppNotification[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -76,7 +76,7 @@ export default function MainHeader() {
 
         setRecentNotifications(data);
 
-        const unreadCount = data.filter((n) => !n.read).length;
+        const unreadCount = data.filter((n: { read: any; }) => !n.read).length;
         setUnreadNotificationCount(unreadCount);
       } catch (err) {
         console.error("Error loading notifications:", err);
@@ -172,9 +172,9 @@ export default function MainHeader() {
           {recentNotifications.length > 0 ? (
             recentNotifications
               .slice(0, 3) // ✅ Limit to latest 3
-              .map((notification) => {
+              .map((notification: AppNotification) => {
                 const Icon =
-                  NOTIFICATION_ICONS_DROPDOWN?.[notification?.type] || Activity;
+                  NOTIFICATION_ICONS_DROPDOWN[notification.type] || Activity;
 
                 return (
                   <DropdownMenuItem

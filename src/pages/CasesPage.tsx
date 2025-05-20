@@ -304,7 +304,7 @@ export default function CasesPage() {
       {viewMode === "table" ? (
         <CaseTable cases={filteredCases} onDelete={handleDelete} />
       ) : (
-        <CaseCardView cases={filteredCases} onDelete={handleDelete} />
+        <CaseCardView cases={filteredCases} onDelete={handleDelete}/>
       )}
     </>
   );

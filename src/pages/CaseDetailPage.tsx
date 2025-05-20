@@ -183,12 +183,14 @@ export default function CaseDetailPage() {
     );
   }
 
-  const assignedUserObjects = caseData.assignedUsers.map((user) => ({
-    id: user.userId, // Use userId as ID
-    name: user.name,
-    role: "Team Member", // You can customize or fetch actual role if available
-    avatarUrl: user.avatarUrl || "", // Optional fallback
-  }));
+  const assignedUserObjects = (caseData.assignedUsers ?? [])
+    .filter((user): user is { userId: string; name?: string; avatarUrl?: string } => typeof user === "object" && user !== null && "userId" in user)
+    .map((user) => ({
+      id: user.userId, // Use userId as ID
+      name: user.name,
+      role: "Team Member", // You can customize or fetch actual role if available
+      avatarUrl: user.avatarUrl || "", // Optional fallback
+    }));
 
   return (
     <>
@@ -362,14 +364,14 @@ export default function CaseDetailPage() {
                         src={
                           user.avatarUrl ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            user.name
+                            user.name || ""
                           )}&background=random`
                         }
                         alt={user.name}
                         width={32}
                         height={32}
                         className="rounded-full"
-                        data-ai-hint={user.dataAIHint || "user avatar"}
+                        data-ai-hint="user avatar"
                       />
                       <div>
                         <p className="text-sm font-medium">{user.name}</p>
@@ -420,12 +422,13 @@ export default function CaseDetailPage() {
         {caseData && caseId && (
           <CaseChat
             caseId={caseId}
-            messages={caseData.chatMessages || []}
             currentUser={currentUser}
-            onSendMessage={handleSendMessage}
             assignedUsers={(caseData.assignedUsers || []).map((user: any) => ({
-              userId: user.userId,
+              id: user.userId,
               name: user.name,
+              email: user.email || "",
+              avatarUrl: user.avatarUrl || "",
+              role: user.role || "Team Member",
             }))}
           />
         )}

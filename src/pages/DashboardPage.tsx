@@ -218,7 +218,15 @@ export default function DashboardPage() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RecentActivity recentCases={cases} loading={loading} />
+          <RecentActivity
+            recentCases={cases.map((c) => ({
+              _id: c._id,
+              unitName: c.unitName,
+              overallStatus: c.status ?? "", // Ensure string, fallback to empty string if undefined
+              lastUpdate: c.lastUpdate, // or c.updatedAt if that's the field
+            }))}
+            loading={loading}
+          />
         </div>
         <div>
           <ComplianceStatusOverview

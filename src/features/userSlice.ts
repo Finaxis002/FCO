@@ -3,6 +3,8 @@ import axios from "axios";
 
 // 👇 Define your User type
 export interface User {
+  id: string;
+  userId: string;
   _id: string;
   name: string;
   email: string;

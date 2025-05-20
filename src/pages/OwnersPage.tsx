@@ -105,13 +105,13 @@ export default function OwnersPage() {
         <PageHeader
           title="Franchise Owners"
           description="Manage and view franchise owners and their cases."
-          actions={
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Owner
-            </Button>
-          }
         />
+        <div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Owner
+          </Button>
+        </div>
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
             <div className="rounded-full bg-muted p-4 mb-4">
@@ -138,13 +138,13 @@ export default function OwnersPage() {
         description={`Viewing ${ownersData.length} ${
           ownersData.length === 1 ? "owner" : "owners"
         }`}
-        actions={
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Owner
-          </Button>
-        }
       />
+      <div>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Owner
+        </Button>
+      </div>
 
       <div className="space-y-4">
         {ownersData.map((owner) => (
