@@ -84,7 +84,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     const updatedStatuses: Record<string, string> = {};
     cases.forEach((c: Case) => {
       if (c.id) {
-      updatedStatuses[c.id] = c.status || c.overallStatus || "Pending";
+        updatedStatuses[c.id] = c.status || c.overallStatus || "Pending";
       }
     });
     setCaseStatuses(updatedStatuses);
@@ -138,7 +138,9 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   };
 
   useEffect(() => {
-    const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
+    const sortedCases = [...cases].sort(
+      (a, b) => Number(a.srNo) - Number(b.srNo)
+    );
     setDisplayCases(sortedCases);
   }, [cases]);
 
@@ -226,10 +228,8 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
           </TableHeader>
           <TableBody>
             {displayCases.map((caseData) => {
-             
-
-             const lastUpdateDisplay = lastUpdateDisplayCache[caseData.id ?? ""] || "Loading...";
-
+              const lastUpdateDisplay =
+                lastUpdateDisplayCache[caseData.id ?? ""] || "Loading...";
 
               return (
                 <TableRow
@@ -292,6 +292,9 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
                       {/* View button - assuming everyone can view */}
+                       {isAdmin ||
+                      permissions?.viewRights ?
+                       (
                       <Button
                         variant="outline"
                         size="icon"
@@ -306,11 +309,11 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                           <Eye className="h-4 w-4" />
                         </RouterLink>
                       </Button>
+                       ) : null}
 
                       {/* Share button */}
                       {isAdmin ||
-                      permissions?.canCreate ||
-                      permissions?.canAssignTasks ? (
+                      permissions?.createCaseRights ? (
                         <Button
                           variant="outline"
                           size="icon"
@@ -322,7 +325,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                       ) : null}
 
                       {/* Edit button */}
-                      {isAdmin || permissions?.canEdit ? (
+                      {isAdmin || permissions?.edit ? (
                         <Button
                           variant="outline"
                           size="icon"
@@ -336,7 +339,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                       ) : null}
 
                       {/* Delete button */}
-                      {isAdmin || permissions?.canDelete ? (
+                      {isAdmin || permissions?.delete ? (
                         <Button
                           variant="outline"
                           size="icon"

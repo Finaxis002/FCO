@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link as RouterLink } from "react-router-dom";
-import {
-  MOCK_USERS,
-  STATUS_CONFIG,
-  APP_NAME,
-} from "@/lib/constants";
+import { MOCK_USERS, STATUS_CONFIG, APP_NAME } from "@/lib/constants";
 import type { Case, Service, User, ChatMessage } from "@/types/franchise";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -23,6 +19,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import CaseChat from "@/components/cases/case-chat"; // Import CaseChat
+import { AppDispatch, RootState } from "@/store";
+import { fetchPermissions } from "@/features/permissionsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import ServiceRemarks from "@/components/cases/ServiceRemarks"; // Import this at the top
 
 function getFormattedDate(dateString?: string) {
   if (!dateString) return "N/A";
@@ -39,11 +39,51 @@ export default function CaseDetailPage() {
   const { caseId } = useParams<{ caseId: string }>();
   const [caseData, setCaseData] = useState<Case | undefined | null>(null); // null for loading state
   const [loading, setLoading] = useState<boolean>(true);
- const currentUser = JSON.parse(
-  localStorage.getItem("user") || "{}"
-) as User ;
 
-  console.log("logged in user / current user", currentUser)
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { permissions, loading: permissionsLoading } = useSelector(
+    (state: RootState) => state.permissions
+  );
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser({
+          id: parsedUser._id || parsedUser.userId || "", // Required by User type
+          name: parsedUser.name,
+          email: parsedUser.email || "", // Required by User type
+          role: parsedUser.role,
+          userId: parsedUser._id || parsedUser.userId, // Your additional field if neede
+          permissions: {
+            // Remove the ? since we're defining the object
+            canViewAllCases: false,
+            canCreateCase: false,
+            canEditCase: false,
+            canDeleteCase: false,
+            canManageUsers: false,
+            canManageSettings: false,
+          },
+        });
+
+        // Skip fetching permissions if Super Admin
+        if (
+          parsedUser.name !== "Super Admin" &&
+          (parsedUser._id || parsedUser.userId)
+        ) {
+          dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
+        }
+      } catch (e) {
+        console.error("Error parsing user data", e);
+      }
+    }
+  }, [dispatch]);
+
+  console.log("permissions", permissions);
 
   useEffect(() => {
     if (caseData && caseData.unitName) {
@@ -58,7 +98,7 @@ export default function CaseDetailPage() {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:5000/api/cases/${caseId}`
+          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`
         );
         if (!response.ok) {
           setCaseData(undefined);
@@ -74,27 +114,6 @@ export default function CaseDetailPage() {
 
     if (caseId) fetchCaseById();
   }, [caseId]);
-
-  const handleSendMessage = (messageText: string) => {
-    if (!caseData || !caseId) return;
-
-    const newMessage: ChatMessage = {
-      id: `msg-${caseId}-${Date.now()}`,
-      caseId: caseId,
-      senderId: currentUser.id,
-      senderName: currentUser.name,
-      message: messageText,
-      timestamp: new Date().toISOString(),
-    };
-
-    setCaseData((prevCaseData) => {
-      if (!prevCaseData) return prevCaseData;
-      return {
-        ...prevCaseData,
-        chatMessages: [...(prevCaseData.chatMessages || []), newMessage],
-      };
-    });
-  };
 
   if (loading || caseData === null) {
     return (
@@ -184,8 +203,18 @@ export default function CaseDetailPage() {
 
   const assignedUserObjects = (caseData.assignedUsers ?? [])
     .filter(
-      (user): user is { userId: string; _id: string; name?: string; avatarUrl?: string } =>
-        typeof user === "object" && user !== null && "userId" in user && "_id" in user
+      (
+        user
+      ): user is {
+        userId: string;
+        _id: string;
+        name?: string;
+        avatarUrl?: string;
+      } =>
+        typeof user === "object" &&
+        user !== null &&
+        "userId" in user &&
+        "_id" in user
     )
     .map((user) => ({
       id: user.userId,
@@ -256,51 +285,59 @@ export default function CaseDetailPage() {
                       (u) => u.id === service.assignedUser
                     );
                     return (
-                      <li
-                        key={service.id}
-                        className="p-3 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <h4 className="font-semibold text-md">
-                            {service.name}
-                          </h4>
-                          <StatusIndicator
-                            status={service.status}
-                            showText={true}
-                          />
-                        </div>
-                        <div className="mb-2">
-                          <Progress
-                            value={service.completionPercentage}
-                            aria-label={`${service.name} completion ${service.completionPercentage}%`}
-                            className="h-2"
-                            style={
-                              {
-                                backgroundColor: statusConfig.lightColor,
-                                "--indicator-color": statusConfig.color,
-                              } as React.CSSProperties
-                            }
-                            indicatorClassName="bg-[var(--indicator-color)]"
-                          />
-                          <p
-                            className="text-xs text-right mt-1"
-                            style={{ color: statusConfig.color }}
-                          >
-                            {service.completionPercentage}% Complete
-                          </p>
-                        </div>
-                        {service.remarks && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
-                            <strong>Remarks:</strong> {service.remarks}
-                          </p>
-                        )}
-                        {serviceAssignedUser && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <strong>Assigned to:</strong>{" "}
-                            {serviceAssignedUser.name}
-                          </p>
-                        )}
-                      </li>
+                      <>
+                        <li
+                          key={service.id}
+                          className="p-3 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <h4 className="font-semibold text-md">
+                              {service.name}
+                            </h4>
+                            <StatusIndicator
+                              status={service.status}
+                              showText={true}
+                            />
+                          </div>
+                          <div className="mb-2">
+                            <Progress
+                              value={service.completionPercentage}
+                              aria-label={`${service.name} completion ${service.completionPercentage}%`}
+                              className="h-2"
+                              style={
+                                {
+                                  backgroundColor: statusConfig.lightColor,
+                                  "--indicator-color": statusConfig.color,
+                                } as React.CSSProperties
+                              }
+                              indicatorClassName="bg-[var(--indicator-color)]"
+                            />
+                            <p
+                              className="text-xs text-right mt-1"
+                              style={{ color: statusConfig.color }}
+                            >
+                              {service.completionPercentage}% Complete
+                            </p>
+                          </div>
+                          {service.remarks && (
+                            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                              <strong>Remarks:</strong> {service.remarks}
+                            </p>
+                          )}
+                          {serviceAssignedUser && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              <strong>Assigned to:</strong>{" "}
+                              {serviceAssignedUser.name}
+                            </p>
+                          )}
+                        </li>
+                        <ServiceRemarks
+                          caseId={caseId!}
+                          serviceId={service.id}
+                          currentUser={currentUser}
+                          serviceName={service.name}
+                        />
+                      </>
                     );
                   })}
                 </ul>
@@ -421,7 +458,7 @@ export default function CaseDetailPage() {
 
       {/* Team Chat Section */}
       <div className="mt-6">
-        {caseData && caseId && (
+        {caseData && caseId && currentUser && (
           <CaseChat
             caseId={caseId}
             currentUser={currentUser}

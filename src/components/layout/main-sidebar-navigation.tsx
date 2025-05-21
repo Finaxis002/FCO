@@ -1,6 +1,6 @@
-"use client"; // Not strictly needed for Vite
+"use client";
 import React, { useState, useEffect } from "react";
-import { Link as RouterLink, useLocation } from "react-router-dom"; // Changed imports
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
@@ -8,8 +8,30 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "@/lib/constants";
-import type { NavItem } from "@/lib/constants";
+import { Home, Users, FolderKanban } from "lucide-react"; // Added Users2
+import { useSelector } from "react-redux";
+import { RootState } from "@/store"; // Adjust import path for your RootState
+
+interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
+interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  role?: string[]; // optional roles allowed to see this item
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: "dashboard", label: "Dashboard", href: "/", icon: Home },
+  { id: "cases", label: "Cases", href: "/cases", icon: FolderKanban },
+  { id: "users", label: "Users", href: "/users", icon: Users, role: ["Admin"] },
+];
 
 interface MainSidebarNavigationProps {
   isMobile?: boolean;
@@ -17,22 +39,35 @@ interface MainSidebarNavigationProps {
 
 export default function MainSidebarNavigation({
   isMobile = false,
-  
 }: MainSidebarNavigationProps) {
+  const permissions = useSelector(
+    (state: RootState) => state.permissions.permissions
+  );
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+  // Filter nav items based on createUserRights permission
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.id === "users") {
+      return (
+        isAdmin ||
+        permissions?.createUserRights === true ||
+        permissions?.userRolesAndResponsibility === true
+      ); // Only show 'Users' if permission granted
+    }
+    return true;
+  });
+
   const location = useLocation();
   const pathname = location.pathname;
-
-  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     setUserRole(role);
   }, []);
 
-  const filteredNavItems =
-    userRole === "user"
-      ? NAV_ITEMS.filter((item) => item.label.toLowerCase() !== "users")
-      : NAV_ITEMS;
+  // Filter "Users" nav item for role 'User' (case-sensitive)
 
   const renderNavItem = (item: NavItem) => {
     const isActive =
@@ -56,9 +91,9 @@ export default function MainSidebarNavigation({
 
     if (isMobile) {
       return (
-        <RouterLink // Changed Link
-          key={item.href}
-          to={item.href} // Changed href to to
+        <RouterLink
+          key={item.id}
+          to={item.href}
           className={cn(
             "flex items-center gap-4 px-2.5",
             isActive
@@ -73,11 +108,11 @@ export default function MainSidebarNavigation({
     }
 
     return (
-      <TooltipProvider key={item.href} delayDuration={0}>
+      <TooltipProvider key={item.id} delayDuration={0}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <RouterLink // Changed Link
-              to={item.href} // Changed href to to
+            <RouterLink
+              to={item.href}
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8",
                 "group-data-[state=expanded]:w-full group-data-[state=expanded]:justify-start group-data-[state=expanded]:px-2.5 group-data-[state=expanded]:py-2",

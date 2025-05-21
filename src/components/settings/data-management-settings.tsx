@@ -1,13 +1,20 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Edit } from "lucide-react";
-import { MOCK_STATES, MOCK_AREAS, MOCK_SERVICE_DEFINITIONS } from "@/lib/constants";
-import type { StateItem, AreaItem, ServiceDefinition } from "@/types/franchise";
+import { MOCK_STATES, MOCK_AREAS } from "@/lib/constants";
 import { useState, useEffect } from "react";
+import type { StateItem, AreaItem, ServiceDefinition } from "@/types/franchise";
 import {
   Table,
   TableBody,
@@ -16,7 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription, // <-- Add this line
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 interface DataItem {
   id: string;
@@ -45,11 +63,14 @@ function DataTable<T extends DataItem>({
   renderAdditionalCols,
 }: DataTableProps<T>) {
   const [newItemName, setNewItemName] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const handleAddItem = () => {
     if (newItemName.trim()) {
       onAddItem(newItemName.trim());
       setNewItemName("");
+      setIsDialogOpen(false); // 👈 closes the dialog
     }
   };
 
@@ -60,15 +81,41 @@ function DataTable<T extends DataItem>({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2 mb-4">
-          <Input 
-            placeholder={`New ${title.slice(0, -1)} Name`} 
-            value={newItemName} 
-            onChange={(e) => setNewItemName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-          />
-          <Button onClick={handleAddItem}><PlusCircle className="h-4 w-4 mr-2"/>Add</Button>
-        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="default">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add {title.slice(0, -1)}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add {title.slice(0, -1)}</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder={`Enter ${title.slice(0, -1)} name`}
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                onClick={() => {
+                  handleAddItem();
+                }}
+              >
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {items.length > 0 ? (
           <Table>
             <TableHeader>
@@ -82,12 +129,24 @@ function DataTable<T extends DataItem>({
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.name}</TableCell>
-                  {renderAdditionalCols && <TableCell>{renderAdditionalCols(item)}</TableCell>}
+                  {renderAdditionalCols && (
+                    <TableCell>{renderAdditionalCols(item)}</TableCell>
+                  )}
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => onEditItem(item)} className="mr-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEditItem(item)}
+                      className="mr-1"
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDeleteItem(item.id)} className="text-destructive hover:text-destructive">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDeleteItem(item.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -96,19 +155,53 @@ function DataTable<T extends DataItem>({
             </TableBody>
           </Table>
         ) : (
-          <p className="text-sm text-muted-foreground">No {title.toLowerCase()} added yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No {title.toLowerCase()} added yet.
+          </p>
         )}
       </CardContent>
     </Card>
   );
 }
 
-
 export default function DataManagementSettings() {
   const { toast } = useToast();
   const [states, setStates] = useState<StateItem[]>(MOCK_STATES);
   const [areas, setAreas] = useState<AreaItem[]>(MOCK_AREAS);
-  const [serviceDefinitions, setServiceDefinitions] = useState<ServiceDefinition[]>(MOCK_SERVICE_DEFINITIONS);
+  const [serviceDefinitions, setServiceDefinitions] = useState<
+    ServiceDefinition[]
+  >([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editItem, setEditItem] = useState<ServiceDefinition | null>(null);
+  const [editServiceName, setEditServiceName] = useState(editItem?.name || "");
+
+  useEffect(() => {
+    if (editItem) {
+      setEditServiceName(editItem.name);
+    }
+  }, [editItem]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/services");
+        const formatted = res.data.map((s: any) => ({
+          id: s._id,
+          name: s.name,
+          defaultStatus: "Pending" as ServiceDefinition["defaultStatus"], // optional display logic
+        }));
+        setServiceDefinitions(formatted as ServiceDefinition[]);
+      } catch (err) {
+        toast({
+          title: "Error loading services",
+          description: "Could not fetch services from server",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   // Placeholder CRUD operations - in a real app, these would call an API
   const crudHandler = <T extends DataItem>(
@@ -116,36 +209,125 @@ export default function DataManagementSettings() {
     itemName: string
   ) => ({
     add: (name: string, additionalProps?: Partial<T>) => {
-      const newItem = { id: `${itemName.toLowerCase()}-${Date.now()}`, name, ...additionalProps } as T;
-      setter(prev => [...prev, newItem]);
-      toast({ title: `${itemName} Added`, description: `${name} has been added.` });
+      const newItem = {
+        id: `${itemName.toLowerCase()}-${Date.now()}`,
+        name,
+        ...additionalProps,
+      } as T;
+      setter((prev) => [...prev, newItem]);
+      toast({
+        title: `${itemName} Added`,
+        description: `${name} has been added.`,
+      });
     },
-    edit: (itemToEdit: T) => {
-      // For simplicity, just logging. Real edit would involve a form/dialog.
-      console.log(`Editing ${itemName}:`, itemToEdit);
-      toast({ title: `Edit ${itemName}`, description: `Editing ${itemToEdit.name}. (Dev placeholder)` });
+    edit: (item: ServiceDefinition) => {
+      setEditItem(item);
+      setEditDialogOpen(true);
     },
     delete: (id: string) => {
-      setter(prev => prev.filter(item => item.id !== id));
-      toast({ title: `${itemName} Deleted`, description: `${itemName} with ID ${id} has been removed.`, variant: "destructive" });
+      setter((prev) => prev.filter((item) => item.id !== id));
+      toast({
+        title: `${itemName} Deleted`,
+        description: `${itemName} with ID ${id} has been removed.`,
+        variant: "destructive",
+      });
     },
   });
 
-  const stateHandler = crudHandler(setStates, "State");
-  const areaHandler = crudHandler(setAreas, "Area");
-  const serviceDefHandler = crudHandler(setServiceDefinitions, "Service Definition");
+  const serviceDefHandler = {
+    add: async (name: string, p0: { defaultStatus: string }) => {
+      try {
+        const res = await axios.post("http://localhost:5000/api/services", {
+          name,
+        });
+        const newItem: ServiceDefinition = {
+          id: res.data._id,
+          name: res.data.name,
+          defaultStatus: "Pending" as ServiceDefinition["defaultStatus"],
+        };
+        setServiceDefinitions((prev) => [...prev, newItem]);
+        toast({
+          title: "Service Added",
+          description: `${name} has been saved.`,
+        });
+      } catch (err: any) {
+        toast({
+          title: "Error",
+          description: err.response?.data?.message || "Could not save service.",
+          variant: "destructive",
+        });
+      }
+    },
+
+    delete: async (id: string) => {
+      try {
+        await axios.delete(`http://localhost:5000/api/services/${id}`);
+        setServiceDefinitions((prev) => prev.filter((item) => item.id !== id));
+        toast({
+          title: "Service Deleted",
+          description: "Service has been removed.",
+          variant: "destructive",
+        });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Failed to delete service",
+          variant: "destructive",
+        });
+      }
+    },
+
+    edit: (item: ServiceDefinition) => {
+      toast({
+        title: "Edit Service",
+        description: `Editing ${item.name} (not yet implemented)`,
+      });
+    },
+  };
+
+  const handleEditItem = (item: ServiceDefinition) => {
+    setEditItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editItem) return;
+    try {
+      await axios.put(`http://localhost:5000/api/services/${editItem.id}`, {
+        name: editServiceName,
+      });
+
+      // Update local state after success
+      setServiceDefinitions((prev) =>
+        prev.map((svc) =>
+          svc.id === editItem.id ? { ...svc, name: editServiceName } : svc
+        )
+      );
+      setEditDialogOpen(false);
+      toast({
+        title: "Service Updated",
+        description: `${editServiceName} has been updated.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update service",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <DataTable
+      {/* <DataTable
         title="Manage States"
         description="Add, edit, or delete states for franchise locations."
         items={states}
         onAddItem={stateHandler.add}
         onEditItem={stateHandler.edit}
         onDeleteItem={stateHandler.delete}
-      />
-      <DataTable
+      /> */}
+      {/* <DataTable
         title="Manage Areas"
         description="Add, edit, or delete areas within states."
         items={areas}
@@ -157,13 +339,15 @@ export default function DataManagementSettings() {
             State: {states.find(s => s.id === item.stateId)?.name || "N/A"}
           </span>
         )}
-      />
+      /> */}
       <DataTable
         title="Manage Service Definitions"
         description="Define the types of compliance services offered."
         items={serviceDefinitions}
-        onAddItem={(name) => serviceDefHandler.add(name, { defaultStatus: "Pending" })}
-        onEditItem={serviceDefHandler.edit}
+        onAddItem={(name) =>
+          serviceDefHandler.add(name, { defaultStatus: "Pending" })
+        }
+        onEditItem={handleEditItem}
         onDeleteItem={serviceDefHandler.delete}
         renderAdditionalCols={(item) => (
           <span className="text-xs text-muted-foreground">
@@ -171,6 +355,31 @@ export default function DataManagementSettings() {
           </span>
         )}
       />
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Service</DialogTitle>
+            <DialogDescription>
+              <Input
+                value={editServiceName}
+                onChange={(e) => setEditServiceName(e.target.value)}
+                autoFocus
+              />
+            </DialogDescription>
+          </DialogHeader>
+          {/* Future: put an input field here and a Save button */}
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

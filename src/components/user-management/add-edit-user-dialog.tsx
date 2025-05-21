@@ -33,7 +33,7 @@ import {
 import type { User, UserRole } from "@/types/franchise";
 import { useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-export const USER_ROLES = ["admin", "user"] as const;
+export const USER_ROLES = ["user"] as const;
 
 const userFormSchema = z.object({
   userId: z.string().min(2, "User ID is required."), 
@@ -72,7 +72,7 @@ export default function AddEditUserDialog({
     defaultValues: {
       name: "",
       email: "",
-      role: USER_ROLES[1], // Default to "Back Office" or another sensible default
+      role: USER_ROLES[0], // Default to "user" or another sensible default
       password: "",
     },
   });
@@ -85,14 +85,14 @@ export default function AddEditUserDialog({
         userId: user.userId || "", // ✅ Added
         name: user.name,
         email: user.email,
-        role: (user.role ? user.role.toLowerCase() : USER_ROLES[1]) as (typeof USER_ROLES)[number],
+        role: (user.role ? user.role.toLowerCase() : USER_ROLES[0]) as (typeof USER_ROLES)[number],
       });
     } else {
       form.reset({
         userId: "",
         name: "",
         email: "",
-        role: USER_ROLES[1],
+        role: USER_ROLES[0],
       });
     }
   }, [user, form, isOpen]); // Re-run effect if isOpen changes to reset form for new additions
