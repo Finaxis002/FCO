@@ -184,7 +184,7 @@ export default function DataManagementSettings() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/services");
+        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/services");
         const formatted = res.data.map((s: any) => ({
           id: s._id,
           name: s.name,
@@ -237,7 +237,7 @@ export default function DataManagementSettings() {
   const serviceDefHandler = {
     add: async (name: string, p0: { defaultStatus: string }) => {
       try {
-        const res = await axios.post("http://localhost:5000/api/services", {
+        const res = await axios.post("https://fcobackend-23v7.onrender.com/api/services", {
           name,
         });
         const newItem: ServiceDefinition = {
@@ -261,7 +261,7 @@ export default function DataManagementSettings() {
 
     delete: async (id: string) => {
       try {
-        await axios.delete(`http://localhost:5000/api/services/${id}`);
+        await axios.delete(`https://fcobackend-23v7.onrender.com/api/services/${id}`);
         setServiceDefinitions((prev) => prev.filter((item) => item.id !== id));
         toast({
           title: "Service Deleted",
@@ -293,7 +293,7 @@ export default function DataManagementSettings() {
   const handleEditSave = async () => {
     if (!editItem) return;
     try {
-      await axios.put(`http://localhost:5000/api/services/${editItem.id}`, {
+      await axios.put(`https://fcobackend-23v7.onrender.com/api/services/${editItem.id}`, {
         name: editServiceName,
       });
 

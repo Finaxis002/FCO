@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +47,9 @@ export default function ServiceRemarks({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddingRemark, setIsAddingRemark] = useState(false);
 
+  const [newRemarkAdded, setNewRemarkAdded] = useState(false);
+
+
   // Fetch remarks when dialog opens
   useEffect(() => {
     if (isDialogOpen) {
@@ -65,6 +67,7 @@ export default function ServiceRemarks({
       if (!res.ok) throw new Error("Failed to load remarks");
       const data: Remark[] = await res.json();
       setRemarks(data);
+       setNewRemarkAdded(false);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -98,6 +101,7 @@ export default function ServiceRemarks({
       const newRemark = await res.json();
       setRemarks((prev) => [newRemark, ...prev]);
       setNewRemarkText("");
+       setNewRemarkAdded(true);  
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
     } finally {
@@ -130,6 +134,7 @@ export default function ServiceRemarks({
           onClick={() => setIsDialogOpen(true)}
         >
           View All Remarks
+          
         </Button>
 
         <Dialog>
