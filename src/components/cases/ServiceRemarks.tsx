@@ -1,0 +1,267 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
+import { Loader2, MessageSquarePlus } from "lucide-react";
+
+type Remark = {
+  _id: string;
+  userId: string;
+  userName: string;
+  remark: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+interface ServiceRemarksProps {
+  caseId: string;
+  serviceId: string;
+  currentUser: {
+    id: string;
+    name: string;
+  } | null;
+  serviceName: string;
+}
+
+export default function ServiceRemarks({
+  caseId,
+  serviceId,
+  currentUser,
+  serviceName,
+}: ServiceRemarksProps) {
+  const [remarks, setRemarks] = useState<Remark[]>([]);
+  const [newRemarkText, setNewRemarkText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddingRemark, setIsAddingRemark] = useState(false);
+
+  // Fetch remarks when dialog opens
+  useEffect(() => {
+    if (isDialogOpen) {
+      fetchRemarks();
+    }
+  }, [isDialogOpen]);
+
+  const fetchRemarks = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`
+      );
+      if (!res.ok) throw new Error("Failed to load remarks");
+      const data: Remark[] = await res.json();
+      setRemarks(data);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddRemark = async () => {
+    if (!currentUser || !newRemarkText.trim()) return;
+
+    setIsAddingRemark(true);
+    const payload = {
+      caseId,
+      serviceId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      remark: newRemarkText.trim(),
+    };
+
+    try {
+      const res = await fetch(
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to add remark");
+
+      const newRemark = await res.json();
+      setRemarks((prev) => [newRemark, ...prev]);
+      setNewRemarkText("");
+    } catch (err) {
+      alert((err as Error).message || "Error saving remark");
+    } finally {
+      setIsAddingRemark(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), "MMM dd, yyyy 'at' h:mm a");
+    } catch {
+      return "Just now";
+    }
+  };
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          View All Remarks
+        </Button>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="default" size="sm" className="gap-1">
+              <MessageSquarePlus className="h-4 w-4" />
+              Add Remark
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Remark</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Textarea
+                rows={4}
+                value={newRemarkText}
+                onChange={(e) => setNewRemarkText(e.target.value)}
+                placeholder="Write your remark here..."
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button
+                  onClick={handleAddRemark}
+                  disabled={!newRemarkText.trim() || isAddingRemark}
+                >
+                  {isAddingRemark ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Remark"
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Remarks for {serviceName}</DialogTitle>
+          </DialogHeader>
+
+          {loading && (
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-md">{error}</div>
+          )}
+
+          {!loading && remarks.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No remarks yet. Be the first to add one!
+            </div>
+          )}
+
+          <ScrollArea className="flex-1 pr-4 h-[20vh] overflow-auto">
+            <div className="space-y-6 py-2">
+              {remarks.map((remark) => (
+                <div key={remark._id} className="flex gap-3">
+                  <Avatar className="h-9 w-9 mt-1">
+                    <AvatarImage src="" />
+                    <AvatarFallback>
+                      {getUserInitials(remark.userName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold">{remark.userName}</h4>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(remark.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-1 whitespace-pre-wrap">
+                      {remark.remark}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <div className="pt-4 border-t">
+            <div className="flex gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src="" />
+                <AvatarFallback>
+                  {currentUser ? getUserInitials(currentUser.name) : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-2">
+                <Textarea
+                  rows={3}
+                  value={newRemarkText}
+                  onChange={(e) => setNewRemarkText(e.target.value)}
+                  placeholder="Add a new remark..."
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    onClick={handleAddRemark}
+                    disabled={!newRemarkText.trim() || isAddingRemark}
+                  >
+                    {isAddingRemark ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Posting...
+                      </>
+                    ) : (
+                      "Post Remark"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

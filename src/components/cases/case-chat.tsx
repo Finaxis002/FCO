@@ -9,6 +9,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { fetchPermissions } from "@/features/permissionsSlice";
 
 interface CaseChatProps {
   caseId: string;
@@ -59,21 +62,37 @@ function getRandomColorFromName(name: string): string {
   return colors[index];
 }
 
-
 export default function CaseChat({
   caseId,
   currentUser,
   assignedUsers,
   initialMessages = [],
-  
 }: CaseChatProps) {
   console.log("Assigned users prop:", assignedUsers);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const remarksAndChat = useSelector(
+    (state: RootState) => state.permissions.permissions?.remarksAndChat
+  );
+
+  const isSuperAdmin = currentUser?.name === "Super Admin";
+
+  if (!isSuperAdmin && !remarksAndChat) {
+    return (
+      <Card className="p-6">
+        <p className="text-center text-red-600 font-semibold">
+          You do not have permission to access the chat.
+        </p>
+      </Card>
+    );
+  }
 
   // Load previous messages
   useEffect(() => {
@@ -201,7 +220,7 @@ export default function CaseChat({
       const tempMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         caseId,
-       senderId: currentUser.userId!,
+        senderId: currentUser.userId!,
         senderName: currentUser.name,
         message: messageContent,
         timestamp: new Date().toISOString(),

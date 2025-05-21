@@ -21,17 +21,27 @@ const API_BASE_URL = "https://fcobackend-23v7.onrender.com/api/users"; // replac
 
 // Async Thunks
 export const getAllUsers = createAsyncThunk<User[]>(
-  "users/getAll",
-  async () => {
-    const response = await axios.get(API_BASE_URL);
-    return response.data;
+  "/users/getAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      console.log("getAllUsers token:", token);
+      if (!token) throw new Error("No token found");
+
+      const response = await axios.get(API_BASE_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Failed to fetch users: Unauthorized");
+    }
   }
 );
 
 export const addUser = createAsyncThunk<
   User,
   Omit<User, "_id" | "avatarUrl" | "dataAIHint">
->("users/add", async (userData) => {
+>("/users/add", async (userData) => {
   const response = await axios.post(API_BASE_URL, userData);
   return response.data;
 });
@@ -39,13 +49,13 @@ export const addUser = createAsyncThunk<
 export const editUser = createAsyncThunk<
   User,
   { id: string; user: Partial<User> }
->("users/edit", async ({ id, user }) => {
+>("/users/edit", async ({ id, user }) => {
   const response = await axios.put(`${API_BASE_URL}/${id}`, user);
   return response.data;
 });
 
 export const deleteUser = createAsyncThunk<string, string>(
-  "users/delete",
+  "/users/delete",
   async (id) => {
     await axios.delete(`${API_BASE_URL}/${id}`);
     return id;
@@ -64,22 +74,35 @@ export const fetchCurrentUser = createAsyncThunk<
 
     const user = JSON.parse(userString);
     const userId = user?._id || user?.id || user?.userId;
-    if (!userId) return rejectWithValue("User ID not found");
-
-    const res = await axios.get(`https://fcobackend-23v7.onrender.com/api/users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await axios.get(
+      `${API_BASE_URL}/${userId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
     if (!res.data) return rejectWithValue("No user data returned");
 
+    // Map old keys to new keys if backend is still using old ones
+    const permsFromBackend = res.data.permissions || {};
+    const mappedPermissions: Permissions = {
+      allCaseAccess: permsFromBackend.allCaseAccess ?? permsFromBackend.canCreate ?? false,
+      viewRights: permsFromBackend.viewRights ?? permsFromBackend.canViewReports ?? false,
+      createCaseRights: permsFromBackend.createCaseRights ?? permsFromBackend.canCreate ?? false,
+      createUserRights: permsFromBackend.createUserRights ?? false,
+      userRolesAndResponsibility: permsFromBackend.userRolesAndResponsibility ?? false,
+      delete: permsFromBackend.delete ?? permsFromBackend.canDelete ?? false,
+      edit: permsFromBackend.edit ?? permsFromBackend.canEdit ?? false,
+      remarksAndChat: permsFromBackend.remarksAndChat ?? false,
+    };
+
     return {
       user: res.data,
-      permissions: res.data.permissions,
+      permissions: mappedPermissions,
     };
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to fetch current user");
   }
 });
+
 
 // State shape
 interface UserState {
@@ -91,20 +114,36 @@ interface UserState {
 }
 
 interface Permissions {
-  canCreate: boolean;
-  canEdit: boolean;
-  canDelete: boolean;
-  canViewReports: boolean;
-  canAssignTasks: boolean;
+  allCaseAccess: boolean;
+  viewRights: boolean;
+  createCaseRights: boolean;
+  createUserRights: boolean;
+  userRolesAndResponsibility: boolean;
+  delete: boolean;
+  edit: boolean;
+  remarksAndChat: boolean;
 }
+
+
+const defaultPermissions: Permissions = {
+  allCaseAccess: false,
+  viewRights: false,
+  createCaseRights: false,
+  createUserRights: false,
+  userRolesAndResponsibility: false,
+  delete: false,
+  edit: false,
+  remarksAndChat: false,
+};
 
 const initialState: UserState = {
   users: [],
   currentUser: null,
-  permissions: null,
+  permissions: defaultPermissions,
   loading: false,
   error: null,
 };
+
 // Slice
 const userSlice = createSlice({
   name: "users",

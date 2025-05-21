@@ -42,7 +42,7 @@ import { useAppSelector } from "@/hooks/hooks";
 import CreatableSelect from "react-select/creatable";
 import { Controller } from "react-hook-form";
 import { getAllUsers } from "@/features/userSlice"; // adjust path if needed
-import { AddServiceDialog } from "../ui/AddServiceDialog";
+// import { AddServiceDialog } from "../ui/AddServiceDialog";
 import type { ServiceStatus } from "@/types/franchise"; // <-- Adjust the import path as needed
 
 const allowedStatuses = [
@@ -105,10 +105,6 @@ export default function AddCaseForm() {
   const dispatch = useDispatch<AppDispatch>();
   const { users } = useAppSelector((state) => state.users);
   console.log("Loaded users:", users);
-    const defaultServices = globalServices.map((service) => ({
-    name: service.name,
-    selected: false,
-  }));
 
   const form = useForm<CaseFormValues>({
     resolver: zodResolver(caseFormSchema),
@@ -126,14 +122,23 @@ export default function AddCaseForm() {
       status: "Pending",
     },
   });
-  
-
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/services");
+        const res = await axios.get(
+          "https://fcobackend-23v7.onrender.com/api/services"
+        );
         setGlobalServices(res.data);
+
+        // Reset form's default services with fetched data
+        form.reset({
+          ...form.getValues(),
+          services: res.data.map((service: any) => ({
+            name: service.name,
+            selected: false,
+          })),
+        });
       } catch (e) {
         console.error("Failed to fetch services", e);
         toast({
@@ -143,39 +148,10 @@ export default function AddCaseForm() {
         });
       }
     };
+
     fetchServices();
   }, []);
 
-
-  // Inside the AddCaseForm component, add this function:
-  const handleAddNewService = (serviceName: string) => {
-    const currentServices = form.getValues("services");
-
-    // Check if service already exists
-    if (
-      currentServices.some(
-        (s) => s.name.toLowerCase() === serviceName.toLowerCase()
-      )
-    ) {
-      toast({
-        title: "Service exists",
-        description: "This service already exists in the list",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Add new service
-    form.setValue("services", [
-      ...currentServices,
-      { name: serviceName, selected: true },
-    ]);
-
-    toast({
-      title: "Service added",
-      description: `${serviceName} has been added to the services list`,
-    });
-  };
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -250,7 +226,9 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/owners");
+        const res = await axios.get(
+          "https://fcobackend-23v7.onrender.com/api/owners"
+        );
         setOwnerOptions(
           res.data.map((o: any) => ({
             label: o.name,
@@ -268,7 +246,9 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get("https://fcobackend-23v7.onrender.com/api/clients");
+        const res = await axios.get(
+          "https://fcobackend-23v7.onrender.com/api/clients"
+        );
         setClientOptions(
           res.data.map((c: any) => ({
             label: c.name,
@@ -290,9 +270,12 @@ export default function AddCaseForm() {
   // Create Owner if not exists
   const createOwner = async (name: string) => {
     try {
-      const res = await axios.post("https://fcobackend-23v7.onrender.com/api/owners", {
-        name,
-      });
+      const res = await axios.post(
+        "https://fcobackend-23v7.onrender.com/api/owners",
+        {
+          name,
+        }
+      );
       const newOption = { label: name, value: name }; // Create proper option object
       setOwnerOptions((prev) => [...prev, newOption]); // Add the complete option
       return name; // Return the name for consistency
@@ -310,9 +293,12 @@ export default function AddCaseForm() {
   const createClient = async (name: string) => {
     console.log("Attempting to create client:", name);
     try {
-      const res = await axios.post("https://fcobackend-23v7.onrender.com/api/clients", {
-        name,
-      });
+      const res = await axios.post(
+        "https://fcobackend-23v7.onrender.com/api/clients",
+        {
+          name,
+        }
+      );
       console.log("Client creation response:", res.data);
       const newOption = { label: name, value: name };
       setClientOptions((prev) => [...prev, newOption]);
@@ -627,11 +613,46 @@ export default function AddCaseForm() {
                 <FormField
                   control={form.control}
                   name="authorizedPerson"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
-                      <FormLabel>Authorized Person (Optional)</FormLabel>
+                      <FormLabel>Authorized Person</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Contact person" {...field} />
+                        <Controller
+                          control={form.control}
+                          name="authorizedPerson"
+                          render={({ field: { onChange, value, ref } }) => (
+                            <SelectReact
+                              ref={ref}
+                              isClearable
+                              isSearchable
+                              options={users.map((user) => ({
+                                label: `${user.name} (${user.userId})`,
+                                value: user.name,
+                              }))}
+                              value={
+                                value
+                                  ? {
+                                      label:
+                                        users.find((u) => u.name === value)
+                                          ?.name +
+                                        " (" +
+                                        users.find((u) => u.name === value)
+                                          ?.userId +
+                                        ")",
+                                      value,
+                                    }
+                                  : null
+                              }
+                              onChange={(selectedOption) =>
+                                onChange(
+                                  selectedOption ? selectedOption.value : ""
+                                )
+                              }
+                              placeholder="Select authorized person"
+                              classNamePrefix="react-select"
+                            />
+                          )}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -650,11 +671,11 @@ export default function AddCaseForm() {
                   <CardTitle>Services Opted</CardTitle>
                   <CardDescription>Select applicable services.</CardDescription>
                 </div>
-                <AddServiceDialog onAddService={handleAddNewService}>
+                {/* <AddServiceDialog onAddService={handleAddNewService}>
                   <Button variant="outline" size="sm">
                     Add Service
                   </Button>
-                </AddServiceDialog>
+                </AddServiceDialog> */}
               </div>
             </CardHeader>
             <CardContent>
@@ -688,6 +709,19 @@ export default function AddCaseForm() {
                     <FormMessage className="mt-2">
                       {form.formState.errors.services?.message}
                     </FormMessage>
+
+                    {/* Add your info message here */}
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Can't find your service? Please{" "}
+                      <a
+                        href="/settings?data="
+                        className="text-blue-600 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        add it from the Settings page
+                      </a>
+                    </p>
                   </FormItem>
                 )}
               />
@@ -726,6 +760,7 @@ export default function AddCaseForm() {
               <CardDescription>Assign users and add notes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Assignees*/}
               <FormField
                 control={form.control}
                 name="assignedUsers"

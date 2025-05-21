@@ -37,6 +37,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { getCases, deleteCase } from "@/features/caseSlice";
+import { fetchPermissions } from "@/features/permissionsSlice";
 
 const FILTER_OPTIONS: { label: string; value: DashboardFilterStatus }[] = [
   { label: "All Cases", value: "Total" },
@@ -60,6 +61,13 @@ export default function CasesPage() {
       canDelete?: boolean;
       canViewReports?: boolean;
       canAssignTasks?: boolean;
+      allCaseAccess?: boolean;
+      viewRights?: boolean;
+      createCaseRights?: boolean;
+      createUserRights?: boolean;
+      userRolesAndResponsibility?: boolean;
+      remarksAndChat?: boolean;
+       canShare?:boolean;
     };
   } | null>(null);
 
@@ -88,69 +96,68 @@ export default function CasesPage() {
     }
   }, [location.state, location.pathname, navigate]);
 
+  const { permissions, loading: permissionsLoading } = useSelector(
+    (state: RootState) => state.permissions
+  );
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          setCurrentUser({
-            name: parsedUser.name,
-            role: parsedUser.role,
-            userId: parsedUser.userId,
-            permissions: parsedUser.permissions || {},
-          });
-        } catch (e) {
-          console.error("Error parsing user data", e);
-        }
-      }
-    }
-  }, []);
+    console.log("Fetched permissions from redux:", permissions);
+  }, [permissions]);
 
   const isAdmin =
     currentUser?.role?.toLowerCase() === "admin" ||
     currentUser?.name === "Super Admin";
 
-  const canSeeAddButton =
-    isAdmin || currentUser?.permissions?.canCreate === true;
-
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          setCurrentUser({
-            name: parsedUser.name,
-            role: parsedUser.role,
-            userId: parsedUser.userId,
-          });
-        } catch (e) {
-          console.error("Error parsing user data", e);
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser({
+          name: parsedUser.name,
+          role: parsedUser.role,
+          userId: parsedUser._id || parsedUser.userId,
+        });
+
+        // Skip fetching permissions if Super Admin
+        if (
+          parsedUser.name !== "Super Admin" &&
+          (parsedUser._id || parsedUser.userId)
+        ) {
+          dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
         }
+      } catch (e) {
+        console.error("Error parsing user data", e);
       }
     }
-  }, []);
+  }, [dispatch]);
+
+  const canSeeAddButton =
+  currentUser?.name === "Super Admin" || permissions?.createCaseRights === true;
+
 
   useEffect(() => {
-    if (!currentUser || !allCases) {
+    if (!allCases || !currentUser) {
       setFilteredCases([]);
       return;
     }
 
-    // Check if the user is admin (you might want to use a specific role like "admin")
-    const isAdmin =
-      currentUser.role === "admin" || currentUser.name === "Super Admin";
+    // If super admin, show all cases immediately, no filtering needed
+    if (currentUser.name === "Super Admin") {
+      setFilteredCases(allCases);
+      return;
+    }
+
+    if (!permissions) {
+      setFilteredCases([]);
+      return;
+    }
 
     let casesToDisplay = allCases;
 
-    // Filter cases based on user role
-    if (!isAdmin) {
-      casesToDisplay = allCases.filter((c) => {
-        // Check if the case is assigned to this user
-        // This depends on how assignedUsers is structured in your Case type
-        return c.assignedUsers?.some((user) => {
-          // Handle both string (userId) and object {_id, name} formats
+    if (!permissions.allCaseAccess) {
+      casesToDisplay = allCases.filter((c) =>
+        c.assignedUsers?.some((user) => {
           if (typeof user === "string") {
             return user === currentUser.userId || user === currentUser.name;
           } else {
@@ -160,12 +167,10 @@ export default function CasesPage() {
               user.name === currentUser.name
             );
           }
-        });
-      });
+        })
+      );
     }
 
-    // Apply status filter if not "Total"
-    // Inside your last useEffect
     if (activeFilter && activeFilter !== "Total") {
       if (activeFilter === "Completed") {
         casesToDisplay = casesToDisplay.filter(
@@ -181,7 +186,7 @@ export default function CasesPage() {
     }
 
     setFilteredCases(casesToDisplay);
-  }, [allCases, activeFilter, currentUser]);
+  }, [allCases, activeFilter, permissions, currentUser]);
 
   const handleDelete = async (caseId: string) => {
     if (window.confirm("Are you sure you want to delete this case?")) {
@@ -304,7 +309,7 @@ export default function CasesPage() {
       {viewMode === "table" ? (
         <CaseTable cases={filteredCases} onDelete={handleDelete} />
       ) : (
-        <CaseCardView cases={filteredCases} onDelete={handleDelete}/>
+        <CaseCardView cases={filteredCases} onDelete={handleDelete} />
       )}
     </>
   );

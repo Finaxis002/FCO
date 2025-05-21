@@ -20,19 +20,34 @@ export interface SettingsSection { // Exported for use in SettingsPage
   content: ReactNode;
 }
 
-interface SettingsLayoutProps {
+export type SettingsLayoutProps = {
   sections: SettingsSection[];
   defaultSection: string;
-}
+  onSectionChange?: (newSection: string) => void;
+};
 
-export default function SettingsLayout({ sections, defaultSection }: SettingsLayoutProps) {
+export default function SettingsLayout({
+  sections,
+  defaultSection,
+  onSectionChange,
+}: SettingsLayoutProps) {
   return (
-    <Tabs defaultValue={defaultSection} className="w-full">
+    <Tabs
+      value={defaultSection}              // Controlled prop
+      onValueChange={(val) => {
+        if (onSectionChange) onSectionChange(val);  // Call URL update handler
+      }}
+      className="w-full"
+    >
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
         {sections.map((section) => {
-          const IconComponent = iconMap[section.icon] || SettingsIconLucide; // Fallback to a default icon
+          const IconComponent = iconMap[section.icon] || SettingsIconLucide;
           return (
-            <TabsTrigger key={section.value} value={section.value} className="flex-1 flex items-center justify-center gap-2 py-2">
+            <TabsTrigger
+              key={section.value}
+              value={section.value}
+              className="flex-1 flex items-center justify-center gap-2 py-2"
+            >
               <IconComponent className="h-4 w-4" />
               {section.label}
             </TabsTrigger>
@@ -47,3 +62,4 @@ export default function SettingsLayout({ sections, defaultSection }: SettingsLay
     </Tabs>
   );
 }
+

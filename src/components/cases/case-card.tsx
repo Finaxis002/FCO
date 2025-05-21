@@ -159,7 +159,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
           </Button>
 
           {/* Share button */}
-          {isAdmin || permissions?.canCreate || permissions?.canAssignTasks ? (
+          {isAdmin || permissions?.createCaseRights ? (
             <Button
               variant="outline"
               size="icon"
@@ -171,7 +171,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
           ) : null}
 
           {/* Edit button */}
-          {isAdmin || permissions?.canEdit ? (
+          {isAdmin || permissions?.edit ? (
             <Button
               variant="outline"
               size="icon"
@@ -185,7 +185,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
           ) : null}
 
           {/* Delete button */}
-          {isAdmin || permissions?.canDelete ? (
+          {isAdmin || permissions?.delete ? (
             <Button
               variant="outline"
               size="icon"

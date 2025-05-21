@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import {
   getAllUsers,
@@ -9,17 +9,9 @@ import {
   deleteUser as deleteUserThunk,
 } from "@/features/userSlice";
 import type { User } from "@/types/franchise";
-import { generateAvatarUrl } from "@/lib/constants";
 import AddEditUserDialog from "./add-edit-user-dialog";
 import { Link as RouterLink } from "react-router-dom";
-import {
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  UserPlus,
-  Settings2,
-  ShieldCheck,
-} from "lucide-react";
+import { Edit, Trash2, UserPlus, Settings2, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,28 +40,69 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Eye, EyeOff } from "lucide-react";
-
 import { useToast } from "@/hooks/use-toast";
 import { UserRole } from "@/features/userSlice";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store"; // Adjust import path for your RootState
+import { fetchPermissions } from "@/features/permissionsSlice";
 
 
+interface UserType {
+  name: string;
+  role?: string;
+  userId?: string;
+}
 
-export default function UserList() {
+export default function UserList({ refreshKey }: { refreshKey: any }) {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [userToReset, setUserToReset] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState(""); // For new password
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+
+const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+
+
+  const permissions = useSelector(
+    (state: RootState) => state.permissions.permissions
+  );
 
   const dispatch = useAppDispatch();
-  const { users, loading, error } = useAppSelector((state) => state.users);
+  const { users, error } = useAppSelector((state) => state.users);
   const { toast } = useToast();
 
   const [isAddEditUserDialogOpen, setIsAddEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  // Add this at the top of your component
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser({
+          name: parsedUser.name,
+          role: parsedUser.role,
+          userId: parsedUser._id || parsedUser.userId,
+        });
+
+        // Skip fetching permissions if Super Admin
+        if (
+          parsedUser.name !== "Super Admin" &&
+          (parsedUser._id || parsedUser.userId)
+        ) {
+          dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
+        }
+      } catch (e) {
+        console.error("Error parsing user data", e);
+      }
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(getAllUsers());
-  }, [dispatch]);
+  }, [dispatch, refreshKey]);
 
   const handleAddNewUser = () => {
     setEditingUser(null);
@@ -114,7 +147,7 @@ export default function UserList() {
         await dispatch(
           editUser({
             id: userId,
-           user: { ...userData, role: userData.role as UserRole },
+            user: { ...userData, role: userData.role as UserRole },
           })
         ).unwrap();
         toast({
@@ -129,7 +162,7 @@ export default function UserList() {
             ...userDataWithoutIds,
             id: id ?? "",
             userId: userData.userId ?? "", // Ensure userId is always a string
-             role: userData.role as UserRole // Ensure role is always defined and cast to correct type
+            role: userData.role as UserRole, // Ensure role is always defined and cast to correct type
           })
         ).unwrap();
         toast({
@@ -197,6 +230,10 @@ export default function UserList() {
     }
   };
 
+  const userRole = localStorage.getItem("userRole");
+
+  console.log("permissions : " + permissions);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -206,9 +243,11 @@ export default function UserList() {
             Manage all user accounts and their roles within the application.
           </CardDescription>
         </div>
-        <Button onClick={handleAddNewUser}>
-          <UserPlus className="mr-2 h-4 w-4" /> Add New User
-        </Button>
+        {(userRole === "Admin" || permissions?.createUserRights === true) && (
+          <Button onClick={handleAddNewUser}>
+            <UserPlus className="mr-2 h-4 w-4" /> Add New User
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -229,7 +268,10 @@ export default function UserList() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
+                  {(userRole === "Admin" ||
+                    permissions?.userRolesAndResponsibility === true) && (
+                    <TableHead className="text-right pr-6">Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -262,61 +304,64 @@ export default function UserList() {
                         {user.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right flex justify-end gap-4 flex-wrap">
-                      {/* Edit Button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleEditUser({
-                            ...user,
-                            id: user.id ?? user._id ?? "",
-                            // Optionally ensure role is cast to the correct type if needed:
-                            role: user.role as UserRole,
-                          })
-                        }
-                        className="text-blue-600 hover:!bg-blue-600 hover:!text-white"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
+                    {(userRole === "Admin" ||
+                      permissions?.userRolesAndResponsibility === true) && (
+                      <TableCell className="text-right flex justify-end gap-4 flex-wrap">
+                        {/* Edit Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleEditUser({
+                              ...user,
+                              id: user.id ?? user._id ?? "",
+                              // Optionally ensure role is cast to the correct type if needed:
+                              role: user.role as UserRole,
+                            })
+                          }
+                          className="text-blue-600 hover:!bg-blue-600 hover:!text-white"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
 
-                      {/* Manage Button */}
-                      <RouterLink
-                        to={`/users/${user._id || user.id}/permissions`}
-                        className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
-                      >
-                        <Settings2 className="h-4 w-4 mr-1" />
-                        Manage
-                      </RouterLink>
+                        {/* Manage Button */}
+                        <RouterLink
+                          to={`/users/${user._id || user.id}/permissions`}
+                          className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
+                        >
+                          <Settings2 className="h-4 w-4 mr-1" />
+                          Manage
+                        </RouterLink>
 
-                      {/* 🔑 Reset Password Button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleResetPasswordClick({
-                            ...user,
-                            role: user.role as UserRole,
-                          })
-                        }
-                        className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white"
-                      >
-                        <ShieldCheck className="h-4 w-4 mr-1" />
-                        Reset Password
-                      </Button>
+                        {/* 🔑 Reset Password Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleResetPasswordClick({
+                              ...user,
+                              role: user.role as UserRole,
+                            })
+                          }
+                          className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white"
+                        >
+                          <ShieldCheck className="h-4 w-4 mr-1" />
+                          Reset Password
+                        </Button>
 
-                      {/* Delete Button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user._id || user.id)}
-                        className="text-red-600 hover:!bg-red-600 hover:!text-white"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </TableCell>
+                        {/* Delete Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user._id || user.id)}
+                          className="text-red-600 hover:!bg-red-600 hover:!text-white"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
