@@ -50,6 +50,25 @@ export const deleteCase = createAsyncThunk(
 );
 
 
+export const updateCase = createAsyncThunk(
+  "case/updateCase",
+  async (caseData: Case, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseData.id}`,
+        caseData
+      );
+      return response.data.case;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update case"
+      );
+    }
+  }
+);
+
+
+
 // ✅ Define initial state
 interface CaseState {
   cases: Case[];

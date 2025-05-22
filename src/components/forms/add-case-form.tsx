@@ -46,7 +46,7 @@ import { getAllUsers } from "@/features/userSlice"; // adjust path if needed
 import type { ServiceStatus } from "@/types/franchise"; // <-- Adjust the import path as needed
 
 const allowedStatuses = [
-  "Pending",
+  "New-Case",
   "In-Progress",
   "Completed",
   "Rejected",
@@ -118,7 +118,7 @@ export default function AddCaseForm() {
       services: defaultServices,
       assignedUsers: [],
       reasonForStatus: "",
-      status: "Pending",
+      status: "New-Case",
     },
   });
 
@@ -210,7 +210,7 @@ export default function AddCaseForm() {
           assignedUsers: assignedUserIds,
           reasonForStatus: caseData.reasonForStatus,
           services: serviceDefaults,
-          status: caseData.status || "Pending",
+          status: caseData.status || "New-Case",
         });
       } catch (err) {
         console.error("Failed to load case:", err);
@@ -355,12 +355,14 @@ export default function AddCaseForm() {
         .map((s, index) => ({
           id: `service-${index}-${Date.now()}`,
           name: s.name,
-          status: "Pending" as ServiceStatus, // <-- Cast to ServiceStatus
+          status: "New-Case" as ServiceStatus, // <-- Cast to ServiceStatus
           remarks: "",
           completionPercentage: 0,
         }));
 
       const casePayload = {
+        // Add a name property, you can set it to unitName or another appropriate value
+        name: data.unitName, // or set as needed
         srNo: data.srNo,
         ownerName: data.ownerName,
         clientName: data.clientName, // Include client name
@@ -386,8 +388,8 @@ export default function AddCaseForm() {
           };
         }),
         reasonForStatus: data.reasonForStatus,
-        status: data.status, // <-- include this
-        overallStatus: data.status, // or set a default/logic if needed
+        status: data.status as ServiceStatus, // <-- ensure correct type
+        overallStatus: data.status as ServiceStatus, // or set a default/logic if needed
         lastUpdate: new Date().toISOString(), // or use Date.now() if backend expects a number
         updatedAt: new Date().toISOString(), // Placeholder, backend should update this
       };

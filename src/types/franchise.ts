@@ -1,9 +1,8 @@
 export type ServiceStatus =
-  | "Pending"
-  | "In-Progress"
-  | "Completed"
-  | "Approved"
-  | "Rejected";
+  | "To be Started"
+  | "Detail Required"
+  | "Inprogress"
+  | "Completed";
 
 export interface Service {
   id: string;
@@ -28,8 +27,10 @@ export interface ChatMessage {
 }
 
 export interface Case {
+  overallCompletionPercentage: number;
+  name: string;
   updatedAt: string | number | Date;
-   _id?: string;
+  _id?: string;
   id?: string;
   srNo?: string;
   ownerName?: string;
@@ -39,24 +40,34 @@ export interface Case {
   authorizedPerson?: string;
   services?: Service[];
   overallStatus?: ServiceStatus; // Can be derived or manually set
-  assignedUsers?: (string | {
-    userId?: string | undefined;
-    _id?: string | undefined; name?: string 
-})[]; // User IDs for back office, local area head etc.
+  assignedUsers?: (
+    | string
+    | {
+        userId?: string | undefined;
+        _id?: string | undefined;
+        name?: string;
+      }
+  )[]; // User IDs for back office, local area head etc.
   viewLink?: string; // Optional link for external viewers
   lastUpdate: string; // Timestamp or formatted date string
   reasonForStatus?: string; // For PMEGP status or other specific reasons
   chatMessages?: ChatMessage[];
- status?: ServiceStatus;
+  status?: ServiceStatus;
 }
 
-export type UserRole = "Admin" | "Frontend" | "Backend" | "Manager" | "User" | string;
+export type UserRole =
+  | "Admin"
+  | "Frontend"
+  | "Backend"
+  | "Manager"
+  | "User"
+  | string;
 
 export interface User {
   _id?: string; // MongoDB ID
-  id: string;   // Make this required as primary identifier
+  id: string; // Make this required as primary identifier
   userId?: string; // Deprecated, kept for backward compatibility
-   name: string;
+  name: string;
   email: string;
   role?: UserRole;
   avatarUrl?: string;
@@ -113,19 +124,21 @@ export interface CaseChatProps {
   loading?: boolean;
 }
 
-
 export interface SocketEvents {
   // Client emits these:
-  'register': (userId: string, username: string) => void;
-  'joinCase': (caseId: string) => void;
-  'sendMessage': (payload: { caseId: string; message: string }) => void;
-  
+  register: (userId: string, username: string) => void;
+  joinCase: (caseId: string) => void;
+  sendMessage: (payload: { caseId: string; message: string }) => void;
+
   // Server emits these:
-  'registered': () => void;
-  'newMessage': (msg: ChatMessage) => void;
-  'messageStatus': (payload: { messageId: string; status: MessageStatus }) => void;
-  'userTyping': (payload: { caseId: string; userId: string }) => void;
-  'error': (errMsg: string) => void;
+  registered: () => void;
+  newMessage: (msg: ChatMessage) => void;
+  messageStatus: (payload: {
+    messageId: string;
+    status: MessageStatus;
+  }) => void;
+  userTyping: (payload: { caseId: string; userId: string }) => void;
+  error: (errMsg: string) => void;
 }
 
 export interface ApiResponse<T> {
@@ -135,10 +148,11 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-export interface ChatApiResponse extends ApiResponse<{
-  messages: ChatMessage[];
-  participants: User[];
-}> {}
+export interface ChatApiResponse
+  extends ApiResponse<{
+    messages: ChatMessage[];
+    participants: User[];
+  }> {}
 
 // For "Advanced Section"
 export interface StateItem {

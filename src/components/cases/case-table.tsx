@@ -32,10 +32,10 @@ import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
 
 const statusStyles: Record<string, string> = {
-  Pending:
-    "bg-yellow-100 text-yellow-800 hover:!bg-yellow-200 hover:!text-yellow-900",
+  "New-Case":"bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
+    
   "In-Progress":
-    "bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
+    "bg-yellow-100 text-yellow-800 hover:!bg-yellow-200 hover:!text-yellow-900",
   Completed:
     "bg-green-100 text-green-800 hover:!bg-green-200 hover:!text-green-900",
   Rejected: "bg-red-100 text-red-800 hover:!bg-red-200 hover:!text-red-900",
@@ -60,7 +60,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       const initialStatuses: Record<string, string> = {};
       cases.forEach((c: Case) => {
         if (!c.id) return;
-        initialStatuses[c.id] = c.status || c.overallStatus || "Pending";
+        initialStatuses[c.id] = c.status || c.overallStatus || "New-Case";
       });
 
       return initialStatuses;
@@ -85,13 +85,13 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     const updatedStatuses: Record<string, string> = {};
     cases.forEach((c: Case) => {
       if (c.id) {
-        updatedStatuses[c.id] = c.status || c.overallStatus || "Pending";
+        updatedStatuses[c.id] = c.status || c.overallStatus || "New-Case";
       }
     });
     setCaseStatuses(updatedStatuses);
   }, [cases]);
 
-  const allowedStatuses = ["Pending", "In-Progress", "Completed", "Rejected"];
+  const allowedStatuses = ["New-Case", "In-Progress", "Completed", "Rejected"];
 
   const handleStatusChange = async (caseId: string, newStatus: string) => {
     try {
@@ -127,7 +127,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
 
       setCaseStatuses((prev) => ({
         ...prev,
-        [caseId]: cases.find((c: Case) => c.id === caseId)?.status || "Pending",
+        [caseId]: cases.find((c: Case) => c.id === caseId)?.status || "New-Case",
       }));
     }
   };

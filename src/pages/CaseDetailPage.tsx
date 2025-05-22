@@ -23,6 +23,7 @@ import { AppDispatch, RootState } from "@/store";
 import { fetchPermissions } from "@/features/permissionsSlice";
 import { useDispatch, useSelector } from "react-redux";
 import ServiceRemarks from "@/components/cases/ServiceRemarks"; // Import this at the top
+import CaseServices from "@/components/cases/CaseServices";
 
 function getFormattedDate(dateString?: string) {
   if (!dateString) return "N/A";
@@ -93,27 +94,34 @@ export default function CaseDetailPage() {
     }
   }, [caseData]);
 
-  useEffect(() => {
-    const fetchCaseById = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`
-        );
-        if (!response.ok) {
-          setCaseData(undefined);
-        } else {
-          const result = await response.json();
-          setCaseData(result);
-        }
-      } catch (err) {
+  const fetchCaseById = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`
+      );
+      if (!response.ok) {
         setCaseData(undefined);
+      } else {
+        const result = await response.json();
+        setCaseData(result);
       }
-      setLoading(false);
-    };
+    } catch (err) {
+      setCaseData(undefined);
+    }
+    setLoading(false);
+  };
 
+  useEffect(() => {
     if (caseId) fetchCaseById();
   }, [caseId]);
+
+  
+
+  // Pass this function as onUpdate to child
+  const handleCaseUpdate = () => {
+    fetchCaseById();
+  };
 
   if (loading || caseData === null) {
     return (
@@ -277,70 +285,15 @@ export default function CaseDetailPage() {
             </CardHeader>
             <CardContent>
               {caseData.services && caseData.services.length > 0 ? (
-                <ul className="space-y-4">
-                  {caseData.services.map((service: Service) => {
-                    const statusConfig =
-                      STATUS_CONFIG[service.status] || STATUS_CONFIG.Pending;
-                    const serviceAssignedUser = MOCK_USERS.find(
-                      (u) => u.id === service.assignedUser
-                    );
-                    return (
-                      <>
-                        <li
-                          key={service.id}
-                          className="p-3 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex justify-between items-center mb-1">
-                            <h4 className="font-semibold text-md">
-                              {service.name}
-                            </h4>
-                            <StatusIndicator
-                              status={service.status}
-                              showText={true}
-                            />
-                          </div>
-                          <div className="mb-2">
-                            <Progress
-                              value={service.completionPercentage}
-                              aria-label={`${service.name} completion ${service.completionPercentage}%`}
-                              className="h-2"
-                              style={
-                                {
-                                  backgroundColor: statusConfig.lightColor,
-                                  "--indicator-color": statusConfig.color,
-                                } as React.CSSProperties
-                              }
-                              indicatorClassName="bg-[var(--indicator-color)]"
-                            />
-                            <p
-                              className="text-xs text-right mt-1"
-                              style={{ color: statusConfig.color }}
-                            >
-                              {service.completionPercentage}% Complete
-                            </p>
-                          </div>
-                          {service.remarks && (
-                            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
-                              <strong>Remarks:</strong> {service.remarks}
-                            </p>
-                          )}
-                          {serviceAssignedUser && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              <strong>Assigned to:</strong>{" "}
-                              {serviceAssignedUser.name}
-                            </p>
-                          )}
-                        </li>
-                        <ServiceRemarks
-                          caseId={caseId!}
-                          serviceId={service.id}
-                          currentUser={currentUser}
-                          serviceName={service.name}
-                        />
-                      </>
-                    );
-                  })}
-                </ul>
+                <CaseServices
+                  caseId={caseId!}
+                  caseName={caseData.unitName}
+                  services={caseData.services}
+                  currentUser={currentUser}
+                  overallStatus={caseData.overallStatus ?? "To-be-Started"} // calculate or fetch this value from db
+                  overallCompletionPercentage={caseData.overallCompletionPercentage ?? 50}
+                  onUpdate={handleCaseUpdate}  // NEW PROP
+                />
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No services listed for this case.
@@ -362,7 +315,7 @@ export default function CaseDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Current Status:</span>
                 <StatusIndicator
-                  status={caseData.status ?? "Pending"}
+                  status={caseData.status ?? "To be Started"}
                   showText={true}
                   className="text-sm px-3 py-1"
                 />

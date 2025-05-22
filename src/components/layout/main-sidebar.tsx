@@ -23,7 +23,7 @@ export default function MainSidebar() {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-10 hidden sm:flex flex-col border-r bg-gradient-to-b from-sidebar to-sidebar/90 text-sidebar-foreground print:hidden transition-all duration-300 ease-in-out ${
+      className={`fixed h-[100vh] inset-y-0 left-0 z-10 sm:flex flex-col border-r bg-gradient-to-b from-sidebar to-sidebar/90 text-sidebar-foreground print:hidden transition-all duration-300 ease-in-out will-change-transform ${
         isExpanded ? "w-64" : "w-16"
       }`}
       onMouseEnter={() => setIsHovered(true)}
@@ -43,21 +43,21 @@ export default function MainSidebar() {
           )}
         </RouterLink>
 
-        <button
+        {/* <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 rounded-full hover:bg-sidebar-accent transition-colors"
+          className="p-1 rounded-full hover:bg-sidebar-accent transition-colors z-50 pointer-events-auto relative"
           aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
         >
           {isExpanded ? (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" /> // Removed z-11 (not needed)
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
-        </button>
+        </button> */}
       </div>
 
       {/* Main Navigation */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+      <div className="flex-1 overflow-y-auto  py-2">
         <MainSidebarNavigation />
       </div>
 
