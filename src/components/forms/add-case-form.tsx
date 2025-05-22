@@ -360,39 +360,40 @@ export default function AddCaseForm() {
           completionPercentage: 0,
         }));
 
-      const casePayload = {
-        // Add a name property, you can set it to unitName or another appropriate value
-        name: data.unitName, // or set as needed
-        srNo: data.srNo,
-        ownerName: data.ownerName,
-        clientName: data.clientName, // Include client name
-        unitName: data.unitName,
-        franchiseAddress: data.franchiseAddress,
-        promoters: data.promoters || "",
-        authorizedPerson: data.authorizedPerson || "",
-        services: newCaseServices,
-        assignedUsers: (data.assignedUsers || []).map((userId) => {
-          const user = users.find((u) => u._id === userId);
-          if (!user) {
-            console.warn(`User with ID ${userId} not found`);
-            return {
-              _id: userId,
-              userId: "",
-              name: "Unknown User",
-            };
-          }
-          return {
-            _id: user._id,
-            userId: user.userId || "",
-            name: user.name,
-          };
-        }),
-        reasonForStatus: data.reasonForStatus,
-        status: data.status as ServiceStatus, // <-- ensure correct type
-        overallStatus: data.status as ServiceStatus, // or set a default/logic if needed
-        lastUpdate: new Date().toISOString(), // or use Date.now() if backend expects a number
-        updatedAt: new Date().toISOString(), // Placeholder, backend should update this
+  const casePayload = {
+    // Add a name property, you can set it to unitName or another appropriate value
+    name: data.unitName, // or set as needed
+    srNo: data.srNo,
+    ownerName: data.ownerName,
+    clientName: data.clientName, // Include client name
+    unitName: data.unitName,
+    franchiseAddress: data.franchiseAddress,
+    promoters: data.promoters || "",
+    authorizedPerson: data.authorizedPerson || "",
+    services: newCaseServices,
+    assignedUsers: (data.assignedUsers || []).map((userId) => {
+      const user = users.find((u) => u._id === userId);
+      if (!user) {
+        console.warn(`User with ID ${userId} not found`);
+        return {
+          _id: userId,
+          userId: "",
+          name: "Unknown User",
+        };
+      }
+      return {
+        _id: user._id,
+        userId: user.userId || "",
+        name: user.name,
       };
+    }),
+    reasonForStatus: data.reasonForStatus,
+    status: data.status as ServiceStatus, // <-- ensure correct type
+    overallStatus: data.status as ServiceStatus, // or set a default/logic if needed
+    lastUpdate: new Date().toISOString(), // or use Date.now() if backend expects a number
+    updatedAt: new Date().toISOString(), // Placeholder, backend should update this
+    overallCompletionPercentage: 0, // <-- Add this property, set to 0 or calculate as needed
+  };
 
       if (isEditing) {
         await axios.put(

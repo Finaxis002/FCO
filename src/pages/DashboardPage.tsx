@@ -229,7 +229,7 @@ const filteredCases = useMemo(() => {
           onClick={() => handleStatCardClick("Total")}
         />
         <StatCard
-          title="Pending Cases"
+          title="New Cases"
           value={caseStats.pendingCases.toString()}
           icon={Clock}
           description="Awaiting action"
