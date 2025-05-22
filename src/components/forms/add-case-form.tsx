@@ -50,7 +50,6 @@ const allowedStatuses = [
   "In-Progress",
   "Completed",
   "Rejected",
-  "Approved",
 ] as const;
 
 const caseFormSchema = z.object({

@@ -59,29 +59,6 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  const caseStats: CaseStats = useMemo(() => {
-    const totalCases = cases.length;
-    const completedCases = cases.filter(
-      (c) => c.status === "Completed" || c.status === "Approved"
-    ).length;
-    const pendingCases = cases.filter((c) => c.status === "Pending").length;
-    const inProgressCases = cases.filter(
-      (c) => c.status === "In-Progress"
-    ).length;
-    const rejectedCases = cases.filter((c) => c.status === "Rejected").length;
-    const completionPercentage =
-      totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0;
-
-    return {
-      totalCases,
-      completedCases,
-      pendingCases,
-      inProgressCases,
-      rejectedCases,
-      completionPercentage,
-    };
-  }, [cases]);
-
   const [complianceStatusCounts, setComplianceStatusCounts] = useState<{
     Pending: number;
     "In-Progress": number;
@@ -149,9 +126,66 @@ export default function DashboardPage() {
   }, []);
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
+  const userRole = localStorage.getItem("userRole") || "";
+
+  const isSuperAdmin =
+    userRole.toLowerCase() === "admin" ||
+    currentUser.role?.toLowerCase() === "super admin";
+
+const filteredCases = useMemo(() => {
+  if (isSuperAdmin) return cases;
+
+  return cases.filter((c) =>
+    c.assignedUsers?.some((user) => {
+      if (typeof user === "string") {
+        return user === currentUser._id || user === currentUser.name;
+      } else {
+        return (
+          user._id === currentUser._id ||
+          user.userId === currentUser.userId ||
+          user.name === currentUser.name
+        );
+      }
+    })
+  );
+}, [cases, currentUser, isSuperAdmin]);
+
+
+  const caseStats: CaseStats = useMemo(() => {
+    const totalCases = filteredCases.length;
+    const completedCases = filteredCases.filter(
+      (c) => c.status === "Completed" || c.status === "Approved"
+    ).length;
+    const pendingCases = filteredCases.filter(
+      (c) => c.status === "Pending"
+    ).length;
+    const inProgressCases = filteredCases.filter(
+      (c) => c.status === "In-Progress"
+    ).length;
+    const rejectedCases = filteredCases.filter(
+      (c) => c.status === "Rejected"
+    ).length;
+    const completionPercentage =
+      totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0;
+
+    return {
+      totalCases,
+      completedCases,
+      pendingCases,
+      inProgressCases,
+      rejectedCases,
+      completionPercentage,
+    };
+  }, [filteredCases]);
 
   const handleStatCardClick = (filterStatus?: DashboardFilterStatus) => {
-    navigate("/cases", { state: { filter: filterStatus || "Total" } });
+    navigate("/cases", {
+      state: {
+        filter: filterStatus || "Total",
+        restrictToUser: !isSuperAdmin, // can be used on /cases page
+        userId: !isSuperAdmin ? currentUser._id : undefined,
+      },
+    });
   };
 
   if (loading) {
@@ -208,22 +242,24 @@ export default function DashboardPage() {
           description="Currently being processed"
           onClick={() => handleStatCardClick("In-Progress")}
         />
-        <StatCard
-          title="Total Users"
-          value={users.length.toString()}
-          icon={Users}
-          description="Across all roles"
-          onClick={() => navigate("/users")} // Direct navigation, no filter
-        />
+        {isSuperAdmin && (
+          <StatCard
+            title="Total Users"
+            value={users.length.toString()}
+            icon={Users}
+            description="Across all roles"
+            onClick={() => navigate("/users")}
+          />
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RecentActivity
-            recentCases={cases
+            recentCases={filteredCases
               .filter(
                 (c) => typeof c._id === "string" && c._id.trim().length > 0
-              ) // only keep valid _id
+              )
               .map((c) => ({
                 _id: c._id!,
                 unitName: c.unitName,
@@ -235,13 +271,26 @@ export default function DashboardPage() {
         </div>
         <div>
           <ComplianceStatusOverview
-            totalCases={cases.length}
-            pendingCount={complianceStatusCounts.Pending}
-            inProgressCount={complianceStatusCounts["In-Progress"]}
-            completedCount={
-              complianceStatusCounts.Completed + complianceStatusCounts.Approved
+            totalCases={filteredCases.length}
+            pendingCount={
+              filteredCases.filter((c) => c.status?.toLowerCase() === "pending")
+                .length
             }
-            rejectedCount={complianceStatusCounts.Rejected}
+            inProgressCount={
+              filteredCases.filter(
+                (c) => c.status?.toLowerCase() === "in-progress"
+              ).length
+            }
+            completedCount={
+              filteredCases.filter((c) =>
+                ["completed", "approved"].includes((c.status ?? "").toLowerCase())
+              ).length
+            }
+            rejectedCount={
+              filteredCases.filter(
+                (c) => c.status?.toLowerCase() === "rejected"
+              ).length
+            }
             onStatusClick={(status) => handleStatCardClick(status)}
           />
         </div>
