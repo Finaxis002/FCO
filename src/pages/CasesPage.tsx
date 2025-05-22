@@ -43,7 +43,7 @@ const FILTER_OPTIONS: { label: string; value: DashboardFilterStatus }[] = [
   { label: "All Cases", value: "Total" },
   { label: "Pending", value: "Pending" },
   { label: "In Progress", value: "In-Progress" },
-  { label: "Completed / Approved", value: "Completed" },
+  { label: "Completed", value: "Completed" },
   { label: "Rejected", value: "Rejected" },
 ];
 
@@ -67,7 +67,7 @@ export default function CasesPage() {
       createUserRights?: boolean;
       userRolesAndResponsibility?: boolean;
       remarksAndChat?: boolean;
-       canShare?:boolean;
+      canShare?: boolean;
     };
   } | null>(null);
 
@@ -133,8 +133,13 @@ export default function CasesPage() {
   }, [dispatch]);
 
   const canSeeAddButton =
-  currentUser?.name === "Super Admin" || permissions?.createCaseRights === true;
+    currentUser?.name === "Super Admin" ||
+    permissions?.createCaseRights === true;
 
+  function normalizeStatus(status?: string) {
+    if (!status) return "";
+    return status.toLowerCase().replace(/\s/g, "-"); // replace spaces with dash
+  }
 
   useEffect(() => {
     if (!allCases || !currentUser) {
@@ -173,14 +178,13 @@ export default function CasesPage() {
 
     if (activeFilter && activeFilter !== "Total") {
       if (activeFilter === "Completed") {
-        casesToDisplay = casesToDisplay.filter(
-          (c) =>
-            c.status?.toLowerCase() === "completed" ||
-            c.status?.toLowerCase() === "approved"
-        );
+        casesToDisplay = casesToDisplay.filter((c) => {
+          const normalized = normalizeStatus(c.status);
+          return normalized === "completed" || normalized === "approved";
+        });
       } else {
         casesToDisplay = casesToDisplay.filter(
-          (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
+          (c) => normalizeStatus(c.status) === activeFilter.toLowerCase()
         );
       }
     }

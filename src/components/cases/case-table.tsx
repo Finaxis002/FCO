@@ -39,8 +39,6 @@ const statusStyles: Record<string, string> = {
   Completed:
     "bg-green-100 text-green-800 hover:!bg-green-200 hover:!text-green-900",
   Rejected: "bg-red-100 text-red-800 hover:!bg-red-200 hover:!text-red-900",
-  Approved:
-    "bg-purple-100 text-purple-800 hover:!bg-purple-200 hover:!text-purple-900",
 };
 
 interface CaseCardViewProps {
@@ -66,7 +64,6 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       return initialStatuses;
     }
   );
-  
 
   const permissions = useSelector(
     (state: RootState) => state.users.permissions
@@ -81,6 +78,15 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
 
+// Sync displayCases with prop changes
+useEffect(() => {
+  // Optionally sort here if needed:
+  const sortedCases = [...cases].sort(
+    (a, b) => Number(a.srNo) - Number(b.srNo)
+  );
+  setDisplayCases(sortedCases);
+}, [cases]);
+
   useEffect(() => {
     const updatedStatuses: Record<string, string> = {};
     cases.forEach((c: Case) => {
@@ -91,7 +97,12 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     setCaseStatuses(updatedStatuses);
   }, [cases]);
 
-  const allowedStatuses = ["Pending", "In-Progress", "Completed", "Rejected"];
+  const allowedStatuses = [
+    "Pending",
+    "In-Progress",
+    "Completed",
+    "Rejected",
+  ];
 
   const handleStatusChange = async (caseId: string, newStatus: string) => {
     try {
@@ -132,8 +143,12 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     }
   };
 
-const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
-
+  useEffect(() => {
+    const sortedCases = [...cases].sort(
+      (a, b) => Number(a.srNo) - Number(b.srNo)
+    );
+    setDisplayCases(sortedCases);
+  }, [cases]);
 
   useEffect(() => {
     // This effect is client-side only
@@ -283,25 +298,28 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
                       {/* View button - assuming everyone can view */}
-                      {isAdmin || permissions?.viewRights ? (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          asChild
-                          aria-label="View Case Details"
+                       {isAdmin ||
+                      permissions?.viewRights ?
+                       (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        asChild
+                        aria-label="View Case Details"
+                      >
+                        <RouterLink
+                          to={`/cases/${
+                            ((caseData as any)._id ?? caseData.id) as string
+                          }`}
                         >
-                          <RouterLink
-                            to={`/cases/${
-                              ((caseData as any)._id ?? caseData.id) as string
-                            }`}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </RouterLink>
-                        </Button>
-                      ) : null}
+                          <Eye className="h-4 w-4" />
+                        </RouterLink>
+                      </Button>
+                       ) : null}
 
                       {/* Share button */}
-                      {isAdmin || permissions?.createCaseRights ? (
+                      {isAdmin ||
+                      permissions?.createCaseRights ? (
                         <Button
                           variant="outline"
                           size="icon"
