@@ -67,7 +67,7 @@ export default function CasesPage() {
       createUserRights?: boolean;
       userRolesAndResponsibility?: boolean;
       remarksAndChat?: boolean;
-      canShare?: boolean;
+       canShare?:boolean;
     };
   } | null>(null);
 
@@ -133,64 +133,55 @@ export default function CasesPage() {
   }, [dispatch]);
 
   const canSeeAddButton =
-    currentUser?.name === "Super Admin" ||
-    permissions?.createCaseRights === true;
+  currentUser?.name === "Super Admin" || permissions?.createCaseRights === true;
 
   function normalizeStatus(status?: string) {
-    if (!status) return "";
-    return status.toLowerCase().replace(/\s/g, "-"); // replace spaces with dash
+  if (!status) return "";
+  return status.toLowerCase().replace(/\s/g, "-"); // replace spaces with dash
+}
+
+useEffect(() => {
+  if (!allCases || !currentUser) {
+    setFilteredCases([]);
+    return;
   }
 
-  useEffect(() => {
-    if (!allCases || !currentUser) {
-      setFilteredCases([]);
-      return;
-    }
+  let casesToDisplay = allCases;
 
-    // If super admin, show all cases immediately, no filtering needed
-    if (currentUser.name === "Super Admin") {
-      setFilteredCases(allCases);
-      return;
-    }
+  // Apply assigned users filter for non-Super Admins without allCaseAccess
+  if (currentUser.name !== "Super Admin" && !permissions?.allCaseAccess) {
+    casesToDisplay = allCases.filter((c) =>
+      c.assignedUsers?.some((user) => {
+        if (typeof user === "string") {
+          return user === currentUser.userId || user === currentUser.name;
+        } else {
+          return (
+            user._id === currentUser.userId ||
+            user.userId === currentUser.userId ||
+            user.name === currentUser.name
+          );
+        }
+      })
+    );
+  }
 
-    if (!permissions) {
-      setFilteredCases([]);
-      return;
-    }
-
-    let casesToDisplay = allCases;
-
-    if (!permissions.allCaseAccess) {
-      casesToDisplay = allCases.filter((c) =>
-        c.assignedUsers?.some((user) => {
-          if (typeof user === "string") {
-            return user === currentUser.userId || user === currentUser.name;
-          } else {
-            return (
-              user._id === currentUser.userId ||
-              user.userId === currentUser.userId ||
-              user.name === currentUser.name
-            );
-          }
-        })
+  // Apply status filter for all users including Super Admin
+  if (activeFilter && activeFilter !== "Total") {
+    if (activeFilter === "Completed") {
+      casesToDisplay = casesToDisplay.filter(
+        (c) =>
+          c.status?.toLowerCase() === "completed" ||
+          c.status?.toLowerCase() === "approved"
+      );
+    } else {
+      casesToDisplay = casesToDisplay.filter(
+        (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
       );
     }
+  }
 
-    if (activeFilter && activeFilter !== "Total") {
-      if (activeFilter === "Completed") {
-        casesToDisplay = casesToDisplay.filter((c) => {
-          const normalized = normalizeStatus(c.status);
-          return normalized === "completed" || normalized === "approved";
-        });
-      } else {
-        casesToDisplay = casesToDisplay.filter(
-          (c) => normalizeStatus(c.status) === activeFilter.toLowerCase()
-        );
-      }
-    }
-
-    setFilteredCases(casesToDisplay);
-  }, [allCases, activeFilter, permissions, currentUser]);
+  setFilteredCases(casesToDisplay);
+}, [allCases, activeFilter, permissions, currentUser]);
 
   const handleDelete = async (caseId: string) => {
     if (window.confirm("Are you sure you want to delete this case?")) {
