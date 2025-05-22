@@ -26,7 +26,7 @@ interface StatusItemProps {
 
 const StatusItem: React.FC<StatusItemProps> = ({ label, count, total, statusKey, icon: Icon, onClick }) => {
   const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-  const colorConfig = STATUS_CONFIG[statusKey] || STATUS_CONFIG["Pending"];
+  const colorConfig = STATUS_CONFIG[statusKey] || STATUS_CONFIG["To be Started"];
 
   return (
     <div 
@@ -69,12 +69,12 @@ export default function ComplianceStatusOverview({
       </CardHeader>
       <CardContent className="space-y-3">
         <StatusItem
-          label="Pending"
+          label="To be Started"
           count={pendingCount}
           total={totalCases}
-          statusKey="Pending"
+          statusKey="To be Started"
           icon={Clock}
-          onClick={() => onStatusClick("Pending")}
+          onClick={() => onStatusClick("To be Started")}
         />
         <StatusItem
           label="In Progress"

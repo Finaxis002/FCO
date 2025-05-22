@@ -105,7 +105,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
               {caseData.unitName}
             </RouterLink>
           </CardTitle>
-          <StatusIndicator status={caseData.status ?? "Pending"} showText />
+          <StatusIndicator status={caseData.status ?? "To be Started"} showText />
         </div>
         <CardDescription className="text-xs text-muted-foreground pt-1">
           SRN: {caseData.srNo}

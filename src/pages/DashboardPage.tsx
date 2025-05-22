@@ -154,7 +154,7 @@ const filteredCases = useMemo(() => {
   const caseStats: CaseStats = useMemo(() => {
     const totalCases = filteredCases.length;
     const completedCases = filteredCases.filter(
-      (c) => c.status === "Completed" || c.status === "Approved"
+      (c) => c.status === "Completed" 
     ).length;
     const pendingCases = filteredCases.filter(
       (c) => c.status === "Pending"

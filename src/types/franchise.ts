@@ -1,8 +1,10 @@
 export type ServiceStatus =
   | "To be Started"
   | "Detail Required"
-  | "Inprogress"
-  | "Completed";
+  | "In-Progress"
+  | "Completed"
+  | "Rejected"
+  |"Pending"
 
 export interface Service {
   id: string;

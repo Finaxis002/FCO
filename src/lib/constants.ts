@@ -52,31 +52,37 @@ export const STATUS_CONFIG: Record<
   { color: string; lightColor: string; Icon: React.ElementType }
 > = {
   Pending: {
+    color: "hsl(0, 0%, 70%)", // gray color example
+    lightColor: "hsl(0, 0%, 90%)",
+    Icon: Hourglass, // or any suitable icon
+  },
+  "To be Started": {
     color: "hsl(200, 80%, 60%)",
     lightColor: "hsl(200, 80%, 90%)",
     Icon: Hourglass,
-  }, // Light Blue
+  },
   "In-Progress": {
     color: "hsl(210, 100%, 55%)",
     lightColor: "hsl(210, 100%, 85%)",
     Icon: Zap,
-  }, // Medium Blue (Primary) - Adjusted to match primary
+  },
   Completed: {
     color: "hsl(210, 100%, 40%)",
     lightColor: "hsl(210, 100%, 75%)",
     Icon: CheckCircle2,
-  }, // Darker Blue for "Completed"
-  Approved: {
-    color: "hsl(150, 60%, 45%)",
-    lightColor: "hsl(150, 60%, 85%)",
-    Icon: ShieldCheck,
-  }, // Green (Accent)
+  },
   Rejected: {
     color: "hsl(0, 75%, 55%)",
     lightColor: "hsl(0, 75%, 85%)",
     Icon: XCircle,
-  }, // Red
+  },
+  "Detail Required": {
+    color: "",
+    lightColor: "",
+    Icon: "symbol"
+  }
 };
+
 
 export const USER_ROLES: UserRole[] = [
   "Admin",
@@ -173,7 +179,7 @@ export const MOCK_SERVICE_DEFINITIONS: ServiceDefinition[] =
   MOCK_SERVICES_TEMPLATES.map((s, i) => ({
     id: `servdef${i + 1}`,
     name: s.name,
-    defaultStatus: "Pending",
+    defaultStatus: "Pending", // Now valid because it's in ServiceStatus
   }));
 
 export const MOCK_NOTIFICATIONS: AppNotification[] = [
