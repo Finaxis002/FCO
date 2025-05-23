@@ -262,6 +262,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
               <TableHead className="w-[150px]">Status</TableHead>
               <TableHead className="w-[180px]">Last Update</TableHead>
               <TableHead>Assigned To</TableHead>
+              <TableHead>Progress</TableHead>
               <TableHead className="text-right w-[160px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -341,6 +342,8 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                       )}
                     </div>
                   </TableCell>
+                 <TableCell>{`${caseData.overallCompletionPercentage.toFixed(2)}%`}</TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
                       {/* View button - assuming everyone can view */}

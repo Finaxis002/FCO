@@ -1,6 +1,12 @@
 import type { Case } from "@/types/franchise";
 import { Link as RouterLink } from "react-router-dom";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 import {
   Card,
@@ -20,6 +26,7 @@ import {
   User,
   Users,
   Trash,
+  PercentSquare,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store"; // adjust path as per your project structure
@@ -110,47 +117,52 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
     }
   };
 
-
   const handleStatusChange = async (newStatus: string) => {
-  // Prevent invalid change (optional)
-  if (newStatus === "New-Case" && (caseData.overallCompletionPercentage ?? 0) > 50) {
-    toast({
-      title: "Invalid Status Change",
-      description: "Cannot change status to 'New-Case' when completion is above 50%.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  setCurrentStatus(newStatus);
-  setUpdating(true);
-
-  try {
-    const payload: any = { status: newStatus };
-    
-    if (newStatus === "In-Progress") {
-      payload.overallStatus = "In-Progress";
+    // Prevent invalid change (optional)
+    if (
+      newStatus === "New-Case" &&
+      (caseData.overallCompletionPercentage ?? 0) > 50
+    ) {
+      toast({
+        title: "Invalid Status Change",
+        description:
+          "Cannot change status to 'New-Case' when completion is above 50%.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    await axios.put(`https://fcobackend-23v7.onrender.com/api/cases/${caseData.id}`, payload);
+    setCurrentStatus(newStatus);
+    setUpdating(true);
 
-    toast({
-      title: "Status Updated",
-      description: `Case status updated to "${newStatus}".`,
-    });
-  } catch (error) {
-    toast({
-      title: "Update Failed",
-      description: "Failed to update case status. Please try again.",
-      variant: "destructive",
-    });
-    // Revert UI status on failure
-    setCurrentStatus(caseData.status || "New-Case");
-  } finally {
-    setUpdating(false);
-  }
-};
+    try {
+      const payload: any = { status: newStatus };
 
+      if (newStatus === "In-Progress") {
+        payload.overallStatus = "In-Progress";
+      }
+
+      await axios.put(
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseData.id}`,
+        payload
+      );
+
+      toast({
+        title: "Status Updated",
+        description: `Case status updated to "${newStatus}".`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update case status. Please try again.",
+        variant: "destructive",
+      });
+      // Revert UI status on failure
+      setCurrentStatus(caseData.status || "New-Case");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -164,33 +176,42 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
               {caseData.unitName}
             </RouterLink>
           </CardTitle>
-         {(isAdmin || permissions?.edit) ? (
-  <Select
-    value={currentStatus}
-    onValueChange={handleStatusChange}
-    disabled={updating}
-  >
-    <SelectTrigger className={`w-[150px] rounded-md ${statusStyles[currentStatus] || ""}`}>
-      <SelectValue placeholder="Select status" />
-    </SelectTrigger>
-    <SelectContent>
-      {allowedStatuses.map((status) => (
-        <SelectItem
-          key={status}
-          value={status}
-          className={`flex items-center rounded-md px-2 py-1 ${statusStyles[status] || ""}`}
-        >
-          {status}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-) : (
-  <div className={`inline-block px-3 py-1 rounded-md text-center ${statusStyles[currentStatus] || ""}`}>
-    {currentStatus}
-  </div>
-)}
-
+          {isAdmin || permissions?.edit ? (
+            <Select
+              value={currentStatus}
+              onValueChange={handleStatusChange}
+              disabled={updating}
+            >
+              <SelectTrigger
+                className={`w-[150px] rounded-md ${
+                  statusStyles[currentStatus] || ""
+                }`}
+              >
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {allowedStatuses.map((status) => (
+                  <SelectItem
+                    key={status}
+                    value={status}
+                    className={`flex items-center rounded-md px-2 py-1 ${
+                      statusStyles[status] || ""
+                    }`}
+                  >
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div
+              className={`inline-block px-3 py-1 rounded-md text-center ${
+                statusStyles[currentStatus] || ""
+              }`}
+            >
+              {currentStatus}
+            </div>
+          )}
         </div>
         <CardDescription className="text-xs text-muted-foreground pt-1">
           SRN: {caseData.srNo}
@@ -205,38 +226,43 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
           <CalendarDays className="h-4 w-4 shrink-0" />
           <span>Last Update: {lastUpdateDisplay}</span>
         </div>
-       <div className="flex items-start gap-2 text-muted-foreground">
-  <Users className="h-4 w-4 shrink-0 mt-0.5" />
-  <div className="flex flex-wrap gap-2 text-sm">
-    {caseData.assignedUsers?.length ? (
-      (caseData.assignedUsers as (string | { name?: string })[]).map(
-        (user, index) => {
-          const userName =
-            typeof user === "string"
-              ? user.trim()
-              : user?.name?.trim() || "Unknown";
-          const formattedName =
-            userName.length > 0
-              ? userName.charAt(0).toUpperCase() +
-                userName.slice(1).toLowerCase()
-              : "Unknown";
-          return (
-            <span
-              key={index}
-              className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-blue-200 transition cursor-default"
-              title={formattedName}
-            >
-              {formattedName}
-            </span>
-          );
-        }
-      )
-    ) : (
-      <span className="italic text-gray-400">N/A</span>
-    )}
-  </div>
-</div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <PercentSquare className="h-4 w-4 shrink-0" />
+          <span>Progress: {`${caseData.overallCompletionPercentage.toFixed(2)}%`}</span>
+        </div>
+        <div className="flex items-start gap-2 text-muted-foreground">
+          <Users className="h-4 w-4 shrink-0 mt-0.5" />
+          <div className="flex flex-wrap gap-2 text-sm">
+            {caseData.assignedUsers?.length ? (
+              (caseData.assignedUsers as (string | { name?: string })[]).map(
+                (user, index) => {
+                  const userName =
+                    typeof user === "string"
+                      ? user.trim()
+                      : user?.name?.trim() || "Unknown";
+                  const formattedName =
+                    userName.length > 0
+                      ? userName.charAt(0).toUpperCase() +
+                        userName.slice(1).toLowerCase()
+                      : "Unknown";
+                  return (
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-blue-200 transition cursor-default"
+                      title={formattedName}
+                    >
+                      {formattedName}
+                    </span>
+                  );
+                }
+              )
+            ) : (
+              <span className="italic text-gray-400">N/A</span>
+            )}
+          </div>
+        </div>
 
+        
       </CardContent>
       <CardFooter className="border-t pt-4">
         <div className="flex w-full justify-end gap-2">
