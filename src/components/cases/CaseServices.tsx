@@ -5,7 +5,7 @@ import ServiceRemarks from "./ServiceRemarks";
 import { useAppDispatch } from "../../hooks/hooks";
 import { updateCase } from "../../features/caseSlice";
 import { useToast } from "@/hooks/use-toast";
-import type { Service, ServiceStatus } from "@/types/franchise"; // wherever it is declared
+import type { CaseStatus, Service, ServiceStatus } from "@/types/franchise"; // wherever it is declared
 
 interface CaseServicesProps {
   caseId: string;
@@ -20,13 +20,13 @@ interface CaseServicesProps {
 
 const statusStyles: Record<string, string> = {
   "To be Started":
-    "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900 text-sm",
+    "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900 text-xs",
   "Detail Required":
-    "bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900 text-sm",
-  Inprogress:
-    "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900 text-sm",
+    "bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900 text-xs",
+  "In-Progress":
+    "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900 text-xs", // Fixed
   Completed:
-    "bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 text-sm",
+    "bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 text-xs",
 };
 
 const CaseServices: React.FC<CaseServicesProps> = ({
@@ -50,9 +50,21 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   const { toast } = useToast();
 
   const handleStatusChange = (serviceId: string, newStatus: string) => {
-    // Save the old status in case we need to roll back
-    const oldStatus = localServices.find((s) => s.id === serviceId)?.status;
-    // Optimistically update the UI
+    // If overallCompletionPercentage > 50 and newStatus is 'To be Started' (aka New-Case), block update
+    if (
+      overallCompletionPercentage > 50 &&
+      (newStatus === SERVICE_STATUS.TO_BE_STARTED || newStatus === "New-Case")
+    ) {
+      toast({
+        title: "Action Not Allowed",
+        description:
+          "Cannot change status to 'To be Started' because the overall completion is already above 50%.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Optimistic UI update for service status
     setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
     const updatedServices = localServices.map((service) =>
@@ -63,16 +75,23 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
     setLocalServices(updatedServices);
 
+    // If any service status changed to In-Progress, set overallStatus to In-Progress
+    let newOverallStatus = overallStatus;
+    if (newStatus === SERVICE_STATUS.IN_PROGRESS) {
+      newOverallStatus = SERVICE_STATUS.IN_PROGRESS;
+    }
+
     const updatePayload = {
       id: caseId,
       services: updatedServices,
       overallCompletionPercentage,
-      overallStatus: overallStatus as ServiceStatus, // Cast here
+      overallStatus: newOverallStatus as CaseStatus, // Cast here
       name: caseName || unitName || "", // <-- always a string
       unitName: unitName || caseName || "",
       updatedAt: new Date().toISOString(),
       lastUpdate: new Date().toISOString(),
     };
+
     dispatch(updateCase(updatePayload))
       .unwrap()
       .then(() => {
@@ -92,6 +111,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       })
       .finally(() => {
         setIsUpdating(false);
+        setUpdatingServices((prev) => ({ ...prev, [serviceId]: false }));
       });
   };
 
@@ -99,6 +119,21 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
   const visibleServices = showAll ? localServices : localServices.slice(0, 3);
   const displayCaseName = caseName || unitName || "Case Details";
+
+  let progressValue = 0;
+
+  if (overallStatus === "New-Case") {
+    progressValue = 0;
+  } else if (
+    overallStatus === "In-Progress" &&
+    (!overallCompletionPercentage || overallCompletionPercentage < 50)
+  ) {
+    progressValue = 50;
+  } else {
+    progressValue = overallCompletionPercentage;
+  }
+
+  const userRole = localStorage.getItem("userRole");
 
   return (
     <div>
@@ -108,22 +143,22 @@ const CaseServices: React.FC<CaseServicesProps> = ({
           <h3 className="text-lg font-semibold">{displayCaseName}</h3>
         </div>
         <Progress
-          value={overallCompletionPercentage}
-          aria-label={`Overall case completion ${overallCompletionPercentage}%`}
+          value={progressValue}
+          aria-label={`Overall case completion ${progressValue}%`}
           className="h-3 rounded"
           style={
             {
-              backgroundColor: `${STATUS_COLORS[overallStatus] || "#00a4fc"}33`,
-              "--indicator-color": STATUS_COLORS[overallStatus] || "#00a4fc",
+              backgroundColor: ` "#00a4fc"}33`,
+              "--indicator-color": "#00a4fc",
             } as React.CSSProperties
           }
           indicatorClassName="bg-[var(--indicator-color)]"
         />
         <p
           className="text-xs text-right mt-1 font-medium"
-          style={{ color: STATUS_COLORS[overallStatus] || "#02527d" }}
+          style={{ color: "#02527d" }}
         >
-          {overallCompletionPercentage.toFixed(2)}% Complete
+          {progressValue.toFixed(2)}% Complete
         </p>
       </div>
 
@@ -132,7 +167,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         {visibleServices.map((service) => (
           <li
             key={service.id}
-            className="p-3 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow"
+            className="p-3 border rounded-lg shadow-xs bg-card hover:shadow-md transition-shadow"
           >
             <div className="flex justify-between items-center mb-1">
               <h4 className="font-semibold text-md">{service.name}</h4>
@@ -142,7 +177,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                 onChange={(e) => handleStatusChange(service.id, e.target.value)}
                 className={`cursor-pointer rounded-2xl px-3 py-1 font-semibold border ${
                   statusStyles[service.status] ||
-                  "bg-blue-100 text-blue-800 border-gray-300 text-sm"
+                  "bg-blue-100 text-blue-800 border-gray-300 text-xs"
                 }`}
               >
                 {Object.values(SERVICE_STATUS).map((statusOption) => (
@@ -163,12 +198,14 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                 <strong>Remarks:</strong> {service.remarks}
               </p>
             )}
-            <ServiceRemarks
-              caseId={caseId}
-              serviceId={service.id}
-              currentUser={currentUser}
-              serviceName={service.name}
-            />
+            {userRole && (
+              <ServiceRemarks
+                caseId={caseId}
+                serviceId={service.id}
+                currentUser={currentUser}
+                serviceName={service.name}
+              />
+            )}
           </li>
         ))}
       </ul>

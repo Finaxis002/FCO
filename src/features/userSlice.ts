@@ -14,7 +14,7 @@ export interface User {
 }
 
 // 👇 Define User roles
-export type UserRole = "Admin" | "Back Office" | "Frontend" | "Developer"; // adjust according to your app
+export type UserRole = "Admin" | "User"; // adjust according to your app
 
 // Base URL
 const API_BASE_URL = "https://fcobackend-23v7.onrender.com/api/users"; // replace with your backend
@@ -25,18 +25,19 @@ export const getAllUsers = createAsyncThunk<User[]>(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      console.log("getAllUsers token:", token);
       if (!token) throw new Error("No token found");
 
       const response = await axios.get(API_BASE_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;
-    } catch (error) {
-      return rejectWithValue("Failed to fetch users: Unauthorized");
+    } catch (error: any) {
+      console.error("getAllUsers error", error.response || error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
+
 
 export const addUser = createAsyncThunk<
   User,

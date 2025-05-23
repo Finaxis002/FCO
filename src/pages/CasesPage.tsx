@@ -20,11 +20,7 @@ import {
 import PageHeader from "@/components/ui/page-header";
 import CaseTable from "@/components/cases/case-table";
 import CaseCardView from "@/components/cases/case-card-view";
-import type {
-  Case,
-  ServiceStatus,
-  DashboardFilterStatus,
-} from "@/types/franchise";
+import type { Case, CaseStatus, DashboardFilterStatus } from "@/types/franchise";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -41,10 +37,9 @@ import { fetchPermissions } from "@/features/permissionsSlice";
 
 const FILTER_OPTIONS: { label: string; value: DashboardFilterStatus }[] = [
   { label: "All Cases", value: "Total" },
-  { label: "Pending", value: "Pending" },
+  { label: "New Cases", value: "New-Case" },
   { label: "In Progress", value: "In-Progress" },
-  { label: "Completed / Approved", value: "Completed" },
-  { label: "Rejected", value: "Rejected" },
+  { label: "Completed", value: "Completed" },
 ];
 
 type ViewMode = "table" | "card";
@@ -136,41 +131,17 @@ export default function CasesPage() {
   currentUser?.name === "Super Admin" || permissions?.createCaseRights === true;
 
 
-  useEffect(() => {
-    if (!allCases || !currentUser) {
-      setFilteredCases([]);
-      return;
-    }
+useEffect(() => {
+  if (!allCases || !currentUser) {
+    setFilteredCases([]);
+    return;
+  }
 
-    // If super admin, show all cases immediately, no filtering needed
-    if (currentUser.name === "Super Admin") {
-      setFilteredCases(allCases);
-      return;
-    }
+  // If super admin, show all cases but apply activeFilter
+  let casesToDisplay = allCases;
 
-    if (!permissions) {
-      setFilteredCases([]);
-      return;
-    }
-
-    let casesToDisplay = allCases;
-
-    if (!permissions.allCaseAccess) {
-      casesToDisplay = allCases.filter((c) =>
-        c.assignedUsers?.some((user) => {
-          if (typeof user === "string") {
-            return user === currentUser.userId || user === currentUser.name;
-          } else {
-            return (
-              user._id === currentUser.userId ||
-              user.userId === currentUser.userId ||
-              user.name === currentUser.name
-            );
-          }
-        })
-      );
-    }
-
+  if (currentUser.name === "Super Admin") {
+    // Super Admin should be able to see all cases, but apply the activeFilter
     if (activeFilter && activeFilter !== "Total") {
       if (activeFilter === "Completed") {
         casesToDisplay = casesToDisplay.filter(
@@ -184,9 +155,41 @@ export default function CasesPage() {
         );
       }
     }
+  } else if (!permissions?.allCaseAccess) {
+    // Non-admin users have restricted access
+    casesToDisplay = allCases.filter((c) =>
+      c.assignedUsers?.some((user) => {
+        if (typeof user === "string") {
+          return user === currentUser.userId || user === currentUser.name;
+        } else {
+          return (
+            user._id === currentUser.userId ||
+            user.userId === currentUser.userId ||
+            user.name === currentUser.name
+          );
+        }
+      })
+    );
+  }
 
-    setFilteredCases(casesToDisplay);
-  }, [allCases, activeFilter, permissions, currentUser]);
+  // Apply the filter if set (in case the user is not Super Admin)
+  if (activeFilter && activeFilter !== "Total") {
+    if (activeFilter === "Completed") {
+      casesToDisplay = casesToDisplay.filter(
+        (c) =>
+          c.status?.toLowerCase() === "completed" ||
+          c.status?.toLowerCase() === "approved"
+      );
+    } else {
+      casesToDisplay = casesToDisplay.filter(
+        (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
+      );
+    }
+  }
+
+  setFilteredCases(casesToDisplay);
+}, [allCases, activeFilter, permissions, currentUser]);
+
 
   const handleDelete = async (caseId: string) => {
     if (window.confirm("Are you sure you want to delete this case?")) {

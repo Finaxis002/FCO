@@ -1,18 +1,20 @@
 
-import type { ServiceStatus } from "@/types/franchise";
+import type { CaseStatus, ServiceStatus } from "@/types/franchise";
 import { STATUS_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+
 interface StatusIndicatorProps {
-  status: ServiceStatus;
+  status: CaseStatus | ServiceStatus;
   size?: "sm" | "md" | "lg";
   showText?: boolean;
   className?: string;
 }
 
 export default function StatusIndicator({ status, size = "md", showText = false, className }: StatusIndicatorProps) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG["Pending"];
+  const config = STATUS_CONFIG[status as ServiceStatus] || STATUS_CONFIG["Pending"];
+
   const { Icon } = config;
 
   const sizeClasses = {

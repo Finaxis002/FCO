@@ -2,6 +2,8 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { Case } from "@/types/franchise";
 
+
+
 export const addCase = createAsyncThunk(
   "case/addCase",
   async (caseData: Omit<Case, "id">, { rejectWithValue }) => {

@@ -2,8 +2,9 @@
 export const SERVICE_STATUS = {
   TO_BE_STARTED: "To be Started",
   DETAIL_REQUIRED: "Detail Required",
-  IN_PROGRESS: "Inprogress",
+  IN_PROGRESS: "In-Progress",
   COMPLETED: "Completed",
+  
 };
 
 export const STATUS_COLORS: Record<string, string> = {

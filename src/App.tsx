@@ -16,6 +16,8 @@ import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
 import { APP_NAME } from "@/lib/constants";
 import React, { useEffect } from "react";
 import EditCasePage from "./pages/EditCasePage";
+import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
+
 
 // Simplified PlaceholderPage for debugging
 
@@ -66,43 +68,36 @@ export default function App() {
   }, [location.pathname]);
 
   return (
-   
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        {/* Protected Routes */}
-        <Route
-          path="*"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/cases" element={<CasesPage />} />
-                  <Route path="/cases/new" element={<NewCasePage />} />
-                  <Route path="/cases/:caseId" element={<CaseDetailPage />} />
-                  <Route
-                    path="/cases/:caseId/edit"
-                    element={<EditCasePage />}
-                  />
-                  <Route path="/owners" element={<OwnersPage />} />
-                  <Route path="/users" element={<UsersPage />} />
-                  <Route
-                    path="/users/:userId/permissions"
-                    element={<UserPermissionsPage />}
-                  />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route
-                    path="/notifications"
-                    element={<NotificationsPage />}
-                  />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-   
+    <Routes>
+      <Route path="/login" element={<Login />} />
+     <Route path="/client/cases/:caseId" element={<ClientCaseDetailWrapper />} />
+      {/* Protected Routes */}
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/cases" element={<CasesPage />} />
+                <Route path="/cases/new" element={<NewCasePage />} />
+                <Route path="/cases/:caseId" element={<CaseDetailPage />} />
+                <Route path="/cases/:caseId/edit" element={<EditCasePage />} />
+                <Route path="/owners" element={<OwnersPage />} />
+                <Route path="/users" element={<UsersPage />} />
+                <Route
+                  path="/users/:userId/permissions"
+                  element={<UserPermissionsPage />}
+                />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }

@@ -355,45 +355,45 @@ export default function AddCaseForm() {
         .map((s, index) => ({
           id: `service-${index}-${Date.now()}`,
           name: s.name,
-          status: "New-Case" as ServiceStatus, // <-- Cast to ServiceStatus
+          status: "New-Case" as ServiceStatus, // <-- Cast to ServiceStatus type
           remarks: "",
           completionPercentage: 0,
         }));
 
-  const casePayload = {
-    // Add a name property, you can set it to unitName or another appropriate value
-    name: data.unitName, // or set as needed
-    srNo: data.srNo,
-    ownerName: data.ownerName,
-    clientName: data.clientName, // Include client name
-    unitName: data.unitName,
-    franchiseAddress: data.franchiseAddress,
-    promoters: data.promoters || "",
-    authorizedPerson: data.authorizedPerson || "",
-    services: newCaseServices,
-    assignedUsers: (data.assignedUsers || []).map((userId) => {
-      const user = users.find((u) => u._id === userId);
-      if (!user) {
-        console.warn(`User with ID ${userId} not found`);
-        return {
-          _id: userId,
-          userId: "",
-          name: "Unknown User",
-        };
-      }
+const casePayload = {
+  name: data.unitName,
+  srNo: data.srNo,
+  ownerName: data.ownerName,
+  clientName: data.clientName,
+  unitName: data.unitName,
+  franchiseAddress: data.franchiseAddress,
+  promoters: data.promoters || "",
+  authorizedPerson: data.authorizedPerson || "",
+  services: newCaseServices,
+  assignedUsers: (data.assignedUsers || []).map((userId) => {
+    const user = users.find((u) => u._id === userId);
+    if (!user) {
+      console.warn(`User with ID ${userId} not found`);
       return {
-        _id: user._id,
-        userId: user.userId || "",
-        name: user.name,
+        _id: userId,
+        userId: "",
+        name: "Unknown User",
       };
-    }),
-    reasonForStatus: data.reasonForStatus,
-    status: data.status as ServiceStatus, // <-- ensure correct type
-    overallStatus: data.status as ServiceStatus, // or set a default/logic if needed
-    lastUpdate: new Date().toISOString(), // or use Date.now() if backend expects a number
-    updatedAt: new Date().toISOString(), // Placeholder, backend should update this
-    overallCompletionPercentage: 0, // <-- Add this property, set to 0 or calculate as needed
-  };
+    }
+    return {
+      _id: user._id,
+      userId: user.userId || "",
+      name: user.name,
+    };
+  }),
+  reasonForStatus: data.reasonForStatus,
+  status: data.status as any,
+  // Set overallStatus based on status
+  overallStatus: data.status === "In-Progress" ? "In-Progress" : (data.status as any),
+  lastUpdate: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  overallCompletionPercentage: 0,
+};
 
       if (isEditing) {
         await axios.put(
@@ -439,6 +439,7 @@ export default function AddCaseForm() {
       }
     }
   };
+
   return (
     <>
       <Form {...form}>

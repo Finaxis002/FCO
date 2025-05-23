@@ -1,10 +1,20 @@
 export type ServiceStatus =
+
+  | "Pending"
   | "To be Started"
   | "Detail Required"
   | "In-Progress"
   | "Completed"
   | "Rejected"
-  |"Pending"
+  | "Total";
+
+// Case-specific statuses
+export type CaseStatus =
+  | "Total"
+  | "New-Case"
+  | "In-Progress"
+  | "Completed"
+  | "Rejected";
 
 export interface Service {
   id: string;
@@ -14,6 +24,17 @@ export interface Service {
   completionPercentage: number;
   assignedUser?: string; // User ID
 }
+
+export type StatusType =
+  | "Pending"
+  | "To be Started"
+  | "New-Case"
+  | "In-Progress"
+  | "Completed"
+  | "Rejected"
+  | "Detail Required"
+  | "Total";
+
 
 export type MessageStatus = "sending" | "sent" | "failed"; // More specific than just string
 
@@ -41,7 +62,7 @@ export interface Case {
   promoters?: string;
   authorizedPerson?: string;
   services?: Service[];
-  overallStatus?: ServiceStatus; // Can be derived or manually set
+  overallStatus?: CaseStatus; // Can be derived or manually set
   assignedUsers?: (
     | string
     | {
@@ -54,7 +75,7 @@ export interface Case {
   lastUpdate: string; // Timestamp or formatted date string
   reasonForStatus?: string; // For PMEGP status or other specific reasons
   chatMessages?: ChatMessage[];
-  status?: ServiceStatus;
+  status?: CaseStatus;
 }
 
 export type UserRole =
@@ -176,4 +197,8 @@ export interface ServiceDefinition {
 }
 
 // For dashboard filtering options, extending ServiceStatus for convenience
-export type DashboardFilterStatus = ServiceStatus | "Total" | "Rejected";
+export type DashboardFilterStatus =
+  | CaseStatus
+  | "Total"
+  | "Rejected"
+  | "New-Case";

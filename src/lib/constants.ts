@@ -9,6 +9,7 @@ import type {
   ServiceDefinition,
   AppNotification,
   ChatMessage,
+  StatusType
 } from "@/types/franchise";
 import {
   Home,
@@ -27,7 +28,9 @@ import {
   UserPlus,
   MessageSquare,
   Users2,
+  PieChart
 } from "lucide-react"; // Added Users2
+
 
 export const APP_NAME = "FranchiseFlow";
 
@@ -47,17 +50,20 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 // Using HSL values from globals.css for direct style binding
-export const STATUS_CONFIG: Record<
-  ServiceStatus,
-  { color: string; lightColor: string; Icon: React.ElementType }
-> = {
+
+export const STATUS_CONFIG: Record<StatusType, { color: string; lightColor: string; Icon: React.ElementType }> = {
   Pending: {
-    color: "hsl(0, 0%, 70%)", // gray color example
+    color: "hsl(0, 0%, 70%)",
     lightColor: "hsl(0, 0%, 90%)",
-    Icon: Hourglass, // or any suitable icon
+    Icon: Hourglass,
   },
   "To be Started": {
     color: "hsl(200, 80%, 60%)",
+    lightColor: "hsl(200, 80%, 90%)",
+    Icon: Hourglass,
+  },
+  "New-Case": {
+   color: "hsl(200, 80%, 60%)",
     lightColor: "hsl(200, 80%, 90%)",
     Icon: Hourglass,
   },
@@ -77,11 +83,19 @@ export const STATUS_CONFIG: Record<
     Icon: XCircle,
   },
   "Detail Required": {
-    color: "",
+    color: "", // put actual colors if needed
     lightColor: "",
-    Icon: "symbol"
-  }
+    Icon: XCircle, // replace with actual icon component
+  },
+  Total: {
+    color: "#3b82f6",
+    lightColor: "#bfdbfe",
+    Icon: PieChart,
+  },
 };
+
+
+export type ValidStatus = keyof typeof STATUS_CONFIG;
 
 
 export const USER_ROLES: UserRole[] = [

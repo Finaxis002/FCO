@@ -18,7 +18,7 @@ import { Briefcase, Users, Clock, Loader } from "lucide-react"; // Removed Activ
 interface CaseStats {
   totalCases: number;
   completedCases: number; // Includes "Approved"
-  pendingCases: number;
+  NewCases: number;
   inProgressCases: number;
   rejectedCases: number;
   completionPercentage: number;
@@ -60,70 +60,71 @@ export default function DashboardPage() {
   }, []);
 
   const [complianceStatusCounts, setComplianceStatusCounts] = useState<{
-    Pending: number;
+    "New-Case": number;
     "In-Progress": number;
     Completed: number;
     Approved: number;
     Rejected: number;
   }>({
-    Pending: 0,
+    "New-Case": 0,
     "In-Progress": 0,
     Completed: 0,
     Approved: 0,
     Rejected: 0,
   });
 
-  useEffect(() => {
-    const fetchCases = async () => {
-      try {
-        const res = await fetch(
-          "https://fcobackend-23v7.onrender.com/api/cases"
-        );
-        if (!res.ok) throw new Error("Failed to fetch cases");
+useEffect(() => {
+  const fetchCases = async () => {
+    try {
+      const res = await fetch(
+        "https://fcobackend-23v7.onrender.com/api/cases"
+      );
+      if (!res.ok) throw new Error("Failed to fetch cases");
 
-        const data = await res.json();
-        setCases(data);
+      const data = await res.json();
+      setCases(data);
 
-        // 🔍 Count by `status`
-        const counts = {
-          Pending: 0,
-          "In-Progress": 0,
-          Completed: 0,
-          Approved: 0,
-          Rejected: 0,
-        };
+      // 🔍 Count by `status`
+      const counts = {
+        "New-Case": 0,
+        "In-Progress": 0,
+        Completed: 0,
+        Approved: 0,
+        Rejected: 0,
+      };
 
-        data.forEach((c: any) => {
-          const rawStatus = c.status?.trim().toLowerCase();
+      data.forEach((c: any) => {
+        const rawStatus = c.status?.trim(); // No need to convert to lowercase here
+        switch (rawStatus) {
+          case "New-Case":
+            counts["New-Case"]++;
+            break;
+          case "In-Progress":
+            counts["In-Progress"]++;
+            break;
+          case "Completed":
+            counts.Completed++;
+            break;
+          case "Approved":
+            counts.Approved++;
+            counts.Completed++; // Optional: Count Approved as Completed too
+            break;
+          case "Rejected":
+            counts.Rejected++;
+            break;
+        }
+      });
 
-          switch (rawStatus) {
-            case "pending":
-              counts.Pending++;
-              break;
-            case "in-progress":
-              counts["In-Progress"]++;
-              break;
-            case "completed":
-              counts.Completed++;
-              break;
-            case "approved":
-              counts.Approved++;
-              counts.Completed++; // Optional: Count Approved as Completed too
-              break;
-            case "rejected":
-              counts.Rejected++;
-              break;
-          }
-        });
+      setComplianceStatusCounts(counts);
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    }
+  };
 
-        setComplianceStatusCounts(counts);
-      } catch (err) {
-        console.error("Dashboard fetch error:", err);
-      }
-    };
+  fetchCases();
+}, []);
 
-    fetchCases();
-  }, []);
+
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
   const userRole = localStorage.getItem("userRole") || "";
@@ -156,8 +157,8 @@ const filteredCases = useMemo(() => {
     const completedCases = filteredCases.filter(
       (c) => c.status === "Completed" 
     ).length;
-    const pendingCases = filteredCases.filter(
-      (c) => c.status === "Pending"
+    const NewCases = filteredCases.filter(
+      (c) => c.status === "New-Case"
     ).length;
     const inProgressCases = filteredCases.filter(
       (c) => c.status === "In-Progress"
@@ -171,7 +172,7 @@ const filteredCases = useMemo(() => {
     return {
       totalCases,
       completedCases,
-      pendingCases,
+      NewCases,
       inProgressCases,
       rejectedCases,
       completionPercentage,
@@ -230,10 +231,10 @@ const filteredCases = useMemo(() => {
         />
         <StatCard
           title="New Cases"
-          value={caseStats.pendingCases.toString()}
+          value={caseStats.NewCases.toString()}
           icon={Clock}
           description="Awaiting action"
-          onClick={() => handleStatCardClick("Pending")}
+          onClick={() => handleStatCardClick("New-Case")}
         />
         <StatCard
           title="In-Progress Cases"
@@ -272,9 +273,8 @@ const filteredCases = useMemo(() => {
         <div>
           <ComplianceStatusOverview
             totalCases={filteredCases.length}
-            pendingCount={
-              filteredCases.filter((c) => c.status?.toLowerCase() === "pending")
-                .length
+              newCaseCount ={
+             filteredCases.filter((c) => c.status?.toLowerCase() === "new-case").length
             }
             inProgressCount={
               filteredCases.filter(
@@ -291,7 +291,27 @@ const filteredCases = useMemo(() => {
                 (c) => c.status?.toLowerCase() === "rejected"
               ).length
             }
-            onStatusClick={(status) => handleStatCardClick(status)}
+            onStatusClick={(status) => {
+              // Map StatusType to DashboardFilterStatus
+              let mappedStatus: DashboardFilterStatus | undefined;
+              switch (status) {
+                case "New-Case":
+                  mappedStatus = "New-Case";
+                  break;
+                case "In-Progress":
+                  mappedStatus = "In-Progress";
+                  break;
+                case "Completed":
+                  mappedStatus = "Completed";
+                  break;
+                case "Rejected":
+                  mappedStatus = "Rejected";
+                  break;
+                default:
+                  mappedStatus = undefined;
+              }
+              handleStatCardClick(mappedStatus);
+            }}
           />
         </div>
       </div>

@@ -32,8 +32,9 @@ import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
 
 const statusStyles: Record<string, string> = {
-  "New-Case":"bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
-    
+  "New-Case":
+    "bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
+
   "In-Progress":
     "bg-yellow-100 text-yellow-800 hover:!bg-yellow-200 hover:!text-yellow-900",
   Completed:
@@ -60,13 +61,12 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       const initialStatuses: Record<string, string> = {};
       cases.forEach((c: Case) => {
         if (!c.id) return;
-        initialStatuses[c.id] = c.status || c.overallStatus || "New-Case";
+        initialStatuses[c.id] = c.status || c.status || "New-Case";
       });
 
       return initialStatuses;
     }
   );
-  
 
   const permissions = useSelector(
     (state: RootState) => state.users.permissions
@@ -85,7 +85,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
     const updatedStatuses: Record<string, string> = {};
     cases.forEach((c: Case) => {
       if (c.id) {
-        updatedStatuses[c.id] = c.status || c.overallStatus || "New-Case";
+        updatedStatuses[c.id] = c.status || c.status || "";
       }
     });
     setCaseStatuses(updatedStatuses);
@@ -95,21 +95,63 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
 
   const handleStatusChange = async (caseId: string, newStatus: string) => {
     try {
+      const currentCase = displayCases.find((c) => c.id === caseId);
+      if (!currentCase) {
+        toast({
+          title: "Error",
+          description: "Case not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prevent changing to "New-Case" if overallCompletionPercentage > 50
+      if (
+        newStatus === "New-Case" &&
+        (currentCase.overallCompletionPercentage ?? 0) > 50
+      ) {
+        toast({
+          title: "Invalid Status Change",
+          description:
+            "Cannot change status to 'New-Case' when completion is above 50%.",
+          variant: "destructive",
+        });
+        // Reset select value to current status
+        setCaseStatuses((prev) => ({
+          ...prev,
+          [caseId]: currentCase.status || "",
+        }));
+        return;
+      }
+
       setCaseStatuses((prev) => ({ ...prev, [caseId]: newStatus }));
       console.log(`Updating status for case ${caseId} to ${newStatus}`);
 
+      // Prepare payload
+      const payload: any = { status: newStatus };
+
+      if (newStatus === "In-Progress") {
+        payload.overallStatus = "In-Progress";
+      }
+
       const response = await axios.put(
         `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
-        {
-          status: newStatus,
-        }
+        payload
       );
 
       console.log("API response:", response.data);
 
       setDisplayCases((prev: Case[]) =>
         prev.map((c) =>
-          c.id === caseId ? { ...c, status: newStatus as Case["status"] } : c
+          c.id === caseId
+            ? {
+                ...c,
+                status: newStatus as Case["status"],
+                // Update overallStatus only if newStatus is In-Progress
+                overallStatus:
+                  newStatus === "In-Progress" ? "In-Progress" : c.overallStatus,
+              }
+            : c
         )
       );
 
@@ -127,13 +169,14 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
 
       setCaseStatuses((prev) => ({
         ...prev,
-        [caseId]: cases.find((c: Case) => c.id === caseId)?.status || "New-Case",
+        [caseId]: cases.find((c: Case) => c.id === caseId)?.status || "",
       }));
     }
   };
 
-const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
-
+  const sortedCases = [...cases].sort(
+    (a, b) => Number(a.srNo) - Number(b.srNo)
+  );
 
   useEffect(() => {
     // This effect is client-side only
@@ -159,7 +202,7 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
   const handleGenerateLink = (caseData: Case) => {
     const viewLink =
       caseData.viewLink ||
-      `/view/case/${caseData.id}?token=${Math.random()
+      `/client/cases/${caseData.id}?token=${Math.random()
         .toString(36)
         .substring(7)}`;
     // Ensure window and navigator are available (standard for client-side)
@@ -202,6 +245,11 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
     );
   }
 
+  useEffect(() => {
+  setDisplayCases(cases);
+}, [cases]);
+
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -218,9 +266,14 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayCases.map((caseData) => {
+            {displayCases.map((caseData: Case) => {
               const lastUpdateDisplay =
                 lastUpdateDisplayCache[caseData.id ?? ""] || "Loading...";
+
+              const displayStatus =
+                caseStatuses[caseData.id ?? ""] ||
+                caseData.status ||
+                "New-Case";
 
               return (
                 <TableRow
@@ -232,7 +285,7 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
                   <TableCell>{caseData.ownerName}</TableCell>
                   <TableCell>
                     <Select
-                      value={caseStatuses[caseData.id ?? ""]}
+                      value={displayStatus}
                       onValueChange={(value) =>
                         handleStatusChange(caseData.id ?? "", value)
                       }
@@ -261,7 +314,7 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
 
                   <TableCell>{lastUpdateDisplay}</TableCell>
                   <TableCell>
-                    <div className="flex flex-col text-sm text-muted-foreground">
+                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                       {caseData.assignedUsers?.length ? (
                         caseData.assignedUsers.map((user, index) => {
                           const userName =
@@ -273,10 +326,18 @@ const sortedCases = [...cases].sort((a, b) => Number(a.srNo) - Number(b.srNo));
                               ? userName.charAt(0).toUpperCase() +
                                 userName.slice(1).toLowerCase()
                               : "Unknown";
-                          return <span key={index}>{formattedName}</span>;
+                          return (
+                            <span
+                              key={index}
+                              className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-gray-200 transition cursor-default"
+                              title={formattedName}
+                            >
+                              {formattedName}
+                            </span>
+                          );
                         })
                       ) : (
-                        <span>N/A</span>
+                        <span className="italic text-gray-400">N/A</span>
                       )}
                     </div>
                   </TableCell>

@@ -172,13 +172,13 @@ export default function MainHeader() {
           {recentNotifications.length > 0 ? (
             recentNotifications
               .slice(0, 3) // ✅ Limit to latest 3
-              .map((notification: AppNotification) => {
+              .map((notification: AppNotification, index: number) => {
                 const Icon =
                   NOTIFICATION_ICONS_DROPDOWN[notification.type] || Activity;
 
                 return (
                   <DropdownMenuItem
-                    key={notification.id}
+                     key={notification.id ?? index}
                     asChild
                     className="cursor-pointer !p-0"
                   >

@@ -38,7 +38,7 @@ interface CaseDetailPageProps {
   isPublic?: boolean;
 }
 
-export default function CaseDetailPage({
+export default function ClientCaseDetailPage({
   isPublic = false,
 }: CaseDetailPageProps) {
   const { caseId } = useParams<{ caseId: string }>();
@@ -170,11 +170,7 @@ export default function CaseDetailPage({
           title="Loading Case Details..."
           description="Please wait while we fetch the case information."
         >
-          <Button asChild variant="outline">
-            <RouterLink to="/cases">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Cases
-            </RouterLink>
-          </Button>
+         
         </PageHeader>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
@@ -239,11 +235,7 @@ export default function CaseDetailPage({
             The case with ID "{caseId}" does not exist or you do not have
             permission to view it.
           </p>
-          <Button asChild>
-            <RouterLink to="/cases">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Cases
-            </RouterLink>
-          </Button>
+         
         </div>
       </>
     );
@@ -279,13 +271,7 @@ export default function CaseDetailPage({
         title={`Case Details: ${caseData.unitName}`}
         description={`SRN: ${caseData.srNo}`}
       >
-        {userRole && (
-          <Button asChild variant="outline">
-            <RouterLink to="/cases">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Cases
-            </RouterLink>
-          </Button>
-        )}
+    
       </PageHeader>
 
       <div className="grid gap-6 md:grid-cols-3">

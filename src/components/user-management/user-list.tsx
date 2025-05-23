@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
-import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
-import {
-  getAllUsers,
-  addUser,
-  editUser,
-  deleteUser as deleteUserThunk,
-} from "@/features/userSlice";
-import type { User } from "@/types/franchise";
-import AddEditUserDialog from "./add-edit-user-dialog";
+import React, { useEffect, useState } from "react";
+import AddEditUserDialog from "./add-edit-user-dialog"; // Your add/edit dialog component
 import { Link as RouterLink } from "react-router-dom";
-import { Edit, Trash2, UserPlus, Settings2, ShieldCheck } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  UserPlus,
+  Settings2,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +30,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-
 import {
   Card,
   CardContent,
@@ -39,13 +38,18 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { UserRole } from "@/features/userSlice";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store"; // Adjust import path for your RootState
-import { fetchPermissions } from "@/features/permissionsSlice";
 
+interface User {
+  _id: string;
+  id?: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl?: string;
+  dataAIHint?: string;
+}
 
 interface UserType {
   name: string;
@@ -53,57 +57,204 @@ interface UserType {
   userId?: string;
 }
 
-export default function UserList({ refreshKey }: { refreshKey: any }) {
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [userToReset, setUserToReset] = useState<User | null>(null);
-  const [resetPassword, setResetPassword] = useState(""); // For new password
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-
-const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-
-
-  const permissions = useSelector(
-    (state: RootState) => state.permissions.permissions
-  );
-
-  const dispatch = useAppDispatch();
-  const { users, error } = useAppSelector((state) => state.users);
-  const { toast } = useToast();
+export default function UserList({ refreshKey }: { refreshKey?: any }) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [isAddEditUserDialogOpen, setIsAddEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  // Add this at the top of your component
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setCurrentUser({
-          name: parsedUser.name,
-          role: parsedUser.role,
-          userId: parsedUser._id || parsedUser.userId,
-        });
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [userToReset, setUserToReset] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [permissions, setPermissions] = useState<any>({});
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsError, setPermissionsError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
 
-        // Skip fetching permissions if Super Admin
-        if (
-          parsedUser.name !== "Super Admin" &&
-          (parsedUser._id || parsedUser.userId)
-        ) {
-          dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
-        }
-      } catch (e) {
-        console.error("Error parsing user data", e);
+
+  const { toast } = useToast();
+
+  // For permissions & user role (simplified: from localStorage, or you can fetch from backend)
+  const userRole = localStorage.getItem("userRole") || "User";
+  // Example permissions object — adjust according to your actual permissions model
+const fetchPermissions = async (userId: string) => {
+  setPermissionsLoading(true);
+  setPermissionsError(null);
+  try {
+    const response = await fetch(
+      `https://fcobackend-23v7.onrender.com/api/users/${userId}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch permissions");
+    const data = await response.json();
+
+    // Extract permissions from the user object:
+    setPermissions(data.permissions || {}); // <-- important!
+
+  } catch (err: any) {
+    setPermissionsError(err.message || "Error fetching permissions");
+  } finally {
+    setPermissionsLoading(false);
+  }
+};
+
+
+useEffect(() => {
+  const userData = localStorage.getItem("user");
+  if (userData) {
+    try {
+      const parsedUser = JSON.parse(userData);
+      const userId = parsedUser._id || parsedUser.userId;
+
+      setCurrentUser({
+        name: parsedUser.name,
+        role: parsedUser.role,
+        userId,
+      });
+
+      if (parsedUser.name !== "Super Admin" && userId) {
+        fetchPermissions(userId);
       }
+    } catch (e) {
+      console.error("Error parsing user data", e);
     }
-  }, [dispatch]);
+  }
+}, []);
+
+
+  // Backend base URL - adjust accordingly
+  const BASE_URL = "https://fcobackend-23v7.onrender.com/api/users";
+
+  // Fetch users from backend
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(BASE_URL);
+      if (!response.ok) throw new Error("Failed to fetch users");
+      const data = await response.json();
+      setUsers(data);
+    } catch (err: any) {
+      setError(err.message || "Error fetching users");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    dispatch(getAllUsers());
-  }, [dispatch, refreshKey]);
+    fetchUsers();
+  }, [refreshKey]);
 
+  // Add or Edit User handler
+  const handleSaveUser = async (
+    userData: Partial<User>,
+    isEditing: boolean
+  ) => {
+    try {
+      if (isEditing && editingUser) {
+        const userId = editingUser._id;
+        const response = await fetch(`${BASE_URL}/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
+        });
+        if (!response.ok) throw new Error("Failed to update user");
+        toast({
+          title: "User Updated",
+          description: `${userData.name} updated successfully.`,
+        });
+      } else {
+        const response = await fetch(BASE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
+        });
+        if (!response.ok) throw new Error("Failed to add user");
+        toast({
+          title: "User Added",
+          description: `${userData.name} added successfully.`,
+        });
+      }
+      setIsAddEditUserDialogOpen(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Operation failed.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete User handler
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/${userId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete user");
+      toast({
+        title: "User Deleted",
+        description: `User with ID ${userId} deleted successfully.`,
+        variant: "destructive",
+      });
+      fetchUsers();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Password Reset handlers
+  const handleResetPasswordClick = (user: User) => {
+    setUserToReset(user);
+    setShowResetDialog(true);
+  };
+
+  const confirmResetPassword = async () => {
+    if (!userToReset) return;
+    if (!resetPassword)
+      return toast({ title: "Enter new password", variant: "destructive" });
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/${userToReset._id}/reset-password`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword: resetPassword }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.message || "Failed to reset password");
+
+      toast({
+        title: "Password Reset",
+        description: `${userToReset.name}'s password has been reset.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to reset password.",
+        variant: "destructive",
+      });
+    } finally {
+      setShowResetDialog(false);
+      setUserToReset(null);
+      setResetPassword("");
+    }
+  };
+
+  // Handlers to open dialogs
   const handleAddNewUser = () => {
     setEditingUser(null);
     setIsAddEditUserDialogOpen(true);
@@ -114,136 +265,25 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
     setIsAddEditUserDialogOpen(true);
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await dispatch(deleteUserThunk(userId)).unwrap();
-      toast({
-        title: "User Deleted",
-        description: `User with ID ${userId} has been removed.`,
-        variant: "destructive",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete user.",
-        variant: "destructive",
-      });
-    }
-  };
+ useEffect(() => {
+  console.log("Current User:", currentUser);
+}, [currentUser]);
 
-  const handleSaveUser = async (
-    userData: Omit<User, "id" | "_id" | "avatarUrl" | "dataAIHint"> & {
-      id?: string;
-      _id?: string;
-    },
-    isEditing: boolean
-  ) => {
-    try {
-      if (isEditing && (userData.id || (editingUser && editingUser._id))) {
-        const userId = userData.id ?? editingUser!._id;
-        if (!userId) {
-          throw new Error("User ID is required for editing.");
-        }
-        await dispatch(
-          editUser({
-            id: userId,
-            user: { ...userData, role: userData.role as UserRole },
-          })
-        ).unwrap();
-        toast({
-          title: "User Updated",
-          description: `${userData.name}'s details updated.`,
-        });
-      } else {
-        // Ensure id is present when adding a user (can be empty string if backend generates it)
-        const { id, _id, ...userDataWithoutIds } = userData;
-        await dispatch(
-          addUser({
-            ...userDataWithoutIds,
-            id: id ?? "",
-            userId: userData.userId ?? "", // Ensure userId is always a string
-            role: userData.role as UserRole, // Ensure role is always defined and cast to correct type
-          })
-        ).unwrap();
-        toast({
-          title: "User Added",
-          description: `${userData.name} has been added.`,
-        });
-      }
+useEffect(() => {
+  console.log("Permissions:", permissions);
+}, [permissions]);
 
-      setIsAddEditUserDialogOpen(false);
-      setEditingUser(null);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Operation failed.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleResetPasswordClick = (user: User) => {
-    setUserToReset(user);
-    setShowResetDialog(true);
-  };
-
-  const confirmResetPassword = async () => {
-    if (!userToReset) return;
-
-    const userId = userToReset._id || userToReset.id;
-    if (!userId || !resetPassword) return;
-
-    try {
-      const response = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/users/${userId}/reset-password`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ newPassword: resetPassword }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Password Reset",
-          description: `${userToReset.name}'s password was reset successfully.`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.message || "Failed to reset password.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Server error occurred.",
-        variant: "destructive",
-      });
-    } finally {
-      setShowResetDialog(false);
-      setUserToReset(null);
-      setResetPassword(""); // clear input
-    }
-  };
-
-  const userRole = localStorage.getItem("userRole");
-
-  console.log("permissions : " + permissions);
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row justify-between items-center">
         <div>
           <CardTitle>User Accounts</CardTitle>
           <CardDescription>
             Manage all user accounts and their roles within the application.
           </CardDescription>
         </div>
-        {(userRole === "Admin" || permissions?.createUserRights === true) && (
+        {(userRole === "Admin" || permissions?.createUserRights) && (
           <Button onClick={handleAddNewUser}>
             <UserPlus className="mr-2 h-4 w-4" /> Add New User
           </Button>
@@ -269,14 +309,14 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   {(userRole === "Admin" ||
-                    permissions?.userRolesAndResponsibility === true) && (
+                    permissions?.userRolesAndResponsibility) && (
                     <TableHead className="text-right pr-6">Actions</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user._id || user.id}>
+                  <TableRow key={user._id}>
                     <TableCell className="hidden sm:table-cell">
                       {user.avatarUrl ? (
                         <img
@@ -292,7 +332,6 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
                       )}
                     </TableCell>
                     <TableCell>{user.userId}</TableCell>
-
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
@@ -305,56 +344,40 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
                       </Badge>
                     </TableCell>
                     {(userRole === "Admin" ||
-                      permissions?.userRolesAndResponsibility === true) && (
+                      permissions?.userRolesAndResponsibility) && (
                       <TableCell className="text-right flex justify-end gap-4 flex-wrap">
-                        {/* Edit Button */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            handleEditUser({
-                              ...user,
-                              id: user.id ?? user._id ?? "",
-                              // Optionally ensure role is cast to the correct type if needed:
-                              role: user.role as UserRole,
-                            })
-                          }
+                          onClick={() => handleEditUser(user)}
                           className="text-blue-600 hover:!bg-blue-600 hover:!text-white"
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
 
-                        {/* Manage Button */}
                         <RouterLink
-                          to={`/users/${user._id || user.id}/permissions`}
+                          to={`/users/${user._id}/permissions`}
                           className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
                         >
                           <Settings2 className="h-4 w-4 mr-1" />
                           Manage
                         </RouterLink>
 
-                        {/* 🔑 Reset Password Button */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            handleResetPasswordClick({
-                              ...user,
-                              role: user.role as UserRole,
-                            })
-                          }
+                          onClick={() => handleResetPasswordClick(user)}
                           className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white"
                         >
                           <ShieldCheck className="h-4 w-4 mr-1" />
                           Reset Password
                         </Button>
 
-                        {/* Delete Button */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteUser(user._id || user.id)}
+                          onClick={() => handleDeleteUser(user._id)}
                           className="text-red-600 hover:!bg-red-600 hover:!text-white"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
@@ -366,6 +389,7 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
                 ))}
               </TableBody>
             </Table>
+
             {users.length === 0 && (
               <CardFooter className="pt-6">
                 <div className="text-center p-4 text-muted-foreground border border-dashed rounded-md w-full">
@@ -376,9 +400,14 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
           </>
         )}
       </CardContent>
+
       {isAddEditUserDialogOpen && (
         <AddEditUserDialog
-          user={editingUser}
+          user={
+            editingUser
+              ? { ...editingUser, id: editingUser.id ?? editingUser._id ?? "" }
+              : editingUser
+          }
           isOpen={isAddEditUserDialogOpen}
           onClose={() => {
             setIsAddEditUserDialogOpen(false);
@@ -387,6 +416,7 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
           onSave={handleSaveUser}
         />
       )}
+
       {showResetDialog && (
         <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
           <DialogContent>
@@ -440,3 +470,7 @@ const [currentUser, setCurrentUser] = useState<UserType | null>(null);
     </Card>
   );
 }
+function setCurrentUser(arg0: { name: any; role: any; userId: any; }) {
+  throw new Error("Function not implemented.");
+}
+

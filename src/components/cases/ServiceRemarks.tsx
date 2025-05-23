@@ -124,7 +124,7 @@ export default function ServiceRemarks({
       .join("")
       .toUpperCase();
   };
-
+  
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
