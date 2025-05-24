@@ -1,5 +1,4 @@
 export type ServiceStatus =
-
   | "Pending"
   | "To be Started"
   | "Detail Required"
@@ -35,7 +34,6 @@ export type StatusType =
   | "Detail Required"
   | "Total";
 
-
 export type MessageStatus = "sending" | "sent" | "failed"; // More specific than just string
 
 export interface ChatMessage {
@@ -59,7 +57,7 @@ export interface Case {
   ownerName?: string;
   unitName?: string; // Project Name
   franchiseAddress?: string;
-  promoters?: string;
+  stateHead?: string;
   authorizedPerson?: string;
   services?: Service[];
   overallStatus?: CaseStatus; // Can be derived or manually set
@@ -84,7 +82,8 @@ export type UserRole =
   | "Backend"
   | "Manager"
   | "User"
-  | string;
+  | "Authorized Person"
+  | "State Head";
 
 export interface User {
   _id?: string; // MongoDB ID
@@ -121,7 +120,7 @@ export interface AppNotification {
   unitName: string;
   ownerName: string;
   franchiseAddress: string;
-  promoters?: string;
+  stateHead?: string;
   authorizedPerson?: string;
   services: any[];
   assignedUsers: string[];

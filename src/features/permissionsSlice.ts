@@ -9,8 +9,9 @@ interface Permissions {
   userRolesAndResponsibility: boolean;
   delete: boolean;
   edit: boolean;
-  remarksAndChat: boolean;
-  canShare:boolean;
+  remarks: boolean; // ✅ separated
+  chat: boolean; // ✅ separated
+  canShare: boolean;
 }
 
 interface PermissionsState {
@@ -46,7 +47,6 @@ export const fetchPermissions = createAsyncThunk<
     return rejectWithValue(error.message || "Failed to fetch permissions");
   }
 });
-
 
 const initialState: PermissionsState = {
   permissions: null,

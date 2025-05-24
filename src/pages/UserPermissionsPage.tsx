@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import {
-  MOCK_USERS,
-  ROLE_PERMISSIONS,
   DEFAULT_USER_PERMISSIONS,
-  APP_NAME,
 } from "@/lib/constants";
 import type { User, UserRole } from "@/types/franchise";
 import PageHeader from "@/components/ui/page-header";
@@ -26,14 +23,16 @@ type PermissionsState = typeof DEFAULT_USER_PERMISSIONS;
 
 const permissionLabels: Record<string, string> = {
   allCaseAccess: "All Case Access",
-  viewRights: "View ",
-  createCaseRights: "Create Case ",
-  createUserRights: "Create User ",
+  viewRights: "View",
+  createCaseRights: "Create Case",
+  createUserRights: "Create User",
   userRolesAndResponsibility: "User Roles and Responsibility",
   delete: "Delete",
   edit: "Edit",
-  remarksAndChat: "Remarks and Chat",
+  remarks: "Remarks",       // ✅ separated
+  chat: "Chat",             // ✅ separated
 };
+
 
 export default function UserPermissionsPage() {
   const { userId } = useParams<{ userId: string }>();

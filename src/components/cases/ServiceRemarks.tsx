@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import type { Case } from "@/types/franchise";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store"; // adjust path as per your project
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -49,7 +53,6 @@ export default function ServiceRemarks({
 
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
 
-
   // Fetch remarks when dialog opens
   useEffect(() => {
     if (isDialogOpen) {
@@ -62,12 +65,12 @@ export default function ServiceRemarks({
     setError(null);
     try {
       const res = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`
+        `http://localhost:5000/api/cases/${caseId}/services/${serviceId}/remarks`
       );
       if (!res.ok) throw new Error("Failed to load remarks");
       const data: Remark[] = await res.json();
       setRemarks(data);
-       setNewRemarkAdded(false);
+      setNewRemarkAdded(false);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -89,7 +92,7 @@ export default function ServiceRemarks({
 
     try {
       const res = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
+        `http://localhost:5000/api/cases/${caseId}/services/${serviceId}/remarks`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -101,7 +104,9 @@ export default function ServiceRemarks({
       const newRemark = await res.json();
       setRemarks((prev) => [newRemark, ...prev]);
       setNewRemarkText("");
-       setNewRemarkAdded(true);  
+      setNewRemarkAdded(true);
+       // Close the "View All Remarks" dialog after posting
+    setIsDialogOpen(false);
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
     } finally {
@@ -124,7 +129,21 @@ export default function ServiceRemarks({
       .join("")
       .toUpperCase();
   };
-  
+
+  const remark = useSelector(
+    (state: RootState) => state.permissions.permissions?.remarks
+  );
+  const isSuperAdmin = currentUser?.name === "Super Admin";
+  if (!isSuperAdmin && !remark) {
+    return (
+      <Card className="p-6">
+        <p className="text-center text-red-600 font-semibold">
+          You do not have permission to access the Remark.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -134,7 +153,6 @@ export default function ServiceRemarks({
           onClick={() => setIsDialogOpen(true)}
         >
           View All Remarks
-          
         </Button>
 
         <Dialog>

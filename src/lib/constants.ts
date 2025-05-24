@@ -320,7 +320,8 @@ export const DEFAULT_USER_PERMISSIONS = {
   userRolesAndResponsibility: false,
   delete: false,
   edit: false,
-  remarksAndChat: false,
+  remarks: false, // ✅ separated from remarksAndChat
+  chat: false,    // ✅ separated from remarksAndChat
 };
 
 
@@ -341,7 +342,8 @@ export const ROLE_PERMISSIONS: Record<
   userRolesAndResponsibility: false,
   delete: false,
   edit: false,
-  remarksAndChat: false,
+  remarks: false, // ✅ separated from remarksAndChat
+  chat: false,    // ✅ separated from remarksAndChat
   },
   "Back Office": {
     allCaseAccess: false,
@@ -351,7 +353,8 @@ export const ROLE_PERMISSIONS: Record<
   userRolesAndResponsibility: false,
   delete: false,
   edit: false,
-  remarksAndChat: false,
+  remarks: false, // ✅ separated from remarksAndChat
+  chat: false,    // ✅ separated from remarksAndChat
   },
   "Local Area Head": {
    allCaseAccess: false,
@@ -361,7 +364,8 @@ export const ROLE_PERMISSIONS: Record<
   userRolesAndResponsibility: false,
   delete: false,
   edit: false,
-  remarksAndChat: false,
+  remarks: false, // ✅ separated from remarksAndChat
+  chat: false,    // ✅ separated from remarksAndChat
   },
   "Franchise Owner": {
     // Can only view their own case(s) - logic handled by filtering
@@ -372,7 +376,8 @@ export const ROLE_PERMISSIONS: Record<
   userRolesAndResponsibility: false,
   delete: false,
   edit: false,
-  remarksAndChat: false,
+  remarks: false, // ✅ separated from remarksAndChat
+  chat: false,    // ✅ separated from remarksAndChat
   },
   Viewer: {
     // Can only view specific shared case(s) - logic handled by filtering/token
@@ -383,7 +388,8 @@ export const ROLE_PERMISSIONS: Record<
   userRolesAndResponsibility: false,
   delete: false,
   edit: false,
-  remarksAndChat: false,
+  remarks: false, // ✅ separated from remarksAndChat
+  chat: false,    // ✅ separated from remarksAndChat
   },
 };
 

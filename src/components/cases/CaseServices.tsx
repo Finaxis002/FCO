@@ -50,20 +50,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   const { toast } = useToast();
 
   const handleStatusChange = (serviceId: string, newStatus: string) => {
-    // If overallCompletionPercentage > 50 and newStatus is 'To be Started' (aka New-Case), block update
-    if (
-      overallCompletionPercentage > 50 &&
-      (newStatus === SERVICE_STATUS.TO_BE_STARTED || newStatus === "New-Case")
-    ) {
-      toast({
-        title: "Action Not Allowed",
-        description:
-          "Cannot change status to 'To be Started' because the overall completion is already above 50%.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  
     // Optimistic UI update for service status
     setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 

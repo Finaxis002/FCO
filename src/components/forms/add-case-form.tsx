@@ -58,7 +58,7 @@ const caseFormSchema = z.object({
   clientName: z.string().min(2, "Client name must be at least 2 characters."), // new client field
   unitName: z.string().min(2, "Unit name must be at least 2 characters."),
   franchiseAddress: z.string().min(5, "Franchise address is required."),
-  promoters: z.string().optional(),
+  stateHead: z.string().optional(),
   authorizedPerson: z.string().optional(),
   services: z
     .array(
@@ -104,6 +104,7 @@ export default function AddCaseForm() {
   const dispatch = useDispatch<AppDispatch>();
   const { users } = useAppSelector((state) => state.users);
   console.log("Loaded users:", users);
+  const FORM_STORAGE_KEY = "add_case_form_data";
 
   const form = useForm<CaseFormValues>({
     resolver: zodResolver(caseFormSchema),
@@ -113,7 +114,7 @@ export default function AddCaseForm() {
       clientName: "", // new client field
       unitName: "",
       franchiseAddress: "",
-      promoters: "",
+      stateHead: "",
       authorizedPerson: "",
       services: defaultServices,
       assignedUsers: [],
@@ -123,6 +124,38 @@ export default function AddCaseForm() {
   });
 
   useEffect(() => {
+    const wasPageReloaded =
+      (
+        performance.getEntriesByType("navigation")[0] as
+          | PerformanceNavigationTiming
+          | undefined
+      )?.type === "reload" || window.performance?.navigation?.type === 1; // fallback for older browsers
+
+    if (wasPageReloaded) {
+      const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
+      if (savedForm) {
+        try {
+          const parsed = JSON.parse(savedForm);
+          form.reset(parsed);
+        } catch (err) {
+          console.warn("Failed to parse saved form data", err);
+        }
+      }
+    } else {
+      // ⚠️ If not a reload, clear storage to avoid auto-fill
+      localStorage.removeItem(FORM_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(value));
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  useEffect(() => {
     const fetchServices = async () => {
       try {
         const res = await axios.get(
@@ -130,14 +163,16 @@ export default function AddCaseForm() {
         );
         setGlobalServices(res.data);
 
-        // Reset form's default services with fetched data
-        form.reset({
-          ...form.getValues(),
-          services: res.data.map((service: any) => ({
-            name: service.name,
-            selected: false,
-          })),
-        });
+        // Only reset services if not editing
+        if (!isEditing) {
+          form.reset({
+            ...form.getValues(),
+            services: res.data.map((service: any) => ({
+              name: service.name,
+              selected: false,
+            })),
+          });
+        }
       } catch (e) {
         console.error("Failed to fetch services", e);
         toast({
@@ -150,7 +185,6 @@ export default function AddCaseForm() {
 
     fetchServices();
   }, []);
-
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -203,9 +237,9 @@ export default function AddCaseForm() {
           clientName: caseData.clientName,
           unitName: caseData.unitName,
           franchiseAddress: caseData.franchiseAddress,
-          promoters: Array.isArray(caseData.promoters)
-            ? caseData.promoters.join(", ")
-            : caseData.promoters || "",
+          stateHead: Array.isArray(caseData.stateHead)
+            ? caseData.stateHead.join(", ")
+            : caseData.stateHead || "",
           authorizedPerson: caseData.authorizedPerson,
           assignedUsers: assignedUserIds,
           reasonForStatus: caseData.reasonForStatus,
@@ -360,40 +394,58 @@ export default function AddCaseForm() {
           completionPercentage: 0,
         }));
 
-const casePayload = {
-  name: data.unitName,
-  srNo: data.srNo,
-  ownerName: data.ownerName,
-  clientName: data.clientName,
-  unitName: data.unitName,
-  franchiseAddress: data.franchiseAddress,
-  promoters: data.promoters || "",
-  authorizedPerson: data.authorizedPerson || "",
-  services: newCaseServices,
-  assignedUsers: (data.assignedUsers || []).map((userId) => {
-    const user = users.find((u) => u._id === userId);
-    if (!user) {
-      console.warn(`User with ID ${userId} not found`);
-      return {
-        _id: userId,
-        userId: "",
-        name: "Unknown User",
+      // Step 1: Add authorizedPerson and stateHead to assignedUsers
+      const additionalUserNames = [
+        data.authorizedPerson,
+        data.stateHead,
+      ].filter(Boolean);
+
+      // Convert user names to user IDs
+      const additionalUserIds = additionalUserNames
+        .map((name) => users.find((u) => u.name === name)?._id)
+        .filter((id): id is string => !!id); // Type guard to ensure only valid strings
+
+      // Merge with manually selected users and remove duplicates
+      const combinedAssignedUserIds = Array.from(
+        new Set([...(data.assignedUsers || []), ...additionalUserIds])
+      );
+
+      const casePayload = {
+        name: data.unitName,
+        srNo: data.srNo,
+        ownerName: data.ownerName,
+        clientName: data.clientName,
+        unitName: data.unitName,
+        franchiseAddress: data.franchiseAddress,
+        stateHead: data.stateHead || "",
+        authorizedPerson: data.authorizedPerson || "",
+        services: newCaseServices,
+        // assignedUsers: (data.assignedUsers || []).map((userId) => {
+        assignedUsers: combinedAssignedUserIds.map((userId) => {
+          const user = users.find((u) => u._id === userId);
+          if (!user) {
+            console.warn(`User with ID ${userId} not found`);
+            return {
+              _id: userId,
+              userId: "",
+              name: "Unknown User",
+            };
+          }
+          return {
+            _id: user._id,
+            userId: user.userId || "",
+            name: user.name,
+          };
+        }),
+        reasonForStatus: data.reasonForStatus,
+        status: data.status as any,
+        // Set overallStatus based on status
+        overallStatus:
+          data.status === "In-Progress" ? "In-Progress" : (data.status as any),
+        lastUpdate: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        overallCompletionPercentage: 0,
       };
-    }
-    return {
-      _id: user._id,
-      userId: user.userId || "",
-      name: user.name,
-    };
-  }),
-  reasonForStatus: data.reasonForStatus,
-  status: data.status as any,
-  // Set overallStatus based on status
-  overallStatus: data.status === "In-Progress" ? "In-Progress" : (data.status as any),
-  lastUpdate: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  overallCompletionPercentage: 0,
-};
 
       if (isEditing) {
         await axios.put(
@@ -421,6 +473,7 @@ const casePayload = {
           );
         }
       }
+      localStorage.removeItem(FORM_STORAGE_KEY);
 
       navigate("/cases");
     } catch (err: unknown) {
@@ -439,6 +492,10 @@ const casePayload = {
       }
     }
   };
+
+  const authorizedPersons = users.filter(
+    (user) => String(user.role) === "Authorized Person"
+  );
 
   return (
     <>
@@ -594,35 +651,17 @@ const casePayload = {
                   )}
                 />
 
-                {/* Promoters */}
+                {/* State Head */}
                 <FormField
                   control={form.control}
-                  name="promoters"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Promoters (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Self, Co-promoter"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Authorized Person */}
-                <FormField
-                  control={form.control}
-                  name="authorizedPerson"
+                  name="stateHead"
                   render={() => (
                     <FormItem>
-                      <FormLabel>Authorized Person</FormLabel>
+                      <FormLabel>State Head</FormLabel>
                       <FormControl>
                         <Controller
                           control={form.control}
-                          name="authorizedPerson"
+                          name="stateHead"
                           render={({ field: { onChange, value, ref } }) => (
                             <SelectReact
                               ref={ref}
@@ -651,10 +690,52 @@ const casePayload = {
                                   selectedOption ? selectedOption.value : ""
                                 )
                               }
-                              placeholder="Select authorized person"
+                              placeholder="Select state head"
                               classNamePrefix="react-select"
                             />
                           )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Authorized Person */}
+                <FormField
+                  control={form.control}
+                  name="authorizedPerson"
+                  render={({ field: { onChange, value, ref } }) => (
+                    <FormItem>
+                      <FormLabel>Authorized Person</FormLabel>
+                      <FormControl>
+                        <SelectReact
+                          ref={ref}
+                          isClearable
+                          isSearchable
+                          options={authorizedPersons.map((user) => ({
+                            label: `${user.name} (${user.userId})`,
+                            value: user.name,
+                          }))}
+                          value={
+                            value
+                              ? authorizedPersons.find((u) => u.name === value)
+                                ? {
+                                    label: `${value} (${
+                                      authorizedPersons.find(
+                                        (u) => u.name === value
+                                      )?.userId
+                                    })`,
+                                    value,
+                                  }
+                                : null
+                              : null
+                          }
+                          onChange={(selectedOption) =>
+                            onChange(selectedOption ? selectedOption.value : "")
+                          }
+                          placeholder="Select authorized person"
+                          classNamePrefix="react-select"
                         />
                       </FormControl>
                       <FormMessage />

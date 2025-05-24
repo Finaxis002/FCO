@@ -310,7 +310,7 @@ export default function CaseDetailPage({
                   {caseData.franchiseAddress}
                 </div>
                 <div>
-                  <strong>Promoters:</strong> {caseData.promoters || "N/A"}
+                  <strong>State Head:</strong> {caseData.stateHead|| "N/A"}
                 </div>
                 <div>
                   <strong>Authorized Person:</strong>{" "}

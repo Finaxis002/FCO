@@ -135,7 +135,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       }
 
       const response = await axios.put(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
+        `http://localhost:5000/api/cases/${caseId}`,
         payload
       );
 

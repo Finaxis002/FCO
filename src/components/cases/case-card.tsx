@@ -79,7 +79,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
   }, [dispatch]);
 
   const permissions = useSelector(
-    (state: RootState) => state.users.permissions
+    (state: RootState) => (state.users as any).permissions
   );
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -31,18 +31,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { User, UserRole } from "@/types/franchise";
-import { useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-export const USER_ROLES = ["user"] as const;
+import { fetchRoles } from "@/services/rolesApi";
 
 const userFormSchema = z.object({
-  userId: z.string().min(2, "User ID is required."), 
+  userId: z.string().min(2, "User ID is required."),
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
-  role: z.enum(USER_ROLES, {
-    required_error: "User role is required.",
-  }),
- password: z.string().optional(),  
+  role: z.string().min(1, "User role is required."),
+
+  password: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -64,6 +62,9 @@ export default function AddEditUserDialog({
   user,
 }: AddEditUserDialogProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
+  const [allRoles, setAllRoles] = useState<any[]>([]);
 
   const isEditing = !!user;
 
@@ -72,37 +73,61 @@ export default function AddEditUserDialog({
     defaultValues: {
       name: "",
       email: "",
-      role: USER_ROLES[0], // Default to "user" or another sensible default
+      role: roles[0] || "", // Default to the first role or an empty string
       password: "",
     },
   });
 
-  
+  useEffect(() => {
+    fetchRoles()
+      .then((data) => {
+        setAllRoles(data); // store full role objects
+        setRoles(data.map((role: any) => role.name)); // for dropdown
+        setRolesLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch roles:", err);
+        setRoles(["User"]);
+        setAllRoles([]);
+        setRolesLoaded(true);
+      });
+  }, []);
 
   useEffect(() => {
+    if (!rolesLoaded) return; // ⛔ Don't reset if roles not loaded
+
     if (user) {
       form.reset({
-        userId: user.userId || "", // ✅ Added
+        userId: user.userId || "",
         name: user.name,
         email: user.email,
-        role: (user.role ? user.role.toLowerCase() : USER_ROLES[0]) as (typeof USER_ROLES)[number],
+        role: user.role || roles[0] || "",
       });
     } else {
       form.reset({
         userId: "",
         name: "",
         email: "",
-        role: USER_ROLES[0],
+        role: roles[0] || "",
       });
     }
-  }, [user, form, isOpen]); // Re-run effect if isOpen changes to reset form for new additions
+  }, [user, form, isOpen, rolesLoaded]); // ✅ added rolesLoaded as dependency
 
-  function onSubmit(data: UserFormValues) {
-    // Convert role to match UserRole type (e.g., "Admin" | "User")
-    const mappedRole =
-      data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase();
-    onSave({ ...data, role: mappedRole as UserRole }, isEditing);
-  }
+ function onSubmit(data: UserFormValues) {
+  const matchedRole = allRoles.find((r) => r.name === data.role);
+  const rolePermissions = matchedRole?.permissions || {};
+
+  onSave(
+    {
+      ...data,
+      role: data.role as UserRole,
+      permissions: rolePermissions,
+    },
+    isEditing
+  );
+}
+
+  console.log("roles", roles);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -199,33 +224,37 @@ export default function AddEditUserDialog({
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>User Role</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {USER_ROLES.map((roleName) => (
-                        <SelectItem key={roleName} value={roleName}>
-                          {roleName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {rolesLoaded && (
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>User Role</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles.map((roleName) => (
+                          <SelectItem key={roleName} value={roleName}>
+                            {roleName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button type="button" variant="outline">

@@ -49,6 +49,7 @@ interface User {
   role: string;
   avatarUrl?: string;
   dataAIHint?: string;
+  permissions?: any; // Add this line to allow permissions property
 }
 
 interface UserType {
@@ -74,55 +75,51 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
 
-
   const { toast } = useToast();
 
   // For permissions & user role (simplified: from localStorage, or you can fetch from backend)
   const userRole = localStorage.getItem("userRole") || "User";
   // Example permissions object — adjust according to your actual permissions model
-const fetchPermissions = async (userId: string) => {
-  setPermissionsLoading(true);
-  setPermissionsError(null);
-  try {
-    const response = await fetch(
-      `https://fcobackend-23v7.onrender.com/api/users/${userId}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch permissions");
-    const data = await response.json();
-
-    // Extract permissions from the user object:
-    setPermissions(data.permissions || {}); // <-- important!
-
-  } catch (err: any) {
-    setPermissionsError(err.message || "Error fetching permissions");
-  } finally {
-    setPermissionsLoading(false);
-  }
-};
-
-
-useEffect(() => {
-  const userData = localStorage.getItem("user");
-  if (userData) {
+  const fetchPermissions = async (userId: string) => {
+    setPermissionsLoading(true);
+    setPermissionsError(null);
     try {
-      const parsedUser = JSON.parse(userData);
-      const userId = parsedUser._id || parsedUser.userId;
+      const response = await fetch(
+        `https://fcobackend-23v7.onrender.com/api/users/${userId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch permissions");
+      const data = await response.json();
 
-      setCurrentUser({
-        name: parsedUser.name,
-        role: parsedUser.role,
-        userId,
-      });
-
-      if (parsedUser.name !== "Super Admin" && userId) {
-        fetchPermissions(userId);
-      }
-    } catch (e) {
-      console.error("Error parsing user data", e);
+      // Extract permissions from the user object:
+      setPermissions(data.permissions || {}); // <-- important!
+    } catch (err: any) {
+      setPermissionsError(err.message || "Error fetching permissions");
+    } finally {
+      setPermissionsLoading(false);
     }
-  }
-}, []);
+  };
 
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        const userId = parsedUser._id || parsedUser.userId;
+
+        setCurrentUser({
+          name: parsedUser.name,
+          role: parsedUser.role,
+          userId,
+        });
+
+        if (parsedUser.name !== "Super Admin" && userId) {
+          fetchPermissions(userId);
+        }
+      } catch (e) {
+        console.error("Error parsing user data", e);
+      }
+    }
+  }, []);
 
   // Backend base URL - adjust accordingly
   const BASE_URL = "https://fcobackend-23v7.onrender.com/api/users";
@@ -153,39 +150,42 @@ useEffect(() => {
     isEditing: boolean
   ) => {
     try {
+      const payload = {
+        ...userData,
+        permissions: userData.permissions || {}, // Make sure permissions are sent
+      };
+
       if (isEditing && editingUser) {
         const userId = editingUser._id;
         const response = await fetch(`${BASE_URL}/${userId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(userData),
+          body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Failed to update user");
-        toast({
-          title: "User Updated",
-          description: `${userData.name} updated successfully.`,
-        });
+        // ...
       } else {
         const response = await fetch(BASE_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(userData),
+          body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Failed to add user");
+        // Show success toast on user creation
         toast({
           title: "User Added",
           description: `${userData.name} added successfully.`,
+          variant: "default",
         });
       }
+      // Close the dialog after successful save
       setIsAddEditUserDialogOpen(false);
       setEditingUser(null);
+
+      // Optionally reload the user list
       fetchUsers();
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Operation failed.",
-        variant: "destructive",
-      });
+    } catch (err) {
+      // Error handling
     }
   };
 
@@ -265,14 +265,13 @@ useEffect(() => {
     setIsAddEditUserDialogOpen(true);
   };
 
- useEffect(() => {
-  console.log("Current User:", currentUser);
-}, [currentUser]);
+  useEffect(() => {
+    console.log("Current User:", currentUser);
+  }, [currentUser]);
 
-useEffect(() => {
-  console.log("Permissions:", permissions);
-}, [permissions]);
-
+  useEffect(() => {
+    console.log("Permissions:", permissions);
+  }, [permissions]);
 
   return (
     <Card>
@@ -470,7 +469,6 @@ useEffect(() => {
     </Card>
   );
 }
-function setCurrentUser(arg0: { name: any; role: any; userId: any; }) {
+function setCurrentUser(arg0: { name: any; role: any; userId: any }) {
   throw new Error("Function not implemented.");
 }
-

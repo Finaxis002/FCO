@@ -16,6 +16,8 @@ export default function MainSidebar() {
   const [isHovered, setIsHovered] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     setUserRole(role);
@@ -62,30 +64,32 @@ export default function MainSidebar() {
       </div>
 
       {/* Footer with Settings */}
-      <div className="border-t border-sidebar-border/50 p-2">
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <RouterLink
-                to="/settings"
-                className={`flex items-center rounded-lg text-sidebar-foreground transition-colors hover:text-sidebar-primary-foreground hover:bg-sidebar-accent ${
-                  isExpanded
-                    ? "w-full justify-start px-3 py-2 gap-2"
-                    : "h-9 w-9 justify-center"
-                }`}
-              >
-                <Settings className="h-5 w-5 shrink-0" />
-                {isExpanded && <span>Settings</span>}
-              </RouterLink>
-            </TooltipTrigger>
-            {!isExpanded && (
-              <TooltipContent side="right" sideOffset={10}>
-                Settings
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+      {isAdmin && (
+        <div className="border-t border-sidebar-border/50 p-2">
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <RouterLink
+                  to="/settings"
+                  className={`flex items-center rounded-lg text-sidebar-foreground transition-colors hover:text-sidebar-primary-foreground hover:bg-sidebar-accent ${
+                    isExpanded
+                      ? "w-full justify-start px-3 py-2 gap-2"
+                      : "h-9 w-9 justify-center"
+                  }`}
+                >
+                  <Settings className="h-5 w-5 shrink-0" />
+                  {isExpanded && <span>Settings</span>}
+                </RouterLink>
+              </TooltipTrigger>
+              {!isExpanded && (
+                <TooltipContent side="right" sideOffset={10}>
+                  Settings
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
 
       {/* Hover indicator for collapsed state */}
       {!isExpanded && isHovered && (

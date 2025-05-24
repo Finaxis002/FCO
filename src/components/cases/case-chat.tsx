@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { fetchPermissions } from "@/features/permissionsSlice";
 
 interface CaseChatProps {
   caseId: string;
@@ -78,13 +77,13 @@ export default function CaseChat({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const remarksAndChat = useSelector(
-    (state: RootState) => state.permissions.permissions?.remarksAndChat
+  const chat = useSelector(
+    (state: RootState) => state.permissions.permissions?.chat
   );
 
   const isSuperAdmin = currentUser?.name === "Super Admin";
 
-  if (!isSuperAdmin && !remarksAndChat) {
+  if (!isSuperAdmin && !chat) {
     return (
       <Card className="p-6">
         <p className="text-center text-red-600 font-semibold">
