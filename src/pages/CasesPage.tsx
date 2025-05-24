@@ -132,6 +132,8 @@ export default function CasesPage() {
 
 
 useEffect(() => {
+
+   console.log("Filtering cases with", { allCases, activeFilter, permissions, currentUser })
   if (!allCases || !currentUser) {
     setFilteredCases([]);
     return;
@@ -186,7 +188,7 @@ useEffect(() => {
       );
     }
   }
-
+console.log("Filtered cases count:", casesToDisplay.length);
   setFilteredCases(casesToDisplay);
 }, [allCases, activeFilter, permissions, currentUser]);
 

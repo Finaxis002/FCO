@@ -100,10 +100,9 @@ export type ValidStatus = keyof typeof STATUS_CONFIG;
 
 export const USER_ROLES: UserRole[] = [
   "Admin",
-  "Back Office",
-  "Local Area Head",
-  "Franchise Owner",
-  "Viewer",
+  "User",
+  "Authorized Person",
+  "State Head",
 ];
 
 export const MOCK_SERVICES_TEMPLATES: Omit<
@@ -132,46 +131,7 @@ export const MOCK_USERS: User[] = [
     avatarUrl: generateAvatarUrl("Admin User"),
     dataAIHint: "person avatar",
   },
-  {
-    id: "user2",
-    name: "Sarah Miller",
-    email: "sarahm@franchiseflow.com",
-    role: "Back Office",
-    avatarUrl: generateAvatarUrl("Sarah Miller"),
-    dataAIHint: "person avatar",
-  },
-  {
-    id: "user3",
-    name: "Deepak Sharma",
-    email: "deepaks@example.com",
-    role: "Local Area Head",
-    avatarUrl: generateAvatarUrl("Deepak Sharma"),
-    dataAIHint: "person avatar",
-  },
-  {
-    id: "user4",
-    name: "Priya Singh",
-    email: "priyas@example.com",
-    role: "Franchise Owner",
-    avatarUrl: generateAvatarUrl("Priya Singh"),
-    dataAIHint: "person avatar",
-  },
-  {
-    id: "user5",
-    name: "Amit Kumar",
-    email: "amitk@example.com",
-    role: "Back Office",
-    avatarUrl: generateAvatarUrl("Amit Kumar"),
-    dataAIHint: "person avatar",
-  },
-  {
-    id: "user6",
-    name: "John Doe",
-    email: "johndoe@example.com",
-    role: "Viewer",
-    avatarUrl: generateAvatarUrl("John Doe"),
-    dataAIHint: "person avatar",
-  },
+ 
 ];
 
 export const MOCK_STATES: StateItem[] = [
@@ -335,62 +295,83 @@ export const ROLE_PERMISSIONS: Record<
   typeof DEFAULT_USER_PERMISSIONS
 > = {
   Admin: {
-   allCaseAccess: false,
-  viewRights: false,
-  createCaseRights: false,
-  createUserRights: false,
-  userRolesAndResponsibility: false,
-  delete: false,
-  edit: false,
-  remarks: false, // ✅ separated from remarksAndChat
-  chat: false,    // ✅ separated from remarksAndChat
-  },
-  "Back Office": {
     allCaseAccess: false,
-  viewRights: false,
-  createCaseRights: false,
-  createUserRights: false,
-  userRolesAndResponsibility: false,
-  delete: false,
-  edit: false,
-  remarks: false, // ✅ separated from remarksAndChat
-  chat: false,    // ✅ separated from remarksAndChat
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false, // ✅ separated from remarksAndChat
+    chat: false, // ✅ separated from remarksAndChat
   },
-  "Local Area Head": {
-   allCaseAccess: false,
-  viewRights: false,
-  createCaseRights: false,
-  createUserRights: false,
-  userRolesAndResponsibility: false,
-  delete: false,
-  edit: false,
-  remarks: false, // ✅ separated from remarksAndChat
-  chat: false,    // ✅ separated from remarksAndChat
+  "Authorized Person": {
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false, // ✅ separated from remarksAndChat
+    chat: false, // ✅ separated from remarksAndChat
   },
-  "Franchise Owner": {
+  "State Head": {
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false, // ✅ separated from remarksAndChat
+    chat: false, // ✅ separated from remarksAndChat
+  },
+  "User": {
     // Can only view their own case(s) - logic handled by filtering
- allCaseAccess: false,
-  viewRights: false,
-  createCaseRights: false,
-  createUserRights: false,
-  userRolesAndResponsibility: false,
-  delete: false,
-  edit: false,
-  remarks: false, // ✅ separated from remarksAndChat
-  chat: false,    // ✅ separated from remarksAndChat
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false, // ✅ separated from remarksAndChat
+    chat: false, // ✅ separated from remarksAndChat
   },
-  Viewer: {
-    // Can only view specific shared case(s) - logic handled by filtering/token
-     allCaseAccess: false,
-  viewRights: false,
-  createCaseRights: false,
-  createUserRights: false,
-  userRolesAndResponsibility: false,
-  delete: false,
-  edit: false,
-  remarks: false, // ✅ separated from remarksAndChat
-  chat: false,    // ✅ separated from remarksAndChat
+  Frontend: {
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false,
+    chat: false,
   },
+  Backend: {
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false,
+    chat: false,
+  },
+  Manager: {
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false,
+    chat: false,
+  }
 };
 
 export { generateAvatarUrl };

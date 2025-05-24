@@ -39,6 +39,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@/types/franchise";
 
 interface User {
   _id: string;
@@ -46,10 +47,10 @@ interface User {
   userId: string;
   name: string;
   email: string;
-  role: string;
+  role?: UserRole; // Changed from string to UserRole
   avatarUrl?: string;
   dataAIHint?: string;
-  permissions?: any; // Add this line to allow permissions property
+  permissions?: any;
 }
 
 interface UserType {
