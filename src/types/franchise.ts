@@ -16,6 +16,7 @@ export type CaseStatus =
   | "Rejected";
 
 export interface Service {
+  serviceId: any;
   id: string;
   name: string;
   status: ServiceStatus;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SERVICE_STATUS, STATUS_COLORS } from "@/lib/statusConfig";
 import { Progress } from "@/components/ui/progress";
 import ServiceRemarks from "./ServiceRemarks";
@@ -6,6 +6,7 @@ import { useAppDispatch } from "../../hooks/hooks";
 import { updateCase } from "../../features/caseSlice";
 import { useToast } from "@/hooks/use-toast";
 import type { CaseStatus, Service, ServiceStatus } from "@/types/franchise"; // wherever it is declared
+import { useLayoutEffect } from "react";
 
 interface CaseServicesProps {
   caseId: string;
@@ -16,6 +17,12 @@ interface CaseServicesProps {
   overallCompletionPercentage: number;
   currentUser: any;
   onUpdate?: () => void;
+  highlightServiceId?: string;
+  allRemarks: Array<{
+    serviceId: string;
+    read: boolean; // include read status to filter unread
+    // any other relevant fields
+  }>;
 }
 
 const statusStyles: Record<string, string> = {
@@ -38,8 +45,12 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   overallCompletionPercentage,
   currentUser,
   onUpdate,
+  highlightServiceId, // ✅ NEW
+  allRemarks = [], // Optional prop for all remarks
 }) => {
-  const [showAll, setShowAll] = useState(false);
+  // const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(() => !!highlightServiceId);
+
   const [localServices, setLocalServices] = useState(services);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updatingServices, setUpdatingServices] = useState<
@@ -49,8 +60,15 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   const dispatch = useAppDispatch();
   const { toast } = useToast();
 
+  const serviceRefs = useRef<Record<string, HTMLLIElement | null>>({});
+
+  useEffect(() => {
+    if (highlightServiceId) {
+      setShowAll(true);
+    }
+  }, [highlightServiceId]);
+
   const handleStatusChange = (serviceId: string, newStatus: string) => {
-  
     // Optimistic UI update for service status
     setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
@@ -102,7 +120,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       });
   };
 
-  console.log(overallCompletionPercentage);
+  // console.log(overallCompletionPercentage);
 
   const visibleServices = showAll ? localServices : localServices.slice(0, 3);
   const displayCaseName = caseName || unitName || "Case Details";
@@ -121,6 +139,46 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   }
 
   const userRole = localStorage.getItem("userRole");
+
+  // useEffect(() => {
+  //   if (highlightServiceId && serviceRefs.current[highlightServiceId]) {
+  //     const element = serviceRefs.current[highlightServiceId];
+  //     element?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  //     // Optional: Add pulse animation temporarily
+  //     element?.classList.add("animate-pulse", "bg-blue-50");
+
+  //     setTimeout(() => {
+  //       element?.classList.remove("animate-pulse", "bg-blue-50");
+  //     }, 3000);
+  //   }
+  // }, [highlightServiceId]);
+
+  useEffect(() => {
+    if (!highlightServiceId) return;
+
+    // Delay scroll until next paint
+    const timeout = setTimeout(() => {
+      requestAnimationFrame(() => {
+        const element = serviceRefs.current[highlightServiceId];
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          console.log(`✅ Scrolled to service ID: ${highlightServiceId}`);
+
+          element.classList.add("animate-pulse", "bg-blue-50");
+          setTimeout(() => {
+            element.classList.remove("animate-pulse", "bg-blue-50");
+          }, 3000);
+        } else {
+          console.warn(
+            `⚠️ Element not found for service ID: ${highlightServiceId}`
+          );
+        }
+      });
+    }, 200); // Slight delay to allow any re-renders
+
+    return () => clearTimeout(timeout);
+  }, [highlightServiceId, localServices]);
 
   return (
     <div>
@@ -151,50 +209,83 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
       {/* Services List */}
       <ul className="space-y-4">
-        {visibleServices.map((service) => (
-          <li
-            key={service.id}
-            className="p-3 border rounded-lg shadow-xs bg-card hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-center mb-1">
-              <h4 className="font-semibold text-md">{service.name}</h4>
-              <select
-                disabled={isUpdating}
-                value={service.status}
-                onChange={(e) => handleStatusChange(service.id, e.target.value)}
-                className={`cursor-pointer rounded-2xl px-3 py-1 font-semibold border ${
-                  statusStyles[service.status] ||
-                  "bg-blue-100 text-blue-800 border-gray-300 text-xs"
-                }`}
-              >
-                {Object.values(SERVICE_STATUS).map((statusOption) => (
-                  <option
-                    key={statusOption}
-                    value={statusOption}
-                    className={`${
-                      statusStyles[statusOption] || "bg-white text-black"
-                    }`}
-                  >
-                    {statusOption}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {service.remarks && (
-              <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
-                <strong>Remarks:</strong> {service.remarks}
-              </p>
-            )}
-            {userRole && (
-              <ServiceRemarks
-                caseId={caseId}
-                serviceId={service.id}
-                currentUser={currentUser}
-                serviceName={service.name}
-              />
-            )}
-          </li>
-        ))}
+        {visibleServices.map((service) => {
+          // Filter remarks belonging to this service and are unread
+          const unreadRemarkCount = allRemarks.filter(
+            (remark) => remark.serviceId === service.id && !remark.read
+          ).length;
+
+          console.log(
+            `Service: ${service.name} (ID: ${service.serviceId}), Unread Remark Count: ${unreadRemarkCount}`
+          );
+
+          return (
+            <li
+              id={`service-${service.serviceId}`}
+              key={service.id}
+              ref={(el) => {
+                if (el) serviceRefs.current[service.id] = el;
+              }}
+              className={`p-3 border rounded-lg shadow-xs bg-card hover:shadow-md transition-shadow ${
+                highlightServiceId === service.id ? "ring-2 ring-blue-500" : ""
+              }`}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-md">{service.name}</h4>
+
+                  {/* Show badge only if unread remarks exist */}
+                  {unreadRemarkCount > 0 && (
+                    <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                      {unreadRemarkCount} unread remark
+                      {unreadRemarkCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+
+                <select
+                  disabled={isUpdating}
+                  value={service.status}
+                  onChange={(e) =>
+                    handleStatusChange(service.id, e.target.value)
+                  }
+                  className={`cursor-pointer rounded-2xl px-3 py-1 font-semibold border ${
+                    statusStyles[service.status] ||
+                    "bg-blue-100 text-blue-800 border-gray-300 text-xs"
+                  }`}
+                >
+                  {Object.values(SERVICE_STATUS).map((statusOption) => (
+                    <option
+                      key={statusOption}
+                      value={statusOption}
+                      className={`${
+                        statusStyles[statusOption] || "bg-white text-black"
+                      }`}
+                    >
+                      {statusOption}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Optionally display remarks text if needed - comment out if redundant */}
+              {/* {remarkCount > 0 && (
+          <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+            <strong>Remarks Count:</strong> {remarkCount}
+          </p>
+        )} */}
+
+              {userRole && (
+                <ServiceRemarks
+                  caseId={caseId}
+                  serviceId={service.id}
+                  currentUser={currentUser}
+                  serviceName={service.name}
+                />
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {/* Show More / Less Button */}

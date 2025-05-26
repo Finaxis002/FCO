@@ -20,7 +20,11 @@ import {
 import PageHeader from "@/components/ui/page-header";
 import CaseTable from "@/components/cases/case-table";
 import CaseCardView from "@/components/cases/case-card-view";
-import type { Case, CaseStatus, DashboardFilterStatus } from "@/types/franchise";
+import type {
+  Case,
+  CaseStatus,
+  DashboardFilterStatus,
+} from "@/types/franchise";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -62,9 +66,11 @@ export default function CasesPage() {
       createUserRights?: boolean;
       userRolesAndResponsibility?: boolean;
       remarksAndChat?: boolean;
-       canShare?:boolean;
+      canShare?: boolean;
     };
   } | null>(null);
+
+  const [ready, setReady] = useState(false);
 
   const [activeFilter, setActiveFilter] =
     useState<DashboardFilterStatus>("Total");
@@ -128,22 +134,57 @@ export default function CasesPage() {
   }, [dispatch]);
 
   const canSeeAddButton =
-  currentUser?.name === "Super Admin" || permissions?.createCaseRights === true;
+    currentUser?.name === "Super Admin" ||
+    permissions?.createCaseRights === true;
 
+  useEffect(() => {
+    console.log("Filtering cases with", {
+      allCases,
+      activeFilter,
+      permissions,
+      currentUser,
+    });
+    if (!allCases || allCases.length === 0 || !currentUser) {
+      // setFilteredCases([]);
+      return;
+    }
 
-useEffect(() => {
+    // If super admin, show all cases but apply activeFilter
+    let casesToDisplay = allCases;
 
-   console.log("Filtering cases with", { allCases, activeFilter, permissions, currentUser })
-  if (!allCases || !currentUser) {
-    setFilteredCases([]);
-    return;
-  }
+    if (currentUser.name === "Super Admin") {
+      // Super Admin should be able to see all cases, but apply the activeFilter
+      if (activeFilter && activeFilter !== "Total") {
+        if (activeFilter === "Completed") {
+          casesToDisplay = casesToDisplay.filter(
+            (c) =>
+              c.status?.toLowerCase() === "completed" ||
+              c.status?.toLowerCase() === "approved"
+          );
+        } else {
+          casesToDisplay = casesToDisplay.filter(
+            (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
+          );
+        }
+      }
+    } else if (!permissions?.allCaseAccess) {
+      // Non-admin users have restricted access
+      casesToDisplay = allCases.filter((c) =>
+        c.assignedUsers?.some((user) => {
+          if (typeof user === "string") {
+            return user === currentUser.userId || user === currentUser.name;
+          } else {
+            return (
+              user._id === currentUser.userId ||
+              user.userId === currentUser.userId ||
+              user.name === currentUser.name
+            );
+          }
+        })
+      );
+    }
 
-  // If super admin, show all cases but apply activeFilter
-  let casesToDisplay = allCases;
-
-  if (currentUser.name === "Super Admin") {
-    // Super Admin should be able to see all cases, but apply the activeFilter
+    // Apply the filter if set (in case the user is not Super Admin)
     if (activeFilter && activeFilter !== "Total") {
       if (activeFilter === "Completed") {
         casesToDisplay = casesToDisplay.filter(
@@ -157,41 +198,9 @@ useEffect(() => {
         );
       }
     }
-  } else if (!permissions?.allCaseAccess) {
-    // Non-admin users have restricted access
-    casesToDisplay = allCases.filter((c) =>
-      c.assignedUsers?.some((user) => {
-        if (typeof user === "string") {
-          return user === currentUser.userId || user === currentUser.name;
-        } else {
-          return (
-            user._id === currentUser.userId ||
-            user.userId === currentUser.userId ||
-            user.name === currentUser.name
-          );
-        }
-      })
-    );
-  }
-
-  // Apply the filter if set (in case the user is not Super Admin)
-  if (activeFilter && activeFilter !== "Total") {
-    if (activeFilter === "Completed") {
-      casesToDisplay = casesToDisplay.filter(
-        (c) =>
-          c.status?.toLowerCase() === "completed" ||
-          c.status?.toLowerCase() === "approved"
-      );
-    } else {
-      casesToDisplay = casesToDisplay.filter(
-        (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
-      );
-    }
-  }
-console.log("Filtered cases count:", casesToDisplay.length);
-  setFilteredCases(casesToDisplay);
-}, [allCases, activeFilter, permissions, currentUser]);
-
+    console.log("Filtered cases count:", casesToDisplay.length);
+    setFilteredCases(casesToDisplay);
+  }, [allCases, activeFilter, permissions, currentUser]);
 
   const handleDelete = async (caseId: string) => {
     if (window.confirm("Are you sure you want to delete this case?")) {
@@ -207,6 +216,12 @@ console.log("Filtered cases count:", casesToDisplay.length);
 
   const currentFilterLabel =
     FILTER_OPTIONS.find((opt) => opt.value === activeFilter)?.label || "Filter";
+
+  useEffect(() => {
+    if (currentUser && allCases.length > 0) {
+      setReady(true);
+    }
+  }, [currentUser, allCases]);
 
   const pageActions = (
     <div className="flex items-center gap-2">
@@ -273,7 +288,12 @@ console.log("Filtered cases count:", casesToDisplay.length);
     </div>
   );
 
-  if (loading) {
+  if (
+    loading ||
+    !currentUser ||
+    !Array.isArray(allCases) ||
+    allCases.length === 0
+  ) {
     return (
       <>
         <PageHeader
@@ -302,9 +322,14 @@ console.log("Filtered cases count:", casesToDisplay.length);
       </>
     );
   }
+  if (!ready) {
+  return <Skeleton />;
+}
+
 
   return (
     <>
+    
       <PageHeader
         title="All Cases"
         description="Manage and track all franchise compliance cases."

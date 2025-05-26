@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { APP_NAME } from "@/lib/constants";
-import type { Case, User, CaseStatus, ServiceStatus } from "@/types/franchise";
+import type { Case, User } from "@/types/franchise";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,8 @@ import {
   Building2,
   MessageSquare,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import CaseChat from "@/components/cases/case-chat"; // Import CaseChat
 import { AppDispatch, RootState } from "@/store";
@@ -44,6 +46,73 @@ export default function CaseDetailPage({
   const { caseId } = useParams<{ caseId: string }>();
   const [caseData, setCaseData] = useState<Case | undefined | null>(null); // null for loading state
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+const [unreadRemarkCount, setUnreadRemarkCount] = useState<number>(0);
+  const initialHighlightServiceId = searchParams.get("serviceId");
+  const [highlightServiceId, setHighlightServiceId] = useState<
+    string | undefined
+  >(undefined);
+ const [allRemarks, setAllRemarks] = useState<
+  Array<{ serviceId: string; read: boolean }>
+>([]);
+
+
+useEffect(() => {
+  const fetchAllRemarks = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks/recent", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch recent remarks");
+      const data = await res.json();
+      setAllRemarks(data);
+
+      // Count only unread remarks for pulsing dot
+      const unread = data.filter((r: any) => !r.read).length;
+      setUnreadRemarkCount(unread);
+
+      console.log("unread remarks count:", unread);
+    } catch (err) {
+      console.error("Error loading recent remarks:", err);
+    }
+  };
+
+  if (caseId) fetchAllRemarks();
+}, [caseId]);
+
+
+  // Reactively watch for changes in URL params (including when on the same page)
+  useEffect(() => {
+    const serviceId = searchParams.get("serviceId");
+    if (serviceId) {
+      console.log("🆕 Service ID detected from URL param:", serviceId);
+      setHighlightServiceId(serviceId);
+
+      // Optionally: Clean up URL param after reading
+      const params = new URLSearchParams(window.location.search);
+      params.delete("serviceId");
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [searchParams]);
+
+  // Remove from URL but preserve in state
+  useEffect(() => {
+    if (initialHighlightServiceId) {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("serviceId");
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("✅ Highlight Service ID:", highlightServiceId);
+  }, [highlightServiceId]);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -52,6 +121,7 @@ export default function CaseDetailPage({
   const { permissions, loading: permissionsLoading } = useSelector(
     (state: RootState) => state.permissions
   );
+
   // 3. Add status validation if needed (optional)
   useEffect(() => {
     if (caseData) {
@@ -126,7 +196,17 @@ export default function CaseDetailPage({
     }
   }, [dispatch]);
 
-  console.log("permissions", permissions);
+  // useEffect(() => {
+  //   const urlParams = new URLSearchParams(window.location.search);
+  //   const serviceId = urlParams.get("serviceId");
+
+  //   if (serviceId) {
+  //     setHighlightServiceId(serviceId); // ✅ sets the actual value
+  //     urlParams.delete("serviceId");
+  //     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+  //     window.history.replaceState({}, "", newUrl);
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (caseData && caseData.unitName) {
@@ -310,7 +390,7 @@ export default function CaseDetailPage({
                   {caseData.franchiseAddress}
                 </div>
                 <div>
-                  <strong>State Head:</strong> {caseData.stateHead|| "N/A"}
+                  <strong>State Head:</strong> {caseData.stateHead || "N/A"}
                 </div>
                 <div>
                   <strong>Authorized Person:</strong>{" "}
@@ -339,6 +419,8 @@ export default function CaseDetailPage({
                     caseData.overallCompletionPercentage ?? 50
                   }
                   onUpdate={handleCaseUpdate} // NEW PROP
+                  highlightServiceId={highlightServiceId || undefined} // ✅ FIXED
+                  allRemarks={allRemarks.map(r => ({ serviceId: r.serviceId, read: r.read }))}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

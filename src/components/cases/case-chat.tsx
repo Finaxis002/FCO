@@ -72,26 +72,14 @@ export default function CaseChat({
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
-
-
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+ 
+  // ✅ All hooks must come before any `return`
   const chat = useSelector(
     (state: RootState) => state.permissions.permissions?.chat
   );
-
-  const isSuperAdmin = currentUser?.name === "Super Admin";
-
-  if (!isSuperAdmin && !chat) {
-    return (
-      <Card className="p-6">
-        <p className="text-center text-red-600 font-semibold">
-          You do not have permission to access the chat.
-        </p>
-      </Card>
-    );
-  }
 
   // Load previous messages
   useEffect(() => {
@@ -245,6 +233,20 @@ export default function CaseChat({
       setIsSending(false);
     }
   };
+
+
+    const isSuperAdmin = currentUser?.name === "Super Admin";
+
+  if (!isSuperAdmin && !chat) {
+    return (
+      <Card className="p-6">
+        <p className="text-center text-red-600 font-semibold">
+          You do not have permission to access the chat.
+        </p>
+      </Card>
+    );
+  }
+
 
   return (
     <Card className="h-full flex flex-col">

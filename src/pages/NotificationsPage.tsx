@@ -134,9 +134,36 @@ export default function NotificationsPage() {
     }
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    toast({ title: "All Notifications Marked as Read" });
+  const markAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        "http://localhost:5000/api/notifications/read-all",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to mark all notifications as read");
+      }
+
+      // Update local state
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+      toast({ title: "All Notifications Marked as Read" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteNotification = async (id: string) => {

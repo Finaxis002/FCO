@@ -17,6 +17,7 @@ import { APP_NAME } from "@/lib/constants";
 import React, { useEffect } from "react";
 import EditCasePage from "./pages/EditCasePage";
 import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
+import AllRemarksPage from "./pages/AllRemarksPage";
 
 
 // Simplified PlaceholderPage for debugging
@@ -92,6 +93,7 @@ export default function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/remarks" element={<AllRemarksPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppLayout>

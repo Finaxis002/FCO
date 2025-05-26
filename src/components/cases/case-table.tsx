@@ -135,7 +135,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/cases/${caseId}`,
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
         payload
       );
 
@@ -246,9 +246,8 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   }
 
   useEffect(() => {
-  setDisplayCases(cases);
-}, [cases]);
-
+    setDisplayCases(cases);
+  }, [cases]);
 
   return (
     <Card>
@@ -342,7 +341,9 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                       )}
                     </div>
                   </TableCell>
-                 <TableCell>{`${caseData.overallCompletionPercentage.toFixed(2)}%`}</TableCell>
+                  <TableCell>{`${caseData.overallCompletionPercentage.toFixed(
+                    2
+                  )}%`}</TableCell>
 
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">

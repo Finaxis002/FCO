@@ -11,6 +11,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ type Remark = {
   remark: string;
   createdAt: string;
   updatedAt: string;
+  read?: boolean; // ✅ Add this
 };
 
 interface ServiceRemarksProps {
@@ -60,23 +62,34 @@ export default function ServiceRemarks({
     }
   }, [isDialogOpen]);
 
-  const fetchRemarks = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/cases/${caseId}/services/${serviceId}/remarks`
-      );
-      if (!res.ok) throw new Error("Failed to load remarks");
-      const data: Remark[] = await res.json();
-      setRemarks(data);
-      setNewRemarkAdded(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchRemarks = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const token = localStorage.getItem("token"); // ✅ Get auth token
+    const res = await fetch(
+      `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ✅ Send token in headers
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to load remarks");
+
+    const data: Remark[] = await res.json();
+    setRemarks(data);
+    setNewRemarkAdded(false);
+  } catch (err) {
+    setError((err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleAddRemark = async () => {
     if (!currentUser || !newRemarkText.trim()) return;
@@ -92,7 +105,7 @@ export default function ServiceRemarks({
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/cases/${caseId}/services/${serviceId}/remarks`,
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -105,8 +118,8 @@ export default function ServiceRemarks({
       setRemarks((prev) => [newRemark, ...prev]);
       setNewRemarkText("");
       setNewRemarkAdded(true);
-       // Close the "View All Remarks" dialog after posting
-    setIsDialogOpen(false);
+      // Close the "View All Remarks" dialog after posting
+      setIsDialogOpen(false);
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
     } finally {
@@ -143,6 +156,33 @@ export default function ServiceRemarks({
       </Card>
     );
   }
+
+  const markAsRead = async (remarkId: string) => {
+    try {
+      const token = localStorage.getItem("token"); // 🔑 get token from localStorage
+
+      const res = await fetch(
+        `https://fcobackend-23v7.onrender.com/api/remarks/${remarkId}/read`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ✅ include token here
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to mark remark as read");
+
+      setRemarks((prev) =>
+        prev.map((r) => (r._id === remarkId ? { ...r, read: true } : r))
+      );
+    } catch (err) {
+      alert("Failed to mark remark as read");
+    }
+
+    window.dispatchEvent(new Event("remarks-updated"));
+  };
 
   return (
     <div className="space-y-4">
@@ -200,6 +240,9 @@ export default function ServiceRemarks({
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Remarks for {serviceName}</DialogTitle>
+            <DialogDescription>
+              You can view and respond to all remarks for this service.
+            </DialogDescription>
           </DialogHeader>
 
           {loading && (
@@ -238,6 +281,17 @@ export default function ServiceRemarks({
                     <p className="text-sm mt-1 whitespace-pre-wrap">
                       {remark.remark}
                     </p>
+
+                    {!remark.read && (
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="mt-2 text-xs"
+                        onClick={() => markAsRead(remark._id)}
+                      >
+                        Mark as Read
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

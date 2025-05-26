@@ -14,6 +14,7 @@ import {
   UserPlus,
   AlertCircle,
   Activity,
+  MessageSquarePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,18 +58,27 @@ const NOTIFICATION_ICONS_DROPDOWN: Record<
 };
 
 export default function MainHeader() {
-  const [recentNotifications, setRecentNotifications] = useState<AppNotification[]>([]);
+  const [recentNotifications, setRecentNotifications] = useState<
+    AppNotification[]
+  >([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [recentRemarks, setRecentRemarks] = useState<any[]>([]);
+  const [unreadRemarkCount, setUnreadRemarkCount] = useState(0);
+
+  //notification badge
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("https://fcobackend-23v7.onrender.com/api/notifications", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/notifications",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!res.ok) throw new Error("Failed to fetch notifications");
 
@@ -76,7 +86,7 @@ export default function MainHeader() {
 
         setRecentNotifications(data);
 
-        const unreadCount = data.filter((n: { read: any; }) => !n.read).length;
+        const unreadCount = data.filter((n: { read: any }) => !n.read).length;
         setUnreadNotificationCount(unreadCount);
       } catch (err) {
         console.error("Error loading notifications:", err);
@@ -85,6 +95,33 @@ export default function MainHeader() {
 
     fetchNotifications();
   }, []);
+
+  const fetchRecentRemarks = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks/recent", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch recent remarks");
+      const data = await res.json();
+      setRecentRemarks(data);
+
+      // Count only unread remarks for pulsing dot
+      const unread = data.filter((r: any) => !r.read).length;
+      setUnreadRemarkCount(unread);
+    } catch (err) {
+      console.error("Error loading recent remarks:", err);
+    }
+  };
+
+  //remarks badge
+  useEffect(() => {
+    fetchRecentRemarks();
+  }, []);
+
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -101,6 +138,19 @@ export default function MainHeader() {
 
   const userStr = localStorage.getItem("user");
   const currentUser = userStr ? JSON.parse(userStr) : null;
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      fetchRecentRemarks(); // Make sure this function sets unreadRemarkCount
+    };
+
+    window.addEventListener("remarks-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("remarks-updated", handleUpdate);
+    };
+  }, []);
+
+  console.log("unread remark count", unreadRemarkCount);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 print:hidden">
@@ -146,6 +196,7 @@ export default function MainHeader() {
         </form>
       </div>
 
+      {/* notification  */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
@@ -178,7 +229,7 @@ export default function MainHeader() {
 
                 return (
                   <DropdownMenuItem
-                     key={notification.id ?? index}
+                    key={notification.id ?? index}
                     asChild
                     className="cursor-pointer !p-0"
                   >
@@ -236,6 +287,82 @@ export default function MainHeader() {
               className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
             >
               View all notifications
+            </RouterLink>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* remarks  */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" className="relative">
+            <MessageSquarePlus className="h-5 w-5" />
+            {unreadRemarkCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
+              </span>
+            )}
+            <span className="sr-only">Toggle remarks</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-96">
+          <DropdownMenuLabel className="flex justify-between items-center">
+            <span>Recent Remarks</span>
+            {unreadRemarkCount > 0 && (
+              <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                {unreadRemarkCount} New
+              </span>
+            )}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {recentRemarks.length > 0 ? (
+            recentRemarks.map((remark) => (
+              <DropdownMenuItem
+                key={remark._id}
+                asChild
+                className="cursor-pointer !p-0"
+              >
+                <RouterLink
+                  to={`/cases/${remark.caseId}?serviceId=${remark.serviceId}`}
+                  className="flex items-start gap-2 p-2 w-full"
+                >
+                  <Avatar className="h-8 w-8 mt-0.5 shrink-0">
+                    <AvatarFallback className="bg-blue-100 text-blue-600">
+                      {remark.userName
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-xs font-medium truncate">
+                      {remark.remark.length > 50
+                        ? remark.remark.slice(0, 47) + "..."
+                        : remark.remark}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {getRelativeTimeShort(remark.createdAt)}
+                    </p>
+                  </div>
+                </RouterLink>
+              </DropdownMenuItem>
+            ))
+          ) : (
+            <DropdownMenuItem disabled>
+              <div className="text-xs text-muted-foreground text-center py-2 w-full">
+                No recent remarks
+              </div>
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild className="!p-0">
+            <RouterLink
+              to="/remarks"
+              className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
+            >
+              View all remarks
             </RouterLink>
           </DropdownMenuItem>
         </DropdownMenuContent>
