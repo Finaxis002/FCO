@@ -52,7 +52,7 @@ export default function ServiceRemarks({
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddingRemark, setIsAddingRemark] = useState(false);
-
+const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
 
   // Fetch remarks when dialog opens
@@ -117,6 +117,7 @@ export default function ServiceRemarks({
       setRemarks((prev) => [newRemark, ...prev]);
       setNewRemarkText("");
       setNewRemarkAdded(true);
+      setIsAddDialogOpen(false);
       // Close the "View All Remarks" dialog after posting
       setIsDialogOpen(false);
     } catch (err) {
@@ -194,7 +195,7 @@ export default function ServiceRemarks({
           View All Remarks
         </Button>
 
-        <Dialog>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="default" size="sm" className="gap-1">
               <MessageSquarePlus className="h-4 w-4" />
