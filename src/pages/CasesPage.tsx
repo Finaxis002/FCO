@@ -44,6 +44,7 @@ const FILTER_OPTIONS: { label: string; value: DashboardFilterStatus }[] = [
   { label: "New Cases", value: "New-Case" },
   { label: "In Progress", value: "In-Progress" },
   { label: "Completed", value: "Completed" },
+  { label: "Rejected", value: "Rejected" },
 ];
 
 type ViewMode = "table" | "card";
@@ -323,20 +324,22 @@ export default function CasesPage() {
     );
   }
   if (!ready) {
-  return <Skeleton />;
-}
-
+    return <Skeleton />;
+  }
 
   return (
     <>
-    
       <PageHeader
         title="All Cases"
         description="Manage and track all franchise compliance cases."
       >
         {pageActions}
       </PageHeader>
-      {viewMode === "table" ? (
+      {filteredCases.length === 0 ? (
+        <div className="text-center p-10 text-gray-500">
+          No cases found for this filter.
+        </div>
+      ) : viewMode === "table" ? (
         <CaseTable cases={filteredCases} onDelete={handleDelete} />
       ) : (
         <CaseCardView cases={filteredCases} onDelete={handleDelete} />
