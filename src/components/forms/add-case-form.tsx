@@ -387,6 +387,7 @@ export default function AddCaseForm() {
       const newCaseServices = data.services
         .filter((s) => s.selected)
         .map((s, index) => ({
+          serviceId: `service-${index}-${Date.now()}`, // <-- use 'serviceId' as required by type
           id: `service-${index}-${Date.now()}`,
           name: s.name,
           status: "New-Case" as ServiceStatus, // <-- Cast to ServiceStatus type

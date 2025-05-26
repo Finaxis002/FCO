@@ -44,8 +44,41 @@ export default function ClientCaseDetailPage({
   const { caseId } = useParams<{ caseId: string }>();
   const [caseData, setCaseData] = useState<Case | undefined | null>(null); // null for loading state
   const [loading, setLoading] = useState<boolean>(true);
-
+  const [unreadRemarkCount, setUnreadRemarkCount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [allRemarks, setAllRemarks] = useState<
+    Array<{ serviceId: string; read: boolean }>
+  >([]);
+
+  useEffect(() => {
+    const fetchAllRemarks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) throw new Error("Failed to fetch recent remarks");
+        const data = await res.json();
+        setAllRemarks(data);
+
+        // Count only unread remarks for pulsing dot
+        const unread = data.filter((r: any) => !r.read).length;
+        setUnreadRemarkCount(unread);
+
+        console.log("unread remarks count:", unread);
+      } catch (err) {
+        console.error("Error loading recent remarks:", err);
+      }
+    };
+
+    if (caseId) fetchAllRemarks();
+  }, [caseId]);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -169,9 +202,7 @@ export default function ClientCaseDetailPage({
         <PageHeader
           title="Loading Case Details..."
           description="Please wait while we fetch the case information."
-        >
-         
-        </PageHeader>
+        ></PageHeader>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
             <Card>
@@ -235,7 +266,6 @@ export default function ClientCaseDetailPage({
             The case with ID "{caseId}" does not exist or you do not have
             permission to view it.
           </p>
-         
         </div>
       </>
     );
@@ -270,9 +300,7 @@ export default function ClientCaseDetailPage({
       <PageHeader
         title={`Case Details: ${caseData.unitName}`}
         description={`SRN: ${caseData.srNo}`}
-      >
-    
-      </PageHeader>
+      ></PageHeader>
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
@@ -325,6 +353,10 @@ export default function ClientCaseDetailPage({
                     caseData.overallCompletionPercentage ?? 50
                   }
                   onUpdate={handleCaseUpdate} // NEW PROP
+                  allRemarks={allRemarks.map((r) => ({
+                    serviceId: r.serviceId,
+                    read: r.read,
+                  }))}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">
