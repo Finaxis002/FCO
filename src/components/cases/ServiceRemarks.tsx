@@ -62,34 +62,33 @@ export default function ServiceRemarks({
     }
   }, [isDialogOpen]);
 
-const fetchRemarks = async () => {
-  setLoading(true);
-  setError(null);
+  const fetchRemarks = async () => {
+    setLoading(true);
+    setError(null);
 
-  try {
-    const token = localStorage.getItem("token"); // ✅ Get auth token
-    const res = await fetch(
-      `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // ✅ Send token in headers
-        },
-      }
-    );
+    try {
+      const token = localStorage.getItem("token"); // ✅ Get auth token
+      const res = await fetch(
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ✅ Send token in headers
+          },
+        }
+      );
 
-    if (!res.ok) throw new Error("Failed to load remarks");
+      if (!res.ok) throw new Error("Failed to load remarks");
 
-    const data: Remark[] = await res.json();
-    setRemarks(data);
-    setNewRemarkAdded(false);
-  } catch (err) {
-    setError((err as Error).message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      const data: Remark[] = await res.json();
+      setRemarks(data);
+      setNewRemarkAdded(false);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddRemark = async () => {
     if (!currentUser || !newRemarkText.trim()) return;
@@ -264,7 +263,12 @@ const fetchRemarks = async () => {
           <ScrollArea className="flex-1 pr-4 h-[20vh] overflow-auto">
             <div className="space-y-6 py-2">
               {remarks.map((remark) => (
-                <div key={remark._id} className="flex gap-3">
+                <div
+                  key={remark._id}
+                  className={`flex gap-3 rounded-md p-3 ${
+                    !remark.read ? "bg-green-100 border border-green-300" : ""
+                  }`}
+                >
                   <Avatar className="h-9 w-9 mt-1">
                     <AvatarImage src="" />
                     <AvatarFallback>
@@ -277,6 +281,11 @@ const fetchRemarks = async () => {
                       <span className="text-xs text-muted-foreground">
                         {formatDate(remark.createdAt)}
                       </span>
+                      {!remark.read && (
+                        <span className="ml-2 inline-block rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">
+                          New
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm mt-1 whitespace-pre-wrap">
                       {remark.remark}
@@ -286,7 +295,7 @@ const fetchRemarks = async () => {
                       <Button
                         variant="outline"
                         size="xs"
-                        className="mt-2 text-xs"
+                        className="mt-2 text-xs bg-green-600 text-white hover:bg-green-700"
                         onClick={() => markAsRead(remark._id)}
                       >
                         Mark as Read
