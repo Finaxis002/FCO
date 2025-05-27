@@ -446,6 +446,7 @@ export default function AddCaseForm() {
         lastUpdate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         overallCompletionPercentage: 0,
+        readBy: [], // <-- Add this line to satisfy Omit<Case, "id">
       };
 
       if (isEditing) {
