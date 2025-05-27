@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Loader2, MessageSquarePlus } from "lucide-react";
+import { permission } from "process";
 
 type Remark = {
   _id: string;
@@ -27,7 +28,7 @@ type Remark = {
   remark: string;
   createdAt: string;
   updatedAt: string;
-  read?: boolean; // ✅ Add this
+  readBy: string[]; // Change from 'read?' to 'readBy'
 };
 
 interface ServiceRemarksProps {
@@ -52,32 +53,57 @@ export default function ServiceRemarks({
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddingRemark, setIsAddingRemark] = useState(false);
-const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
 
   // Fetch remarks when dialog opens
-  useEffect(() => {
-    if (isDialogOpen) {
-      fetchRemarks();
-    }
-  }, [isDialogOpen]);
+
+  // const fetchRemarks = async () => {
+  //   setLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     const token = localStorage.getItem("token"); // ✅ Get auth token
+  //     const res = await fetch(
+  //       `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`, // ✅ Send token in headers
+  //         },
+  //       }
+  //     );
+
+  //     if (!res.ok) throw new Error("Failed to load remarks");
+
+  //     const data: Remark[] = await res.json();
+  //     setRemarks(data);
+  //     setNewRemarkAdded(false);
+  //   } catch (err) {
+  //     setError((err as Error).message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const fetchRemarks = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("token"); // ✅ Get auth token
-      const res = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ Send token in headers
-          },
-        }
-      );
+      const token = localStorage.getItem("token");
 
+      // Choose API based on token availability
+      const url = token
+        ? `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`
+        : `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}`;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error("Failed to load remarks");
 
       const data: Remark[] = await res.json();
@@ -89,6 +115,12 @@ const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      fetchRemarks();
+    }
+  }, [isDialogOpen]);
 
   const handleAddRemark = async () => {
     if (!currentUser || !newRemarkText.trim()) return;
@@ -147,43 +179,64 @@ const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     (state: RootState) => state.permissions.permissions?.remarks
   );
   const isSuperAdmin = currentUser?.name === "Super Admin";
-  if (!isSuperAdmin && !remark) {
-    return (
-      <Card className="p-6">
-        <p className="text-center text-red-600 font-semibold">
-          You do not have permission to access the Remark.
-        </p>
-      </Card>
-    );
-  }
+  // if (!isSuperAdmin && !remark) {
+  //   return (
+  //     <Card className="p-6">
+  //       <p className="text-center text-red-600 font-semibold">
+  //         You do not have permission to access the Remark.
+  //       </p>
+  //     </Card>
+  //   );
+  // }
 
   const markAsRead = async (remarkId: string) => {
-    try {
-      const token = localStorage.getItem("token"); // 🔑 get token from localStorage
+    if (!currentUser?.id) return;
 
+    try {
+      const token = localStorage.getItem("token");
       const res = await fetch(
         `https://fcobackend-23v7.onrender.com/api/remarks/${remarkId}/read`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ include token here
+            Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify({ userId: currentUser.id }), // Send current user ID
         }
       );
 
       if (!res.ok) throw new Error("Failed to mark remark as read");
 
-      setRemarks((prev) =>
-        prev.map((r) => (r._id === remarkId ? { ...r, read: true } : r))
+      // Update local state to include current user in readBy
+      setRemarks((prevRemarks) =>
+        prevRemarks.map((remark) =>
+          remark._id === remarkId
+            ? {
+                ...remark,
+                readBy: [...(remark.readBy || []), currentUser.id],
+              }
+            : remark
+        )
       );
-    } catch (err) {
-      alert("Failed to mark remark as read");
-    }
+      
 
-    window.dispatchEvent(new Event("remarks-updated"));
+      // Update the unread count
+      window.dispatchEvent(new Event("remarks-updated"));
+    } catch (err) {
+      console.error("Failed to mark remark as read:", err);
+    }
   };
 
+  const hasRemarkPermission = useSelector(
+    (state: RootState) => state.permissions.permissions?.remarks
+  );
+
+  // Combined check including Super Admin
+  const canAddRemark =
+    hasRemarkPermission || currentUser?.name === "Super Admin";
+
+  const token = localStorage.getItem("token");
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -194,46 +247,49 @@ const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
         >
           View All Remarks
         </Button>
-
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="default" size="sm" className="gap-1">
-              <MessageSquarePlus className="h-4 w-4" />
-              Add Remark
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Remark</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Textarea
-                rows={4}
-                value={newRemarkText}
-                onChange={(e) => setNewRemarkText(e.target.value)}
-                placeholder="Write your remark here..."
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button
-                  onClick={handleAddRemark}
-                  disabled={!newRemarkText.trim() || isAddingRemark}
-                >
-                  {isAddingRemark ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Remark"
-                  )}
-                </Button>
-              </DialogFooter>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {canAddRemark && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default" size="sm" className="gap-1">
+                <MessageSquarePlus className="h-4 w-4" />
+                Add Remark
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Remark</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  rows={4}
+                  value={newRemarkText}
+                  onChange={(e) => setNewRemarkText(e.target.value)}
+                  placeholder="Write your remark here..."
+                />
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={handleAddRemark}
+                    disabled={
+                      !newRemarkText.trim() || isAddingRemark || !canAddRemark
+                    }
+                  >
+                    {isAddingRemark ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Remark"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -263,90 +319,105 @@ const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
           <ScrollArea className="flex-1 pr-4 h-[20vh] overflow-auto">
             <div className="space-y-6 py-2">
-              {remarks.map((remark) => (
-                <div
-                  key={remark._id}
-                  className={`flex gap-3 rounded-md p-3 ${
-                    !remark.read ? "bg-green-100 border border-green-300" : ""
-                  }`}
-                >
-                  <Avatar className="h-9 w-9 mt-1">
-                    <AvatarImage src="" />
-                    <AvatarFallback>
-                      {getUserInitials(remark.userName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{remark.userName}</h4>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(remark.createdAt)}
-                      </span>
-                      {!remark.read && (
-                        <span className="ml-2 inline-block rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">
-                          New
+              {remarks.map((remark) => {
+                const isOwnRemark = remark.userId === currentUser?.id;
+                return (
+                  <div
+                    key={remark._id}
+                    className={`flex gap-3 rounded-md p-3 ${
+                      remark.readBy &&
+                      !remark.readBy.includes(currentUser?.id || "")
+                        ? "bg-green-100 border border-green-300"
+                        : ""
+                    }`}
+                  >
+                    <Avatar className="h-9 w-9 mt-1">
+                      <AvatarImage src="" />
+                      <AvatarFallback>
+                        {getUserInitials(remark.userName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold">{remark.userName}</h4>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(remark.createdAt)}
                         </span>
-                      )}
-                    </div>
-                    <p className="text-sm mt-1 whitespace-pre-wrap">
-                      {remark.remark}
-                    </p>
+                        {/* "New" badge - shows if current user hasn't read this remark */}
+                        {remark.readBy &&
+                          !remark.readBy.includes(currentUser?.id || "") &&
+                          token && (
+                            <span className="ml-2 inline-block rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">
+                              New
+                            </span>
+                          )}
+                      </div>
+                      <p className="text-sm mt-1 whitespace-pre-wrap">
+                        {remark.remark}
+                      </p>
 
-                    {!remark.read && (
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        className="mt-2 text-xs bg-green-600 text-white hover:bg-green-700"
-                        onClick={() => markAsRead(remark._id)}
-                      >
-                        Mark as Read
-                      </Button>
-                    )}
+                      {/* "Mark as Read" button - shows if current user hasn't read this remark */}
+                      {remark.readBy &&
+                        !remark.readBy.includes(currentUser?.id || "") &&
+                        token && (
+                          <Button
+                            variant="outline"
+                            size="xs"
+                            className="mt-2 text-xs bg-green-600 text-white hover:bg-green-700"
+                            onClick={() => markAsRead(remark._id)}
+                          >
+                            Mark as Read
+                          </Button>
+                        )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
+          {canAddRemark && (
+            <div className="pt-4 border-t">
+              <div className="flex gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="" />
+                  <AvatarFallback>
+                    {currentUser ? getUserInitials(currentUser.name) : "U"}
+                  </AvatarFallback>
+                </Avatar>
 
-          <div className="pt-4 border-t">
-            <div className="flex gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="" />
-                <AvatarFallback>
-                  {currentUser ? getUserInitials(currentUser.name) : "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-2">
-                <Textarea
-                  rows={3}
-                  value={newRemarkText}
-                  onChange={(e) => setNewRemarkText(e.target.value)}
-                  placeholder="Add a new remark..."
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    onClick={handleAddRemark}
-                    disabled={!newRemarkText.trim() || isAddingRemark}
-                  >
-                    {isAddingRemark ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Posting...
-                      </>
-                    ) : (
-                      "Post Remark"
-                    )}
-                  </Button>
+                <div className="flex-1 space-y-2">
+                  <Textarea
+                    rows={3}
+                    value={newRemarkText}
+                    onChange={(e) => setNewRemarkText(e.target.value)}
+                    placeholder="Add a new remark..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Close
+                    </Button>
+
+                    <Button
+                      onClick={handleAddRemark}
+                      disabled={!newRemarkText.trim()}
+                    >
+                      {isAddingRemark ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Posting...
+                        </>
+                      ) : (
+                        "Post Remark"
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

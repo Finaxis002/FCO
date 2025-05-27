@@ -31,6 +31,7 @@ import axios from "axios";
 import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
 
+
 const statusStyles: Record<string, string> = {
   "New-Case":
     "bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
@@ -94,6 +95,21 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   const allowedStatuses = ["New-Case", "In-Progress", "Completed", "Rejected"];
 
   const handleStatusChange = async (caseId: string, newStatus: string) => {
+    // Check if userRole is "Viewer" - block change
+    if (userRole === "Viewer") {
+      toast({
+        title: "Permission Denied",
+        description: "You are a Viewer and can not change the case status.",
+        variant: "destructive",
+      });
+      // Reset the select dropdown to current status (don't update UI)
+      setCaseStatuses((prev) => ({
+        ...prev,
+        [caseId]:
+          displayCases.find((c) => c.id === caseId)?.status || "New-Case",
+      }));
+      return; // Stop further processing
+    }
     try {
       const currentCase = displayCases.find((c) => c.id === caseId);
       if (!currentCase) {
@@ -113,7 +129,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
         toast({
           title: "Invalid Status Change",
           description:
-            "Cannot change status to 'New-Case' when completion is above 50%.",
+            "Can not change status to 'New-Case' when completion is above 50%.",
           variant: "destructive",
         });
         // Reset select value to current status
@@ -366,7 +382,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                       ) : null}
 
                       {/* Share button */}
-                      {isAdmin || permissions?.createCaseRights ? (
+                      
                         <Button
                           variant="outline"
                           size="icon"
@@ -375,7 +391,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                         >
                           <LinkIcon className="h-4 w-4" />
                         </Button>
-                      ) : null}
+                    
 
                       {/* Edit button */}
                       {isAdmin || permissions?.edit ? (

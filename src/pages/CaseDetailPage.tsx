@@ -196,17 +196,6 @@ useEffect(() => {
     }
   }, [dispatch]);
 
-  // useEffect(() => {
-  //   const urlParams = new URLSearchParams(window.location.search);
-  //   const serviceId = urlParams.get("serviceId");
-
-  //   if (serviceId) {
-  //     setHighlightServiceId(serviceId); // ✅ sets the actual value
-  //     urlParams.delete("serviceId");
-  //     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-  //     window.history.replaceState({}, "", newUrl);
-  //   }
-  // }, []);
 
   useEffect(() => {
     if (caseData && caseData.unitName) {

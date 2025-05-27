@@ -15,6 +15,7 @@ interface Permissions {
 }
 
 interface PermissionsState {
+  edit: boolean;
   permissions: Permissions | null;
   loading: boolean;
   error: string | null;

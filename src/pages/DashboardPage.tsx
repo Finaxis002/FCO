@@ -14,6 +14,7 @@ import StatCard from "@/components/dashboard/stat-card";
 import RecentActivity from "@/components/dashboard/recent-activity";
 import ComplianceStatusOverview from "@/components/dashboard/compliance-status-overview";
 import { Briefcase, Users, Clock, Loader } from "lucide-react"; // Removed Activity, BarChart3 for now
+import HeaderWithBranding from "@/components/dashboard/HeaderWithBranding";
 
 interface CaseStats {
   totalCases: number;
@@ -73,58 +74,56 @@ export default function DashboardPage() {
     Rejected: 0,
   });
 
-useEffect(() => {
-  const fetchCases = async () => {
-    try {
-      const res = await fetch(
-        "https://fcobackend-23v7.onrender.com/api/cases"
-      );
-      if (!res.ok) throw new Error("Failed to fetch cases");
+  useEffect(() => {
+    const fetchCases = async () => {
+      try {
+        const res = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/cases"
+        );
+        if (!res.ok) throw new Error("Failed to fetch cases");
 
-      const data = await res.json();
-      setCases(data);
+        const data = await res.json();
+        setCases(data);
 
-      // 🔍 Count by `status`
-      const counts = {
-        "New-Case": 0,
-        "In-Progress": 0,
-        Completed: 0,
-        Approved: 0,
-        Rejected: 0,
-      };
+        // 🔍 Count by `status`
+        const counts = {
+          "New-Case": 0,
+          "In-Progress": 0,
+          Completed: 0,
+          Approved: 0,
+          Rejected: 0,
+        };
 
-      data.forEach((c: any) => {
-        const rawStatus = c.status?.trim(); // No need to convert to lowercase here
-        switch (rawStatus) {
-          case "New-Case":
-            counts["New-Case"]++;
-            break;
-          case "In-Progress":
-            counts["In-Progress"]++;
-            break;
-          case "Completed":
-            counts.Completed++;
-            break;
-          case "Approved":
-            counts.Approved++;
-            counts.Completed++; // Optional: Count Approved as Completed too
-            break;
-          case "Rejected":
-            counts.Rejected++;
-            break;
-        }
-      });
+        data.forEach((c: any) => {
+          const rawStatus = c.status?.trim(); // No need to convert to lowercase here
+          switch (rawStatus) {
+            case "New-Case":
+              counts["New-Case"]++;
+              break;
+            case "In-Progress":
+              counts["In-Progress"]++;
+              break;
+            case "Completed":
+              counts.Completed++;
+              break;
+            case "Approved":
+              counts.Approved++;
+              counts.Completed++; // Optional: Count Approved as Completed too
+              break;
+            case "Rejected":
+              counts.Rejected++;
+              break;
+          }
+        });
 
-      setComplianceStatusCounts(counts);
-    } catch (err) {
-      console.error("Dashboard fetch error:", err);
-    }
-  };
+        setComplianceStatusCounts(counts);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      }
+    };
 
-  fetchCases();
-}, []);
-
-
+    fetchCases();
+  }, []);
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
   const userRole = localStorage.getItem("userRole") || "";
@@ -133,29 +132,28 @@ useEffect(() => {
     userRole.toLowerCase() === "admin" ||
     currentUser.role?.toLowerCase() === "super admin";
 
-const filteredCases = useMemo(() => {
-  if (isSuperAdmin) return cases;
+  const filteredCases = useMemo(() => {
+    if (isSuperAdmin) return cases;
 
-  return cases.filter((c) =>
-    c.assignedUsers?.some((user) => {
-      if (typeof user === "string") {
-        return user === currentUser._id || user === currentUser.name;
-      } else {
-        return (
-          user._id === currentUser._id ||
-          user.userId === currentUser.userId ||
-          user.name === currentUser.name
-        );
-      }
-    })
-  );
-}, [cases, currentUser, isSuperAdmin]);
-
+    return cases.filter((c) =>
+      c.assignedUsers?.some((user) => {
+        if (typeof user === "string") {
+          return user === currentUser._id || user === currentUser.name;
+        } else {
+          return (
+            user._id === currentUser._id ||
+            user.userId === currentUser.userId ||
+            user.name === currentUser.name
+          );
+        }
+      })
+    );
+  }, [cases, currentUser, isSuperAdmin]);
 
   const caseStats: CaseStats = useMemo(() => {
     const totalCases = filteredCases.length;
     const completedCases = filteredCases.filter(
-      (c) => c.status === "Completed" 
+      (c) => c.status === "Completed"
     ).length;
     const NewCases = filteredCases.filter(
       (c) => c.status === "New-Case"
@@ -215,10 +213,7 @@ const filteredCases = useMemo(() => {
 
   return (
     <>
-      <PageHeader
-        title={`Welcome back, ${currentUser.name}!`}
-        description="Here's an overview of your franchise compliance operations."
-      />
+      <HeaderWithBranding currentUser={{ name: currentUser.name }} />
 
       <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -273,8 +268,10 @@ const filteredCases = useMemo(() => {
         <div>
           <ComplianceStatusOverview
             totalCases={filteredCases.length}
-              newCaseCount ={
-             filteredCases.filter((c) => c.status?.toLowerCase() === "new-case").length
+            newCaseCount={
+              filteredCases.filter(
+                (c) => c.status?.toLowerCase() === "new-case"
+              ).length
             }
             inProgressCount={
               filteredCases.filter(
@@ -283,7 +280,9 @@ const filteredCases = useMemo(() => {
             }
             completedCount={
               filteredCases.filter((c) =>
-                ["completed", "approved"].includes((c.status ?? "").toLowerCase())
+                ["completed", "approved"].includes(
+                  (c.status ?? "").toLowerCase()
+                )
               ).length
             }
             rejectedCount={

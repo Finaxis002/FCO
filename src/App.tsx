@@ -19,7 +19,6 @@ import EditCasePage from "./pages/EditCasePage";
 import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
 import AllRemarksPage from "./pages/AllRemarksPage";
 
-
 // Simplified PlaceholderPage for debugging
 
 export default function App() {
@@ -71,7 +70,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-     <Route path="/client/cases/:caseId" element={<ClientCaseDetailWrapper />} />
+      <Route
+        path="/client/cases/:caseId"
+        element={<ClientCaseDetailWrapper />}
+      />
       {/* Protected Routes */}
       <Route
         path="*"

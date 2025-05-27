@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { APP_NAME } from "@/lib/constants";
-import type { Case, User, CaseStatus, ServiceStatus } from "@/types/franchise";
+import type { Case, User } from "@/types/franchise";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,8 @@ import {
   Building2,
   MessageSquare,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import CaseChat from "@/components/cases/case-chat"; // Import CaseChat
 import { AppDispatch, RootState } from "@/store";
@@ -52,28 +54,27 @@ export default function ClientCaseDetailPage({
 
   useEffect(() => {
     const fetchAllRemarks = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(
-          "https://fcobackend-23v7.onrender.com/api/remarks/recent",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      const url = "http://localhost:5000/api/remarks/public/recent"; // always public endpoint
 
-        if (!res.ok) throw new Error("Failed to fetch recent remarks");
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch remarks");
+
         const data = await res.json();
         setAllRemarks(data);
 
-        // Count only unread remarks for pulsing dot
-        const unread = data.filter((r: any) => !r.read).length;
+        // Since public API has no read info, consider all unread or zero
+        const unread = 0;
         setUnreadRemarkCount(unread);
 
-        console.log("unread remarks count:", unread);
+        console.log("Remarks loaded:", data.length);
       } catch (err) {
-        console.error("Error loading recent remarks:", err);
+        console.error("Error loading remarks:", err);
       }
     };
 

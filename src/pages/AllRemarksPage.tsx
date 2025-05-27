@@ -34,10 +34,14 @@ export default function AllRemarksPage() {
 
   const fetchAllRemarks = async () => {
     try {
-      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      const token = localStorage.getItem("token");
+      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks/recent", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      if (!res.ok) throw new Error("Failed to fetch remarks");
+
+      if (!res.ok) throw new Error("Failed to fetch recent remarks");
       const data = await res.json();
       setRemarks(data);
     } catch (err) {

@@ -283,7 +283,7 @@ export default function CaseChat({
             </div>
           ) : (
             <div className="space-y-3">
-              {messages.map((msg) => {
+             {messages.map((msg, index) => {
                 const isCurrentUser = msg.senderId === currentUser.userId;
                 const initials = getInitials(msg.senderName || "Unknown");
 
@@ -291,7 +291,7 @@ export default function CaseChat({
 
                 return (
                   <div
-                    key={msg.id}
+                     key={msg.id || `msg-temp-${index}`}
                     className={cn(
                       "flex items-start gap-2",
                       isCurrentUser ? "justify-end" : "justify-start"

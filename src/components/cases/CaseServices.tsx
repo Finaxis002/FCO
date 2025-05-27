@@ -6,7 +6,9 @@ import { useAppDispatch } from "../../hooks/hooks";
 import { updateCase } from "../../features/caseSlice";
 import { useToast } from "@/hooks/use-toast";
 import type { CaseStatus, Service, ServiceStatus } from "@/types/franchise"; // wherever it is declared
-import { useLayoutEffect } from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store"; // adjust path as per your project
+import { fetchPermissions } from "@/features/permissionsSlice";
 
 interface CaseServicesProps {
   caseId: string;
@@ -62,6 +64,15 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
   const serviceRefs = useRef<Record<string, HTMLLIElement | null>>({});
 
+  // In your component
+  useEffect(() => {
+    // Pass any required argument to fetchPermissions, e.g., currentUser or caseId if needed
+    dispatch(fetchPermissions(currentUser?.id)); // Replace with the correct argument as per your fetchPermissions definition
+  }, [dispatch, currentUser]);
+
+  // Access permissions from Redux state
+  const permissions = useSelector((state: RootState) => state.permissions);
+
   useEffect(() => {
     if (highlightServiceId) {
       setShowAll(true);
@@ -69,7 +80,6 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   }, [highlightServiceId]);
 
   const handleStatusChange = (serviceId: string, newStatus: string) => {
-    // Optimistic UI update for service status
     setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
     const updatedServices = localServices.map((service) =>
@@ -80,18 +90,34 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
     setLocalServices(updatedServices);
 
-    // If any service status changed to In-Progress, set overallStatus to In-Progress
-    let newOverallStatus = overallStatus;
-    if (newStatus === SERVICE_STATUS.IN_PROGRESS) {
-      newOverallStatus = SERVICE_STATUS.IN_PROGRESS;
+    // Calculate new overall status
+    let newOverallStatus: CaseStatus = "New-Case";
+    const allCompleted = updatedServices.every((s) => s.status === "Completed");
+    const anyInProgressOrCompleted = updatedServices.some(
+      (s) => s.status === "In-Progress" || s.status === "Completed"
+    );
+
+    if (allCompleted) {
+      newOverallStatus = "Completed";
+    } else if (anyInProgressOrCompleted) {
+      newOverallStatus = "In-Progress";
     }
+
+    // Calculate completion percentage
+    const completedServices = updatedServices.filter(
+      (s) => s.status === "Completed"
+    ).length;
+    const newCompletionPercentage = Math.round(
+      (completedServices / updatedServices.length) * 100
+    );
 
     const updatePayload = {
       id: caseId,
       services: updatedServices,
-      overallCompletionPercentage,
-      overallStatus: newOverallStatus as CaseStatus, // Cast here
-      name: caseName || unitName || "", // <-- always a string
+      overallCompletionPercentage: newCompletionPercentage,
+      overallStatus: newOverallStatus,
+      status: newOverallStatus,
+      name: caseName || unitName || "",
       unitName: unitName || caseName || "",
       updatedAt: new Date().toISOString(),
       lastUpdate: new Date().toISOString(),
@@ -104,7 +130,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
           title: "Success",
           description: "Service status updated successfully.",
         });
-        if (onUpdate) onUpdate(); // Notify parent to refetch updated data
+        if (onUpdate) onUpdate();
       })
       .catch(() => {
         toast({
@@ -139,20 +165,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   }
 
   const userRole = localStorage.getItem("userRole");
-
-  // useEffect(() => {
-  //   if (highlightServiceId && serviceRefs.current[highlightServiceId]) {
-  //     const element = serviceRefs.current[highlightServiceId];
-  //     element?.scrollIntoView({ behavior: "smooth", block: "center" });
-
-  //     // Optional: Add pulse animation temporarily
-  //     element?.classList.add("animate-pulse", "bg-blue-50");
-
-  //     setTimeout(() => {
-  //       element?.classList.remove("animate-pulse", "bg-blue-50");
-  //     }, 3000);
-  //   }
-  // }, [highlightServiceId]);
+  console.log("prrmissions", permissions);
 
   useEffect(() => {
     if (!highlightServiceId) return;
@@ -179,6 +192,10 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
     return () => clearTimeout(timeout);
   }, [highlightServiceId, localServices]);
+
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+  const canEdit = isAdmin || permissions?.edit;
 
   return (
     <div>
@@ -242,13 +259,22 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                     </span>
                   )}
                 </div>
-
                 <select
-                  disabled={isUpdating}
                   value={service.status}
-                  onChange={(e) =>
-                    handleStatusChange(service.id, e.target.value)
-                  }
+                  onChange={(e) => {
+                    if (canEdit) {
+                      handleStatusChange(service.id, e.target.value);
+                    } else {
+                      toast({
+                        title: "Permission Denied",
+                        description:
+                          "You are a Viewer and cannot change the service status.",
+                        variant: "destructive",
+                      });
+                      // Reset select value to current status (optional)
+                      e.target.value = service.status;
+                    }
+                  }}
                   className={`cursor-pointer rounded-2xl px-3 py-1 font-semibold border ${
                     statusStyles[service.status] ||
                     "bg-blue-100 text-blue-800 border-gray-300 text-xs"
@@ -275,14 +301,12 @@ const CaseServices: React.FC<CaseServicesProps> = ({
           </p>
         )} */}
 
-              {userRole && (
-                <ServiceRemarks
-                  caseId={caseId}
-                  serviceId={service.id}
-                  currentUser={currentUser}
-                  serviceName={service.name}
-                />
-              )}
+              <ServiceRemarks
+                caseId={caseId}
+                serviceId={service.id}
+                currentUser={currentUser}
+                serviceName={service.name}
+              />
             </li>
           );
         })}

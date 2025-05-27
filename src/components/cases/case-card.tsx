@@ -96,12 +96,13 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
     }
   }, [caseData.lastUpdate]);
 
-  const handleGenerateLink = () => {
+  const handleGenerateLink = (caseData: Case) => {
     const viewLink =
       caseData.viewLink ||
-      `/view/case/${caseData.id}?token=${Math.random()
+      `/client/cases/${caseData.id}?token=${Math.random()
         .toString(36)
         .substring(7)}`;
+    // Ensure window and navigator are available (standard for client-side)
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(`${window.location.origin}${viewLink}`);
       toast({
@@ -228,7 +229,9 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <PercentSquare className="h-4 w-4 shrink-0" />
-          <span>Progress: {`${caseData.overallCompletionPercentage.toFixed(2)}%`}</span>
+          <span>
+            Progress: {`${caseData.overallCompletionPercentage.toFixed(2)}%`}
+          </span>
         </div>
         <div className="flex items-start gap-2 text-muted-foreground">
           <Users className="h-4 w-4 shrink-0 mt-0.5" />
@@ -261,8 +264,6 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
             )}
           </div>
         </div>
-
-        
       </CardContent>
       <CardFooter className="border-t pt-4">
         <div className="flex w-full justify-end gap-2">
@@ -279,16 +280,15 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
           </Button>
 
           {/* Share button */}
-          {isAdmin || permissions?.createCaseRights ? (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleGenerateLink}
-              aria-label="Share Case"
-            >
-              <LinkIcon className="h-4 w-4" />
-            </Button>
-          ) : null}
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleGenerateLink(caseData)}
+            aria-label="Share Case"
+          >
+            <LinkIcon className="h-4 w-4" />
+          </Button>
 
           {/* Edit button */}
           {isAdmin || permissions?.edit ? (

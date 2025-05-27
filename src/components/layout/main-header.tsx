@@ -96,6 +96,32 @@ export default function MainHeader() {
     fetchNotifications();
   }, []);
 
+  // const fetchRecentRemarks = async () => {
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     const res = await fetch(
+  //       "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     if (!res.ok) throw new Error("Failed to fetch recent remarks");
+  //     const data = await res.json();
+  //     setRecentRemarks(data);
+
+  //     // Count only unread remarks for pulsing dot
+  //     const unread = data.filter((r: any) => !r.read).length;
+  //     setUnreadRemarkCount(unread);
+  //   } catch (err) {
+  //     console.error("Error loading recent remarks:", err);
+  //   }
+  // };
+
+  //remarks badge
+
   const fetchRecentRemarks = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -107,9 +133,9 @@ export default function MainHeader() {
 
       if (!res.ok) throw new Error("Failed to fetch recent remarks");
       const data = await res.json();
+
       setRecentRemarks(data);
 
-      // Count only unread remarks for pulsing dot
       const unread = data.filter((r: any) => !r.read).length;
       setUnreadRemarkCount(unread);
     } catch (err) {
@@ -117,7 +143,6 @@ export default function MainHeader() {
     }
   };
 
-  //remarks badge
   useEffect(() => {
     fetchRecentRemarks();
   }, []);
@@ -317,7 +342,7 @@ export default function MainHeader() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {recentRemarks.length > 0 ? (
-            recentRemarks.map((remark) => (
+            recentRemarks.slice(0, 3).map((remark) => (
               <DropdownMenuItem
                 key={remark._id}
                 asChild
