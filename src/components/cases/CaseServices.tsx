@@ -121,6 +121,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       unitName: unitName || caseName || "",
       updatedAt: new Date().toISOString(),
       lastUpdate: new Date().toISOString(),
+      readBy: [],
     };
 
     dispatch(updateCase(updatePayload))
@@ -195,7 +196,10 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
 
-  const canEdit = isAdmin || permissions?.edit;
+ const canEdit = isAdmin || (permissions?.permissions?.edit ?? false);
+
+  console.log("isAdmin", isAdmin);
+  console.log("canEdit", canEdit);
 
   return (
     <div>

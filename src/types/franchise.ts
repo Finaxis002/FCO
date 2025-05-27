@@ -49,6 +49,7 @@ export interface ChatMessage {
 }
 
 export interface Case {
+  readBy: never[];
   overallCompletionPercentage: number;
   name: string;
   updatedAt: string | number | Date;
