@@ -53,6 +53,7 @@ const initialState: PermissionsState = {
   permissions: null,
   loading: false,
   error: null,
+  edit: false, // This is used to control the edit mode in the UI
 };
 
 const permissionsSlice = createSlice({

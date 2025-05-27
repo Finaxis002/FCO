@@ -10,6 +10,8 @@ interface HeaderWithBrandingProps {
 }
 
 function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
+
+  const userRole = localStorage.getItem('userRole');
   return (
     <div style={{ 
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
@@ -154,7 +156,7 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
           padding: '6px 12px',
           background: 'rgba(255, 255, 255, 0.7)',
           borderRadius: '20px',
-          fontSize: '0.8rem',
+          fontSize: '1rem',
           fontWeight: '500',
           color: '#4a5568',
           backdropFilter: 'blur(5px)',
@@ -166,13 +168,13 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
           padding: '6px 12px',
           background: 'rgba(255, 255, 255, 0.7)',
           borderRadius: '20px',
-          fontSize: '0.8rem',
+          fontSize: '1rem',
           fontWeight: '500',
           color: '#4a5568',
           backdropFilter: 'blur(5px)',
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
         }}>
-          System status: <span style={{color: '#38a169'}}>Operational</span>
+          Role: <span style={{color: '#38a169'}}>{userRole}</span>
         </div>
       </div>
     </div>
