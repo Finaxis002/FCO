@@ -107,14 +107,20 @@ export default function ServiceRemarks({
     };
 
     try {
+      const token = localStorage.getItem("token"); // or wherever you store it
+
       const res = await fetch(
         `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Add this header
+          },
           body: JSON.stringify(payload),
         }
       );
+
       if (!res.ok) throw new Error("Failed to add remark");
 
       const newRemark = await res.json();

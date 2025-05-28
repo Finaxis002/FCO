@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SelectReact from "react-select";
-import { addCase } from "@/features/caseSlice";
+import { updateCase, addCase } from "@/features/caseSlice"; // Import your thunks
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import { useAppSelector } from "@/hooks/hooks";
@@ -449,16 +449,17 @@ export default function AddCaseForm() {
         readBy: [], // <-- Add this line to satisfy Omit<Case, "id">
       };
 
-      if (isEditing) {
-        await axios.put(
-          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
-          casePayload
-        );
-        toast({
-          title: "Case Updated!",
-          description: "Changes saved successfully.",
-        });
-        navigate(`/cases/${caseId}`);
+     if (isEditing) {
+        // Dispatch updateCase thunk instead of Axios directly
+        const result = await dispatch(updateCase({ ...casePayload, id: caseId }));
+        
+        if (updateCase.fulfilled.match(result)) {
+          toast({
+            title: "Case Updated!",
+            description: "Changes saved successfully.",
+          });
+          navigate(`/cases/${caseId}`);
+        }
       } else {
         const result = await dispatch(addCase(casePayload));
         if (addCase.fulfilled.match(result)) {

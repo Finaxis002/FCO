@@ -159,7 +159,7 @@ export default function AllRemarksPage() {
                             )}
                           </div>
                           <p className="mt-2 text-sm whitespace-pre-wrap">
-                            {remark.remark}
+                            {remark.remark} 
                           </p>
                           <div className="flex gap-2 mt-3">
                             <Button variant="outline" size="xs" asChild>

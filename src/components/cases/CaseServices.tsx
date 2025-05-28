@@ -50,7 +50,6 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   highlightServiceId,
   allRemarks = [],
 }) => {
-
   // const [showAll, setShowAll] = useState(false);
   const [showAll, setShowAll] = useState(() => !!highlightServiceId);
 
@@ -80,73 +79,74 @@ const CaseServices: React.FC<CaseServicesProps> = ({
     }
   }, [highlightServiceId]);
 
-  const handleStatusChange = (serviceId: string, newStatus: string) => {
-    setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
+const handleStatusChange = (serviceId: string, newStatus: string) => {
+  setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
-    const updatedServices = localServices.map((service) =>
-      service.id === serviceId
-        ? { ...service, status: newStatus as ServiceStatus }
-        : service
-    );
+  const updatedServices = localServices.map((service) =>
+    service.id === serviceId
+      ? { ...service, status: newStatus as ServiceStatus }
+      : service
+  );
 
-    setLocalServices(updatedServices);
+  setLocalServices(updatedServices);
 
-    // Calculate new overall status
-    let newOverallStatus: CaseStatus = "New-Case";
-    const allCompleted = updatedServices.every((s) => s.status === "Completed");
-    const anyInProgressOrCompleted = updatedServices.some(
-      (s) => s.status === "In-Progress" || s.status === "Completed"
-    );
+  // Calculate new overall status
+  let newOverallStatus: CaseStatus = "New-Case";
+  const allCompleted = updatedServices.every((s) => s.status === "Completed");
+  const anyInProgressOrCompleted = updatedServices.some(
+    (s) => s.status === "In-Progress" || s.status === "Completed"
+  );
 
-    if (allCompleted) {
-      newOverallStatus = "Completed";
-    } else if (anyInProgressOrCompleted) {
-      newOverallStatus = "In-Progress";
-    }
+  if (allCompleted) {
+    newOverallStatus = "Completed";
+  } else if (anyInProgressOrCompleted) {
+    newOverallStatus = "In-Progress";
+  }
 
-    // Calculate completion percentage
-    const completedServices = updatedServices.filter(
-      (s) => s.status === "Completed"
-    ).length;
-    const newCompletionPercentage = Math.round(
-      (completedServices / updatedServices.length) * 100
-    );
+  // Calculate completion percentage
+  const completedServices = updatedServices.filter(
+    (s) => s.status === "Completed"
+  ).length;
+  const newCompletionPercentage = Math.round(
+    (completedServices / updatedServices.length) * 100
+  );
 
-    const updatePayload = {
-      id: caseId,
-      services: updatedServices,
-      overallCompletionPercentage: newCompletionPercentage,
-      overallStatus: newOverallStatus,
-      status: newOverallStatus,
-      name: caseName || unitName || "",
-      unitName: unitName || caseName || "",
-      updatedAt: new Date().toISOString(),
-      lastUpdate: new Date().toISOString(),
-      readBy: [],
-    };
-
-    dispatch(updateCase(updatePayload))
-      .unwrap()
-      .then(() => {
-        toast({
-          title: "Success",
-          description: "Service status updated successfully.",
-        });
-        if (onUpdate) onUpdate();
-      })
-      .catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to update service status.",
-          variant: "destructive",
-        });
-        setLocalServices(services); // revert on failure
-      })
-      .finally(() => {
-        setIsUpdating(false);
-        setUpdatingServices((prev) => ({ ...prev, [serviceId]: false }));
-      });
+  const updatePayload = {
+    id: caseId,
+    services: updatedServices,
+    overallCompletionPercentage: newCompletionPercentage,
+    overallStatus: newOverallStatus,
+    status: newOverallStatus, // This is where we set both status fields to the same value
+    name: caseName || unitName || "",
+    unitName: unitName || caseName || "",
+    updatedAt: new Date().toISOString(),
+    lastUpdate: new Date().toISOString(),
+    readBy: [],
   };
+console.log("Update Payload:", updatePayload);
+  // Rest of your dispatch code remains the same...
+  dispatch(updateCase(updatePayload))
+    .unwrap()
+    .then(() => {
+      toast({
+        title: "Success",
+        description: "Service status updated successfully.",
+      });
+      if (onUpdate) onUpdate();
+    })
+    .catch(() => {
+      toast({
+        title: "Error",
+        description: "Failed to update service status.",
+        variant: "destructive",
+      });
+      setLocalServices(services); // revert on failure
+    })
+    .finally(() => {
+      setIsUpdating(false);
+      setUpdatingServices((prev) => ({ ...prev, [serviceId]: false }));
+    });
+};
 
   // console.log(overallCompletionPercentage);
 

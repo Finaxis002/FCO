@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
+import AccessPermissions from "@/components/AccessPermissions";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -120,99 +121,8 @@ export default function ProfilePage() {
           {/* Main Content */}
           <div className="flex-1 space-y-6">
             {/* Permissions Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
-                <h2 className="text-lg font-semibold flex items-center">
-                  <Shield className="mr-2 h-5 w-5 text-indigo-600" />
-                  Access Permissions
-                </h2>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[
-                    {
-                      label: "Create Content",
-                      allowed:
-                        currentUser.name === "Super Admin"
-                          ? true
-                          : currentUser.permissions?.canCreate,
-                      icon: <PlusCircle className="h-5 w-5" />,
-                    },
-                    {
-                      label: "Edit Content",
-                      allowed:
-                        currentUser.name === "Super Admin"
-                          ? true
-                          : currentUser.permissions?.canEdit,
-                      icon: <Edit className="h-5 w-5" />,
-                    },
-                    {
-                      label: "Delete Content",
-                      allowed:
-                        currentUser.name === "Super Admin"
-                          ? true
-                          : currentUser.permissions?.canDelete,
-                      icon: <Trash className="h-5 w-5" />,
-                    },
-                    {
-                      label: "View Reports",
-                      allowed:
-                        currentUser.name === "Super Admin"
-                          ? true
-                          : currentUser.permissions?.canViewReports,
-                      icon: <BarChart className="h-5 w-5" />,
-                    },
-                    {
-                      label: "Assign Tasks",
-                      allowed:
-                        currentUser.name === "Super Admin"
-                          ? true
-                          : currentUser.permissions?.canAssignTasks,
-                      icon: <ClipboardList className="h-5 w-5" />,
-                    },
-                    {
-                      label: "Admin Access",
-                      allowed:
-                        currentUser.name === "Super Admin" ? true : false,
-                      icon: <Lock className="h-5 w-5" />,
-                    },
-                  ].map(({ label, allowed, icon }) => (
-                    <div
-                      key={label}
-                      className={`p-4 rounded-lg border ${
-                        allowed
-                          ? "border-green-200 bg-green-50"
-                          : "border-gray-200 bg-gray-50"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`p-2 rounded-full ${
-                            allowed ? "bg-green-100" : "bg-gray-100"
-                          }`}
-                        >
-                          {React.cloneElement(icon, {
-                            className: `h-5 w-5 ${
-                              allowed ? "text-green-600" : "text-gray-500"
-                            }`,
-                          })}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{label}</h3>
-                          <p
-                            className={`text-sm ${
-                              allowed ? "text-green-600" : "text-gray-500"
-                            }`}
-                          >
-                            {allowed ? "Access granted" : "Not available"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <AccessPermissions currentUser={currentUser} />
+
           </div>
         </div>
       </div>

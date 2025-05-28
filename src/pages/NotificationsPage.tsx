@@ -139,7 +139,7 @@ export default function NotificationsPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        "http://localhost:5000/api/notifications/read-all",
+        "https://fcobackend-23v7.onrender.com/api/notifications/read-all",
         {
           method: "PUT",
           headers: {

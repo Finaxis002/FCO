@@ -143,9 +143,16 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
         payload.overallStatus = "In-Progress";
       }
 
+      const token = localStorage.getItem("token"); // Retrieve JWT token from storage
+
       await axios.put(
         `https://fcobackend-23v7.onrender.com/api/cases/${caseData.id}`,
-        payload
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Add Authorization header here
+          },
+        }
       );
 
       toast({

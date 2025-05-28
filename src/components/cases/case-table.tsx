@@ -31,7 +31,6 @@ import axios from "axios";
 import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
 
-
 const statusStyles: Record<string, string> = {
   "New-Case":
     "bg-blue-100 text-blue-800 hover:!bg-blue-200 hover:!text-blue-900",
@@ -150,9 +149,16 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
         payload.overallStatus = "In-Progress";
       }
 
+      const token = localStorage.getItem("token");
+
       const response = await axios.put(
         `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
-        payload
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       console.log("API response:", response.data);
@@ -382,16 +388,15 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                       ) : null}
 
                       {/* Share button */}
-                      
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleGenerateLink(caseData)}
-                          aria-label="Share Case"
-                        >
-                          <LinkIcon className="h-4 w-4" />
-                        </Button>
-                    
+
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleGenerateLink(caseData)}
+                        aria-label="Share Case"
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                      </Button>
 
                       {/* Edit button */}
                       {isAdmin || permissions?.edit ? (
