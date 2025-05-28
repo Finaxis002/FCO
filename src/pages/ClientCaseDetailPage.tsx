@@ -49,9 +49,8 @@ export default function ClientCaseDetailPage({
   const [unreadRemarkCount, setUnreadRemarkCount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allRemarks, setAllRemarks] = useState<
-    Array<{ serviceId: string; read: boolean }>
+    Array<{ serviceId: string; readBy: string[] }>
   >([]);
-
   useEffect(() => {
     const fetchAllRemarks = async () => {
       const url = "http://localhost:5000/api/remarks/public/recent"; // always public endpoint
@@ -354,10 +353,7 @@ export default function ClientCaseDetailPage({
                     caseData.overallCompletionPercentage ?? 50
                   }
                   onUpdate={handleCaseUpdate} // NEW PROP
-                  allRemarks={allRemarks.map((r) => ({
-                    serviceId: r.serviceId,
-                    read: r.read,
-                  }))}
+                  allRemarks={allRemarks}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">
