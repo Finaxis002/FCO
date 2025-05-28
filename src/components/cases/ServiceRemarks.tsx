@@ -39,6 +39,7 @@ interface ServiceRemarksProps {
     name: string;
   } | null;
   serviceName: string;
+  onRemarkRead?: (serviceId: string, userId: string) => void;
 }
 
 export default function ServiceRemarks({
@@ -46,6 +47,7 @@ export default function ServiceRemarks({
   serviceId,
   currentUser,
   serviceName,
+  onRemarkRead,
 }: ServiceRemarksProps) {
   const [remarks, setRemarks] = useState<Remark[]>([]);
   const [newRemarkText, setNewRemarkText] = useState("");
@@ -55,36 +57,6 @@ export default function ServiceRemarks({
   const [isAddingRemark, setIsAddingRemark] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
-
-  // Fetch remarks when dialog opens
-
-  // const fetchRemarks = async () => {
-  //   setLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     const token = localStorage.getItem("token"); // ✅ Get auth token
-  //     const res = await fetch(
-  //       `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`, // ✅ Send token in headers
-  //         },
-  //       }
-  //     );
-
-  //     if (!res.ok) throw new Error("Failed to load remarks");
-
-  //     const data: Remark[] = await res.json();
-  //     setRemarks(data);
-  //     setNewRemarkAdded(false);
-  //   } catch (err) {
-  //     setError((err as Error).message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const fetchRemarks = async () => {
     setLoading(true);
@@ -146,7 +118,8 @@ export default function ServiceRemarks({
       if (!res.ok) throw new Error("Failed to add remark");
 
       const newRemark = await res.json();
-      setRemarks((prev) => [newRemark, ...prev]);
+      setRemarks((prev) => [newRemark, ...prev]); // This newRemark will have readBy including currentUser.id
+
       setNewRemarkText("");
       setNewRemarkAdded(true);
       setIsAddDialogOpen(false);
@@ -190,41 +163,32 @@ export default function ServiceRemarks({
   // }
 
   const markAsRead = async (remarkId: string) => {
-    if (!currentUser?.id) return;
-
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
+      await fetch(
         `https://fcobackend-23v7.onrender.com/api/remarks/${remarkId}/read`,
         {
           method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ userId: currentUser.id }), // Send current user ID
         }
       );
 
-      if (!res.ok) throw new Error("Failed to mark remark as read");
-
-      // Update local state to include current user in readBy
+      // Locally update UI: add current user to readBy[] for this remark
       setRemarks((prevRemarks) =>
-        prevRemarks.map((remark) =>
-          remark._id === remarkId
-            ? {
-                ...remark,
-                readBy: [...(remark.readBy || []), currentUser.id],
-              }
-            : remark
+        prevRemarks.map((r) =>
+          r._id === remarkId && !r.readBy.includes(currentUser?.id || "")
+            ? { ...r, readBy: [...r.readBy, currentUser?.id || ""] }
+            : r
         )
       );
-      
 
-      // Update the unread count
-      window.dispatchEvent(new Event("remarks-updated"));
+      if (onRemarkRead) {
+        onRemarkRead(serviceId, currentUser?.id || "");
+      }
     } catch (err) {
-      console.error("Failed to mark remark as read:", err);
+      console.error("Failed to mark remark as read", err);
     }
   };
 

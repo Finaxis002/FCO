@@ -47,43 +47,54 @@ export default function CaseDetailPage({
   const [caseData, setCaseData] = useState<Case | undefined | null>(null); // null for loading state
   const [loading, setLoading] = useState<boolean>(true);
   const [searchParams, setSearchParams] = useSearchParams();
-const [unreadRemarkCount, setUnreadRemarkCount] = useState<number>(0);
+  const [unreadRemarkCount, setUnreadRemarkCount] = useState<number>(0);
   const initialHighlightServiceId = searchParams.get("serviceId");
   const [highlightServiceId, setHighlightServiceId] = useState<
     string | undefined
   >(undefined);
- const [allRemarks, setAllRemarks] = useState<
-  Array<{ serviceId: string; read: boolean }>
->([]);
+  const [allRemarks, setAllRemarks] = useState<
+    Array<{ serviceId: string; readBy: string[] }>
+  >([]);
 
+  useEffect(() => {
+    const fetchAllRemarks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-useEffect(() => {
-  const fetchAllRemarks = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks/recent", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        if (!res.ok) throw new Error("Failed to fetch recent remarks");
+        const data = await res.json();
+        setAllRemarks(data);
 
-      if (!res.ok) throw new Error("Failed to fetch recent remarks");
-      const data = await res.json();
-      setAllRemarks(data);
+        // Count only unread remarks for pulsing dot
+        const unread = data.filter((r: any) => !r.read).length;
+        setUnreadRemarkCount(unread);
 
-      // Count only unread remarks for pulsing dot
-      const unread = data.filter((r: any) => !r.read).length;
-      setUnreadRemarkCount(unread);
+        console.log("unread remarks count:", unread);
+      } catch (err) {
+        console.error("Error loading recent remarks:", err);
+      }
+    };
 
-      console.log("unread remarks count:", unread);
-    } catch (err) {
-      console.error("Error loading recent remarks:", err);
-    }
+    if (caseId) fetchAllRemarks();
+  }, [caseId]);
+
+  const handleRemarkRead = (serviceId: string, userId: string) => {
+    setAllRemarks((prevRemarks) =>
+      prevRemarks.map((remark) =>
+        remark.serviceId === serviceId && !remark.readBy.includes(userId)
+          ? { ...remark, readBy: [...remark.readBy, userId] }
+          : remark
+      )
+    );
   };
-
-  if (caseId) fetchAllRemarks();
-}, [caseId]);
-
 
   // Reactively watch for changes in URL params (including when on the same page)
   useEffect(() => {
@@ -414,14 +425,14 @@ useEffect(() => {
                   caseName={caseData.unitName}
                   services={caseData.services}
                   currentUser={currentUser}
-                  overallStatus={caseData.overallStatus ?? "New-Case"} // calculate or fetch this value from db
+                  overallStatus={caseData.overallStatus ?? "New-Case"}
                   overallCompletionPercentage={
                     caseData.overallCompletionPercentage ?? 50
                   }
-                  onUpdate={handleCaseUpdate} // NEW PROP
-                  highlightServiceId={highlightServiceId || undefined} // ✅ FIXED
-                  allRemarks={allRemarks.map(r => ({ serviceId: r.serviceId, read: r.read }))}
-                  
+                  onUpdate={handleCaseUpdate}
+                  highlightServiceId={highlightServiceId || undefined}
+                  allRemarks={allRemarks}
+                  onRemarkRead={handleRemarkRead} // ✅ new
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

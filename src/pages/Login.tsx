@@ -12,30 +12,6 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-// const handleLogin = async (e: React.FormEvent) => {
-//   e.preventDefault();
-//   setError("");
-
-//   try {
-//     const res = await axios.post("https://fcobackend-23v7.onrender.com/api/auth/login", {
-//       userId,
-//       password,
-//       isAdminLogin // Send this flag to backend
-//     });
-
-//     const { token, role, user } = res.data;
-    
-//     localStorage.setItem("token", token);
-//     localStorage.setItem("userRole", role);
-//     localStorage.setItem("user", JSON.stringify(user));
-
-//     navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
-    
-//   } catch (err: any) {
-//     console.error("Login failed:", err);
-//     setError(err.response?.data?.message || "Login failed");
-//   }
-// };
 
 
 const handleLogin = async (e: React.FormEvent) => {

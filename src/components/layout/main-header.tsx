@@ -1,5 +1,7 @@
 import { Link as RouterLink } from "react-router-dom"; // Changed import
 import { useNavigate } from "react-router-dom";
+import type { RootState } from "../../store"; // adjust path as per your project
+import { useSelector } from "react-redux";
 import { useState, useEffect } from "react";
 import {
   PanelLeft,
@@ -122,21 +124,39 @@ export default function MainHeader() {
 
   //remarks badge
 
+  const userRole = localStorage.getItem("userRole");
+
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
   const fetchRecentRemarks = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks/recent", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const userStr = localStorage.getItem("user");
+      const currentUser = userStr ? JSON.parse(userStr) : null;
+
+      const res = await fetch(
+        "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch recent remarks");
       const data = await res.json();
 
       setRecentRemarks(data);
+      console.log("Current user ID:", currentUserId);
+      console.log(
+        "Remarks readBy arrays:",
+        data.map((r: { readBy: any }) => r.readBy)
+      );
 
-      const unread = data.filter((r: any) => !r.read).length;
+      // Calculate unread count based on currentUser.id and readBy array
+      const unread = data.filter((r: any) => {
+        return !(r.readBy ?? []).includes(currentUserId);
+      }).length;
       setUnreadRemarkCount(unread);
     } catch (err) {
       console.error("Error loading recent remarks:", err);
@@ -163,6 +183,8 @@ export default function MainHeader() {
 
   const userStr = localStorage.getItem("user");
   const currentUser = userStr ? JSON.parse(userStr) : null;
+  const currentUserId =
+    currentUser?._id || currentUser?.id || currentUser?.userId;
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -427,11 +449,13 @@ export default function MainHeader() {
               <UserCircle className="h-4 w-4" /> Profile
             </RouterLink>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <RouterLink to="/settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" /> Settings
-            </RouterLink>
-          </DropdownMenuItem>
+          {isAdmin ? (
+            <DropdownMenuItem asChild>
+              <RouterLink to="/settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" /> Settings
+              </RouterLink>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleLogout}

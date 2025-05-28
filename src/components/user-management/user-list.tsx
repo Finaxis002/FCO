@@ -164,7 +164,29 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
           body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Failed to update user");
-        // ...
+        const data = await response.json();
+        
+      // Check for role change and if updated user is current logged-in user
+      if (
+        data.roleChanged &&
+        data.updatedUser._id === currentUser?.userId
+      ) {
+        toast({
+          title: "Role Changed",
+          description:
+            "Your role has been changed. You will be logged out now.",
+          variant: "destructive",
+        });
+
+        // Clear user session & redirect to login page
+        localStorage.removeItem("user");
+        localStorage.removeItem("userRole");
+        // Any other session/token cleanup logic here
+
+        // Redirect (using react-router-dom or window.location)
+        window.location.href = "/login"; // or your login route
+        return; // stop further processing
+      }
       } else {
         const response = await fetch(BASE_URL, {
           method: "POST",

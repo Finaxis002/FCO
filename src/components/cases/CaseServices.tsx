@@ -19,11 +19,11 @@ interface CaseServicesProps {
   overallCompletionPercentage: number;
   currentUser: any;
   onUpdate?: () => void;
+  onRemarkRead?: (serviceId: string, userId: string) => void;
   highlightServiceId?: string;
   allRemarks: Array<{
     serviceId: string;
-    read: boolean; // include read status to filter unread
-    // any other relevant fields
+    readBy: string[]; // ✅ fixed from read: boolean
   }>;
 }
 
@@ -37,7 +37,6 @@ const statusStyles: Record<string, string> = {
   Completed:
     "bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 text-xs",
 };
-
 const CaseServices: React.FC<CaseServicesProps> = ({
   caseId,
   caseName,
@@ -47,9 +46,11 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   overallCompletionPercentage,
   currentUser,
   onUpdate,
-  highlightServiceId, // ✅ NEW
-  allRemarks = [], // Optional prop for all remarks
+  onRemarkRead, // ✅ Add this missing line
+  highlightServiceId,
+  allRemarks = [],
 }) => {
+
   // const [showAll, setShowAll] = useState(false);
   const [showAll, setShowAll] = useState(() => !!highlightServiceId);
 
@@ -196,7 +197,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
 
- const canEdit = isAdmin || (permissions?.permissions?.edit ?? false);
+  const canEdit = isAdmin || (permissions?.permissions?.edit ?? false);
 
   console.log("isAdmin", isAdmin);
   console.log("canEdit", canEdit);
@@ -233,7 +234,8 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         {visibleServices.map((service) => {
           // Filter remarks belonging to this service and are unread
           const unreadRemarkCount = allRemarks.filter(
-            (remark) => remark.serviceId === service.id && !remark.read
+            (r) =>
+              r.serviceId === service.id && !r.readBy?.includes(currentUser?.id)
           ).length;
 
           console.log(
@@ -310,6 +312,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                 serviceId={service.id}
                 currentUser={currentUser}
                 serviceName={service.name}
+                onRemarkRead={onRemarkRead} // ✅ added
               />
             </li>
           );

@@ -15,6 +15,7 @@ import RecentActivity from "@/components/dashboard/recent-activity";
 import ComplianceStatusOverview from "@/components/dashboard/compliance-status-overview";
 import { Briefcase, Users, Clock, Loader } from "lucide-react"; // Removed Activity, BarChart3 for now
 import HeaderWithBranding from "@/components/dashboard/HeaderWithBranding";
+import useRoleWatcher from "@/components/dashboard/useRoleWatcher";
 
 interface CaseStats {
   totalCases: number;
@@ -31,6 +32,14 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+
+    const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?._id;
+
+  useRoleWatcher(token, userId);
+
+  console.log("userwatcher token:", token);
 
   useEffect(() => {
     document.title = `Dashboard | ${APP_NAME}`;
