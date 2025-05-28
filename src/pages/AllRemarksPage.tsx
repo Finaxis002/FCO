@@ -25,7 +25,16 @@ import { APP_NAME } from "@/lib/constants";
 export default function AllRemarksPage() {
   const [remarks, setRemarks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const { toast } = useToast();
+
+const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+const currentUserId = currentUser?.id || currentUser?._id;
+
+const unreadCount = remarks.filter(
+  (r) => !(r.readBy ?? []).includes(currentUserId)
+).length;
+
 
   useEffect(() => {
     document.title = `All Remarks | ${APP_NAME}`;
@@ -55,22 +64,20 @@ export default function AllRemarksPage() {
     }
   };
 
-  const markAsRead = async (id: string) => {
-    await fetch(`https://fcobackend-23v7.onrender.com/api/remarks/${id}/read`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    setRemarks((prev) =>
-      prev.map((r) => (r._id === id ? { ...r, read: true } : r))
-    );
-  };
 
   const markAllAsRead = async () => {
     await fetch(`https://fcobackend-23v7.onrender.com/api/remarks/read-all`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
-    setRemarks((prev) => prev.map((r) => ({ ...r, read: true })));
+ setRemarks((prev) =>
+  prev.map((r) =>
+    !(r.readBy ?? []).includes(currentUserId)
+      ? { ...r, readBy: [...(r.readBy || []), currentUserId] }
+      : r
+  )
+);
+
   };
 
   const deleteRemark = async (id: string) => {
@@ -89,7 +96,9 @@ export default function AllRemarksPage() {
     setRemarks([]);
   };
 
-  const unreadCount = remarks.filter((r) => !r.read).length;
+
+
+
 
   return (
     <>
@@ -121,11 +130,14 @@ export default function AllRemarksPage() {
           ) : remarks.length > 0 ? (
             <ScrollArea className="h-[calc(100vh-280px)] pr-4">
               <ul className="space-y-4">
-                {remarks.map((remark) => (
+              {remarks.map((remark) => {
+  const isUnread = !(remark.readBy ?? []).includes(currentUserId);
+
+  return (
                   <li
                     key={remark._id}
                     className={`p-4 border rounded-lg shadow-sm ${
-                      !remark.read ? "bg-blue-50" : "bg-card"
+                      isUnread ? "bg-blue-50" : "bg-card"
                     }`}
                   >
                     <div className="flex items-start gap-4">
@@ -142,7 +154,7 @@ export default function AllRemarksPage() {
                               {new Date(remark.createdAt).toLocaleString()}
                             </p>
                           </div>
-                          {!remark.read && (
+                          {isUnread && (
                             <Badge variant="default" className="text-xs">
                               New
                             </Badge>
@@ -163,7 +175,8 @@ export default function AllRemarksPage() {
                       </div>
                     </div>
                   </li>
-                ))}
+                 );
+})}
               </ul>
             </ScrollArea>
           ) : (
