@@ -25,16 +25,15 @@ import { APP_NAME } from "@/lib/constants";
 export default function AllRemarksPage() {
   const [remarks, setRemarks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const { toast } = useToast();
 
-const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-const currentUserId = currentUser?.id || currentUser?._id;
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUserId = currentUser?.id || currentUser?._id;
 
-const unreadCount = remarks.filter(
-  (r) => !(r.readBy ?? []).includes(currentUserId)
-).length;
-
+  const unreadCount = remarks.filter(
+    (r) => !(r.readBy ?? []).includes(currentUserId)
+  ).length;
 
   useEffect(() => {
     document.title = `All Remarks | ${APP_NAME}`;
@@ -44,11 +43,14 @@ const unreadCount = remarks.filter(
   const fetchAllRemarks = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("https://fcobackend-23v7.onrender.com/api/remarks/recent", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch recent remarks");
       const data = await res.json();
@@ -64,20 +66,18 @@ const unreadCount = remarks.filter(
     }
   };
 
-
   const markAllAsRead = async () => {
     await fetch(`https://fcobackend-23v7.onrender.com/api/remarks/read-all`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
- setRemarks((prev) =>
-  prev.map((r) =>
-    !(r.readBy ?? []).includes(currentUserId)
-      ? { ...r, readBy: [...(r.readBy || []), currentUserId] }
-      : r
-  )
-);
-
+    setRemarks((prev) =>
+      prev.map((r) =>
+        !(r.readBy ?? []).includes(currentUserId)
+          ? { ...r, readBy: [...(r.readBy || []), currentUserId] }
+          : r
+      )
+    );
   };
 
   const deleteRemark = async (id: string) => {
@@ -95,10 +95,6 @@ const unreadCount = remarks.filter(
     });
     setRemarks([]);
   };
-
-
-
-
 
   return (
     <>
@@ -130,53 +126,55 @@ const unreadCount = remarks.filter(
           ) : remarks.length > 0 ? (
             <ScrollArea className="h-[calc(100vh-280px)] pr-4">
               <ul className="space-y-4">
-              {remarks.map((remark) => {
-  const isUnread = !(remark.readBy ?? []).includes(currentUserId);
+                {remarks.map((remark) => {
+                  const isUnread = !(remark.readBy ?? []).includes(
+                    currentUserId
+                  );
 
-  return (
-                  <li
-                    key={remark._id}
-                    className={`p-4 border rounded-lg shadow-sm ${
-                      isUnread ? "bg-blue-50" : "bg-card"
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-9 w-9 mt-1">
-                        <AvatarFallback>
-                          {remark.userName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold">{remark.userName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(remark.createdAt).toLocaleString()}
-                            </p>
+                  return (
+                    <li
+                      key={remark._id}
+                      className={`p-4 border rounded-lg shadow-sm ${
+                        isUnread ? "bg-blue-50" : "bg-card"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-9 w-9 mt-1">
+                          <AvatarFallback>
+                            {remark.userName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-semibold">{remark.userName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(remark.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            {isUnread && (
+                              <Badge variant="default" className="text-xs">
+                                New
+                              </Badge>
+                            )}
                           </div>
-                          {isUnread && (
-                            <Badge variant="default" className="text-xs">
-                              New
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-2 text-sm whitespace-pre-wrap">
-                          {remark.remark}
-                        </p>
-                        <div className="flex gap-2 mt-3">
-                          <Button variant="outline" size="xs" asChild>
-                            <RouterLink
-                              to={`/cases/${remark.caseId}?serviceId=${remark.serviceId}`}
-                            >
-                              <Eye className="mr-1.5 h-3.5 w-3.5" /> View
-                            </RouterLink>
-                          </Button>
+                          <p className="mt-2 text-sm whitespace-pre-wrap">
+                            {remark.remark}
+                          </p>
+                          <div className="flex gap-2 mt-3">
+                            <Button variant="outline" size="xs" asChild>
+                              <RouterLink
+                                to={`/cases/${remark.caseId}?serviceId=${remark.serviceId}`}
+                              >
+                                <Eye className="mr-1.5 h-3.5 w-3.5" /> View
+                              </RouterLink>
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </li>
-                 );
-})}
+                    </li>
+                  );
+                })}
               </ul>
             </ScrollArea>
           ) : (

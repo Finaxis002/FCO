@@ -113,7 +113,7 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
                   background: "#48bb78",
                 }}
               ></span>
-              FCA - Franchises Compliance Automation
+              FCA - Franchise Compliance Automation
             </p>
           </div>
         </div>
