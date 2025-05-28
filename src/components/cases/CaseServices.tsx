@@ -258,7 +258,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                   <h4 className="font-semibold text-md">{service.name}</h4>
 
                   {/* Show badge only if unread remarks exist */}
-                  {unreadRemarkCount > 0 && (
+                  {unreadRemarkCount > 0 && userRole && (
                     <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
                       {unreadRemarkCount} unread remark
                       {unreadRemarkCount > 1 ? "s" : ""}
