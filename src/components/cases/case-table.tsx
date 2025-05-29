@@ -19,7 +19,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Edit, Link as LinkIcon, Eye, Trash } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom"; // Changed import
@@ -47,9 +47,16 @@ const statusStyles: Record<string, string> = {
 interface CaseCardViewProps {
   cases: Case[]; // array of Case objects
   onDelete: (caseId: string) => void; // function called when delete happens
+  unreadRemarks?: Record<string, number>; // caseId -> unread count
+  unreadChats?: Record<string, number>; // caseId -> unread count
 }
 
-export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
+export default function CaseCardView({
+  cases,
+  onDelete,
+  unreadRemarks,
+  unreadChats,
+}: CaseCardViewProps) {
   const { toast } = useToast();
   const [displayCases, setDisplayCases] = useState<Case[]>(cases);
   const [lastUpdateDisplayCache, setLastUpdateDisplayCache] = useState<
@@ -75,6 +82,34 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   const userRole = localStorage.getItem("userRole");
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+  const currentUserId = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user")!)._id
+    : null;
+
+  // console.log("currentUserId:", currentUserId);
+  const navigate = useNavigate();
+  const markChatsRead = async (caseId: string) => {
+    if (!caseId || !currentUserId) return;
+    const token = localStorage.getItem("token");
+    try {
+      await axios.put(
+        `https://fcobackend-23v7.onrender.com/api/chats/mark-read/${caseId}`,
+        { userId: currentUserId }, // Send the ObjectId here
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log(
+        `Marked chats as read for case ${caseId} by user ${currentUserId}`
+      );
+    } catch (error) {
+      console.error("Error marking chats as read:", error);
+    }
+  };
+
+  const handleViewClick = async (caseId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    await markChatsRead(caseId);
+    navigate(`/cases/${caseId}`);
+  };
 
   const dispatch = useAppDispatch();
   useEffect(() => {
@@ -140,7 +175,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
       }
 
       setCaseStatuses((prev) => ({ ...prev, [caseId]: newStatus }));
-      console.log(`Updating status for case ${caseId} to ${newStatus}`);
+      // console.log(`Updating status for case ${caseId} to ${newStatus}`);
 
       // Prepare payload
       const payload: any = { status: newStatus };
@@ -161,7 +196,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
         }
       );
 
-      console.log("API response:", response.data);
+      // console.log("API response:", response.data);
 
       setDisplayCases((prev: Case[]) =>
         prev.map((c) =>
@@ -297,13 +332,46 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                 caseData.status ||
                 "New-Case";
 
+              const unreadRemarkCount = unreadRemarks?.[caseData.id ?? ""] || 0;
+              const unreadChatCount = unreadChats?.[caseData.id ?? ""] || 0;
+
+              // console.log("unreadRemarkCount:", unreadRemarkCount);
+              useEffect(() => {
+                console.log("unreadChats prop changed:", unreadChats);
+              }, [unreadChats]);
+
               return (
                 <TableRow
                   key={caseData.id}
                   data-testid={`case-row-${caseData.id}`}
                 >
-                  <TableCell className="font-medium">{caseData.srNo}</TableCell>
-                  <TableCell>{caseData.unitName}</TableCell>
+                  <TableCell className="font-medium flex items-center gap-2">
+                    {caseData.srNo}
+                    {unreadRemarkCount > 0 && (
+                      <span
+                        className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
+                        title="New Remark"
+                      >
+                        {unreadRemarkCount}
+                      </span>
+                    )}
+                    {unreadChatCount > 0 && (
+                      <span
+                        className="bg-green-600 text-white text-xs px-1.5 rounded-full"
+                        title="New Chat"
+                      >
+                        {unreadChatCount}
+                      </span>
+                    )}
+                  </TableCell>
+
+                  {/* <TableCell>{caseData.unitName}</TableCell> */}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {caseData.unitName}
+                    </div>
+                  </TableCell>
+
                   <TableCell>{caseData.ownerName}</TableCell>
                   <TableCell>
                     <Select
@@ -376,6 +444,7 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
                           size="icon"
                           asChild
                           aria-label="View Case Details"
+                          onClick={(e) => handleViewClick(caseData.id!, e)}
                         >
                           <RouterLink
                             to={`/cases/${

@@ -46,8 +46,14 @@ export const deleteCase = createAsyncThunk(
   "case/deleteCase",
   async (caseId: string, { rejectWithValue }) => {
     try {
+      const token = localStorage.getItem("token"); // or wherever you store it
       await axios.delete(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`
+        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       return caseId; // Return deleted case id for reducer
     } catch (error: any) {

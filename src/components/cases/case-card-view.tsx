@@ -7,10 +7,24 @@ import { Card, CardContent } from "../ui/card";
 export interface CaseCardViewProps {
   cases: Case[];
   onDelete?: (caseId: string) => void | Promise<void>; // add this line
+  unreadRemarks?: Record<string, number>;
+  unreadChats?: Record<string, number>;
+  activeCaseId?: string;
 }
 
-export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
+export default function CaseCardView({
+  cases,
+  onDelete,
+  unreadRemarks,
+  unreadChats,
+  activeCaseId,
+}: CaseCardViewProps) {
   if (cases.length === 0) {
+    console.log("Active Case ID:", activeCaseId);
+    cases.forEach((c) =>
+      console.log("Case ID:", c.id, "Is Active:", c.id === activeCaseId)
+    );
+
     return (
       <Card>
         <CardContent className="pt-6">
@@ -33,7 +47,14 @@ export default function CaseCardView({ cases, onDelete }: CaseCardViewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {cases.map((caseData) => (
-        <CaseCard key={caseData.id} caseData={caseData} onDelete={onDelete} />
+        <CaseCard
+          key={caseData.id}
+          caseData={caseData}
+          onDelete={onDelete}
+          unreadRemarks={unreadRemarks}
+          unreadChats={unreadChats}
+          isActive={caseData.id === activeCaseId}
+        />
       ))}
     </div>
   );

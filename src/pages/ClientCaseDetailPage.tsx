@@ -53,7 +53,7 @@ export default function ClientCaseDetailPage({
   >([]);
   useEffect(() => {
     const fetchAllRemarks = async () => {
-      const url = "http://localhost:5000/api/remarks/public/recent"; // always public endpoint
+      const url = "https://fcobackend-23v7.onrender.com/api/remarks/public/recent"; // always public endpoint
 
       try {
         const res = await fetch(url, {

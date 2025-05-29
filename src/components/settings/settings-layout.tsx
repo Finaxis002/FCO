@@ -2,7 +2,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ReactNode } from "react";
-import { UserCog, Database, Settings as SettingsIconLucide } from "lucide-react"; // Renamed Settings to avoid conflict
+import {
+  UserCog,
+  Database,
+  Settings as SettingsIconLucide,
+} from "lucide-react"; // Renamed Settings to avoid conflict
 
 // Define a mapping for icon strings to components
 const iconMap: { [key: string]: React.ElementType } = {
@@ -12,8 +16,8 @@ const iconMap: { [key: string]: React.ElementType } = {
   // Add other icons here as needed
 };
 
-
-export interface SettingsSection { // Exported for use in SettingsPage
+export interface SettingsSection {
+  // Exported for use in SettingsPage
   value: string;
   label: string;
   icon: string; // Changed from React.ElementType to string
@@ -31,16 +35,24 @@ export default function SettingsLayout({
   defaultSection,
   onSectionChange,
 }: SettingsLayoutProps) {
+  const userRole = localStorage.getItem("userRole");
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+  // Filter sections for non-admin users: only show 'data' tab
+  const visibleSections = isAdmin
+    ? sections
+    : sections.filter((section) => section.value === "data");
+
   return (
     <Tabs
-      value={defaultSection}              // Controlled prop
+      value={defaultSection} // Controlled prop
       onValueChange={(val) => {
-        if (onSectionChange) onSectionChange(val);  // Call URL update handler
+        if (onSectionChange) onSectionChange(val); // Call URL update handler
       }}
       className="w-full"
     >
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
-        {sections.map((section) => {
+        {visibleSections.map((section) => {
           const IconComponent = iconMap[section.icon] || SettingsIconLucide;
           return (
             <TabsTrigger
@@ -54,7 +66,7 @@ export default function SettingsLayout({
           );
         })}
       </TabsList>
-      {sections.map((section) => (
+      {visibleSections.map((section) => (
         <TabsContent key={section.value} value={section.value}>
           {section.content}
         </TabsContent>

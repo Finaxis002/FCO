@@ -38,6 +38,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { getCases, deleteCase } from "@/features/caseSlice";
 import { fetchPermissions } from "@/features/permissionsSlice";
+import axios from "axios";
+import { useParams } from "react-router-dom";
 
 const FILTER_OPTIONS: { label: string; value: DashboardFilterStatus }[] = [
   { label: "All Cases", value: "Total" },
@@ -52,6 +54,7 @@ type ViewMode = "table" | "card";
 export default function CasesPage() {
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [currentUser, setCurrentUser] = useState<{
+    _id?: string;
     name: string;
     role?: string;
     userId?: string;
@@ -73,11 +76,20 @@ export default function CasesPage() {
 
   const [ready, setReady] = useState(false);
 
+  const [unreadRemarks, setUnreadRemarks] = useState<Record<string, number>>(
+    {}
+  );
+  const [unreadChats, setUnreadChats] = useState<Record<string, number>>({});
+  const [allChats, setAllChats] = useState<
+    Array<{ caseId: string; readBy: string[] }>
+  >([]);
+
   const [activeFilter, setActiveFilter] =
     useState<DashboardFilterStatus>("Total");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const location = useLocation();
   const navigate = useNavigate();
+  const { caseId } = useParams();
 
   const dispatch = useDispatch<AppDispatch>();
   const { cases: allCases, loading } = useSelector(
@@ -87,6 +99,138 @@ export default function CasesPage() {
   useEffect(() => {
     dispatch(getCases());
   }, [dispatch]);
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
+        const currentUser = userStr ? JSON.parse(userStr) : null;
+
+        if (!token || !currentUser) return;
+
+        const res = await axios.get(
+          "https://fcobackend-23v7.onrender.com/api/chats/unread-counts",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // This should return an object with caseId as key and unread count as value
+        const unreadCounts = res.data;
+
+        // Filter out cases with zero unread messages
+        const filteredCounts: Record<string, number> = {};
+        for (const caseId in unreadCounts) {
+          if (unreadCounts[caseId] > 0) {
+            filteredCounts[caseId] = unreadCounts[caseId];
+          }
+        }
+
+        setUnreadChats(filteredCounts);
+      } catch (error) {
+        console.error("Error fetching unread chats:", error);
+      }
+    };
+
+    fetchChats();
+  }, [currentUser, caseId]); // Add caseId to dependencies to refresh when case changes
+
+  useEffect(() => {
+    const fetchUnreadCounts = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
+        const currentUser = userStr ? JSON.parse(userStr) : null;
+        const currentUserId = currentUser?._id || currentUser?.userId || "";
+
+        // Fetch unread remarks
+        const remarksRes = await axios.get(
+          "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const remarks = remarksRes.data;
+
+        // Count unread remarks per caseId
+        const unreadRemarkCounts: Record<string, number> = {};
+        remarks.forEach((remark: { readBy: string[]; caseId: string }) => {
+          const isRead = remark.readBy?.includes(currentUserId);
+          if (!isRead) {
+            const caseId = remark.caseId;
+            unreadRemarkCounts[caseId] = (unreadRemarkCounts[caseId] || 0) + 1;
+          }
+        });
+        // console.log("Unread Remarks Count Per Case:", unreadRemarkCounts);
+        setUnreadRemarks(unreadRemarkCounts);
+
+        // Fetch unread chats
+        const chatsRes = await axios.get(
+          "https://fcobackend-23v7.onrender.com/api/chats/unread-counts",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // console.log("Chats API response data:", chatsRes.data);
+        const chats = chatsRes.data;
+
+        // Count unread chats per caseId
+        const unreadChatCounts: Record<string, number> = {};
+        allChats.forEach((chat) => {
+          if (
+            chat.readBy &&
+            currentUserId &&
+            !chat.readBy.includes(currentUserId)
+          ) {
+            unreadChatCounts[chat.caseId] =
+              (unreadChatCounts[chat.caseId] || 0) + 1;
+          }
+        });
+        for (const caseId in chats) {
+          if (Object.prototype.hasOwnProperty.call(chats, caseId)) {
+            unreadChatCounts[caseId] = chats[caseId];
+          }
+        }
+
+        // console.log("Unread Chats Count Per Case:", unreadChatCounts);
+        setUnreadChats(unreadChatCounts);
+      } catch (error) {
+        console.error("Error fetching unread counts", error);
+      }
+    };
+
+    if (currentUser) {
+      fetchUnreadCounts();
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    const markChatsRead = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token || !caseId) return;
+
+        await axios.put(
+          `https://fcobackend-23v7.onrender.com/api/chats/mark-read/${caseId}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Update local state to remove this case from unreadChats
+        setUnreadChats((prev) => {
+          const newUnreads = { ...prev };
+          delete newUnreads[caseId];
+          return newUnreads;
+        });
+      } catch (error) {
+        console.error("Failed to mark chats as read", error);
+      }
+    };
+
+    if (caseId) {
+      markChatsRead();
+    }
+  }, [caseId]);
 
   useEffect(() => {
     const filterFromState = location.state?.filter as
@@ -103,7 +247,7 @@ export default function CasesPage() {
   );
 
   useEffect(() => {
-    console.log("Fetched permissions from redux:", permissions);
+    // console.log("Fetched permissions from redux:", permissions);
   }, [permissions]);
 
   const isAdmin =
@@ -116,6 +260,7 @@ export default function CasesPage() {
       try {
         const parsedUser = JSON.parse(userData);
         setCurrentUser({
+          _id: parsedUser._id, // <-- include this
           name: parsedUser.name,
           role: parsedUser.role,
           userId: parsedUser._id || parsedUser.userId,
@@ -139,12 +284,12 @@ export default function CasesPage() {
     permissions?.createCaseRights === true;
 
   useEffect(() => {
-    console.log("Filtering cases with", {
-      allCases,
-      activeFilter,
-      permissions,
-      currentUser,
-    });
+    // console.log("Filtering cases with", {
+    //   allCases,
+    //   activeFilter,
+    //   permissions,
+    //   currentUser,
+    // });
     if (!allCases || allCases.length === 0 || !currentUser) {
       // setFilteredCases([]);
       return;
@@ -340,9 +485,20 @@ export default function CasesPage() {
           No cases found for this filter.
         </div>
       ) : viewMode === "table" ? (
-        <CaseTable cases={filteredCases} onDelete={handleDelete} />
+        <CaseTable
+          cases={filteredCases}
+          onDelete={handleDelete}
+          unreadRemarks={unreadRemarks}
+          unreadChats={unreadChats}
+        />
       ) : (
-        <CaseCardView cases={filteredCases} onDelete={handleDelete} />
+        <CaseCardView
+          cases={filteredCases}
+          onDelete={handleDelete}
+          unreadRemarks={unreadRemarks}
+          unreadChats={unreadChats}
+          activeCaseId={caseId} // Pass the activeCaseId here
+        />
       )}
     </>
   );

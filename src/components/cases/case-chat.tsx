@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import axios from "axios";
 
 interface CaseChatProps {
   caseId: string;
@@ -75,7 +76,6 @@ export default function CaseChat({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
- 
   // ✅ All hooks must come before any `return`
   const chat = useSelector(
     (state: RootState) => state.permissions.permissions?.chat
@@ -195,6 +195,45 @@ export default function CaseChat({
     scrollToBottom();
   }, [messages]);
 
+  // const handleSendMessage = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const messageContent = newMessage.trim();
+  //   if (!messageContent || isSending || !isConnected) return;
+
+  //   try {
+  //     setIsSending(true);
+
+  //     // Optimistic update
+  //     const tempMessage: ChatMessage = {
+  //       id: `temp-${Date.now()}`,
+  //       caseId,
+  //       senderId: currentUser.userId!,
+  //       senderName: currentUser.name,
+  //       message: messageContent,
+  //       timestamp: new Date().toISOString(),
+  //       status: "sending",
+  //     };
+
+  //     setMessages((prev) => [...prev, tempMessage]);
+  //     setNewMessage("");
+
+  //     // Send via socket
+  //     socket.emit("sendMessage", {
+  //       caseId,
+  //       message: messageContent,
+  //     });
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to send message",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsSending(false);
+  //   }
+  // };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const messageContent = newMessage.trim();
@@ -203,11 +242,10 @@ export default function CaseChat({
     try {
       setIsSending(true);
 
-      // Optimistic update
       const tempMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         caseId,
-        senderId: currentUser.userId!,
+        senderId: currentUser.userId!, // can keep for optimistic UI
         senderName: currentUser.name,
         message: messageContent,
         timestamp: new Date().toISOString(),
@@ -222,6 +260,31 @@ export default function CaseChat({
         caseId,
         message: messageContent,
       });
+
+      // Get user _id from localStorage
+      const userStr = localStorage.getItem("user");
+      const userObj = userStr ? JSON.parse(userStr) : null;
+      const userIdToSend = userObj?._id;
+      console.log("Sending userId (ObjectId) in mark-read:", userIdToSend);
+
+
+      if (!userIdToSend) {
+        throw new Error("User _id not found in localStorage");
+      }
+
+      const token = localStorage.getItem("token");
+
+      await axios.put(
+        `https://fcobackend-23v7.onrender.com/api/chats/mark-read/${caseId}`,
+        {
+          userId: userIdToSend, // send _id from localStorage user object
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -234,8 +297,7 @@ export default function CaseChat({
     }
   };
 
-
-    const isSuperAdmin = currentUser?.name === "Super Admin";
+  const isSuperAdmin = currentUser?.name === "Super Admin";
 
   if (!isSuperAdmin && !chat) {
     return (
@@ -246,7 +308,6 @@ export default function CaseChat({
       </Card>
     );
   }
-
 
   return (
     <Card className="h-full flex flex-col">
@@ -283,7 +344,7 @@ export default function CaseChat({
             </div>
           ) : (
             <div className="space-y-3">
-             {messages.map((msg, index) => {
+              {messages.map((msg, index) => {
                 const isCurrentUser = msg.senderId === currentUser.userId;
                 const initials = getInitials(msg.senderName || "Unknown");
 
@@ -291,7 +352,7 @@ export default function CaseChat({
 
                 return (
                   <div
-                     key={msg.id || `msg-temp-${index}`}
+                    key={msg.id || `msg-temp-${index}`}
                     className={cn(
                       "flex items-start gap-2",
                       isCurrentUser ? "justify-end" : "justify-start"

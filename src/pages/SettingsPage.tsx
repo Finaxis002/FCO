@@ -39,6 +39,7 @@ export default function SettingsPage() {
     setSearchParams({ [newSection]: "" });
   };
 
+ 
   return (
     <>
       <PageHeader

@@ -2,7 +2,7 @@ import { Link as RouterLink } from "react-router-dom"; // Changed import
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../store"; // adjust path as per your project
 import { useSelector } from "react-redux";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   PanelLeft,
   Search,
@@ -66,6 +66,147 @@ export default function MainHeader() {
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [recentRemarks, setRecentRemarks] = useState<any[]>([]);
   const [unreadRemarkCount, setUnreadRemarkCount] = useState(0);
+  //serachbar
+  const [searchQuery, setSearchQuery] = useState("");
+  // State to hold current search term
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Array of highlighted elements (<mark> tags)
+  const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
+
+  // Index to track currently selected highlighted match
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    // Clear previous highlights
+    document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
+      const parent = mark.parentNode;
+      if (!parent) return;
+      parent.replaceChild(
+        document.createTextNode(mark.textContent || ""),
+        mark
+      );
+      parent.normalize();
+    });
+
+    if (!searchTerm) {
+      setHighlightRefs([]);
+      setCurrentIndex(0);
+      return;
+    }
+
+    // Escape regex special characters in searchTerm
+    const escapedTerm = searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const regex = new RegExp(`(${escapedTerm})`, "gi");
+
+    const foundMarks: HTMLElement[] = [];
+
+    // Recursive function to walk text nodes and highlight matches
+    const walk = (node: Node) => {
+      if (
+        node.nodeType === 3 && // text node
+        node.parentNode &&
+        node.parentNode.nodeName !== "SCRIPT" &&
+        node.parentNode.nodeName !== "STYLE"
+      ) {
+        const text = node.nodeValue;
+        if (text && regex.test(text)) {
+          const span = document.createElement("span");
+          span.innerHTML = text.replace(
+            regex,
+            `<mark data-highlight style="background: yellow;">$1</mark>`
+          );
+          const fragment = document.createDocumentFragment();
+          while (span.firstChild) {
+            const child = span.firstChild;
+            if ((child as HTMLElement).tagName === "MARK")
+              foundMarks.push(child as HTMLElement);
+            fragment.appendChild(child);
+          }
+          node.parentNode.replaceChild(fragment, node);
+        }
+      } else if (node.nodeType === 1) {
+        // element node
+        for (let i = 0; i < node.childNodes.length; i++) {
+          walk(node.childNodes[i]);
+        }
+      }
+    };
+
+    walk(document.body);
+
+    setHighlightRefs(foundMarks);
+    setCurrentIndex(0);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && highlightRefs.length > 0) {
+        e.preventDefault();
+        const el = highlightRefs[currentIndex];
+        if (!el) return;
+
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.style.background = "orange";
+
+        // Reset other highlights to yellow
+        highlightRefs.forEach((mark, idx) => {
+          if (idx !== currentIndex) mark.style.background = "yellow";
+        });
+
+        setCurrentIndex((prev) => (prev + 1) % highlightRefs.length);
+      } else if (e.key === "Escape") {
+        // Clear search and highlights on Escape
+        setSearchTerm("");
+        setHighlightRefs([]);
+        setCurrentIndex(0);
+
+        document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
+          const parent = mark.parentNode;
+          if (!parent) return;
+          parent.replaceChild(
+            document.createTextNode(mark.textContent || ""),
+            mark
+          );
+          parent.normalize();
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [highlightRefs, currentIndex]);
+
+  useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      if ((e.ctrlKey && e.key.toLowerCase() === "k") || e.key === "/") {
+        e.preventDefault();
+        const input = document.getElementById(
+          "global-search-input"
+        ) as HTMLInputElement | null;
+        if (input) input.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setHighlightRefs([]);
+    setCurrentIndex(0);
+
+    document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
+      const parent = mark.parentNode;
+      if (!parent) return;
+      parent.replaceChild(
+        document.createTextNode(mark.textContent || ""),
+        mark
+      );
+      parent.normalize();
+    });
+  };
 
   //notification badge
   useEffect(() => {
@@ -98,30 +239,6 @@ export default function MainHeader() {
     fetchNotifications();
   }, []);
 
-  // const fetchRecentRemarks = async () => {
-  //   try {
-  //     const token = localStorage.getItem("token");
-  //     const res = await fetch(
-  //       "https://fcobackend-23v7.onrender.com/api/remarks/recent",
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-
-  //     if (!res.ok) throw new Error("Failed to fetch recent remarks");
-  //     const data = await res.json();
-  //     setRecentRemarks(data);
-
-  //     // Count only unread remarks for pulsing dot
-  //     const unread = data.filter((r: any) => !r.read).length;
-  //     setUnreadRemarkCount(unread);
-  //   } catch (err) {
-  //     console.error("Error loading recent remarks:", err);
-  //   }
-  // };
-
   //remarks badge
 
   const userRole = localStorage.getItem("userRole");
@@ -147,11 +264,11 @@ export default function MainHeader() {
       const data = await res.json();
 
       setRecentRemarks(data);
-      console.log("Current user ID:", currentUserId);
-      console.log(
-        "Remarks readBy arrays:",
-        data.map((r: { readBy: any }) => r.readBy)
-      );
+      // console.log("Current user ID:", currentUserId);
+      // console.log(
+      //   "Remarks readBy arrays:",
+      //   data.map((r: { readBy: any }) => r.readBy)
+      // );
 
       // Calculate unread count based on currentUser.id and readBy array
       const unread = data.filter((r: any) => {
@@ -197,7 +314,7 @@ export default function MainHeader() {
     };
   }, []);
 
-  console.log("unread remark count", unreadRemarkCount);
+  // console.log("unread remark count", unreadRemarkCount);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 print:hidden">
@@ -230,15 +347,24 @@ export default function MainHeader() {
       </div>
 
       <div className="relative ml-auto flex-shrink-0 md:grow-0">
-        <form>
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search cases..."
+              placeholder="Search in page..."
               className="w-full rounded-lg bg-muted pl-8 md:w-[200px] lg:w-[320px]"
               aria-label="Search cases"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoComplete="off"
             />
+            <div className="absolute inset-y-0 right-3 mr-5 flex items-center gap-2">
+              {highlightRefs.length > 0 && (
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {currentIndex === 0 ? 1 : currentIndex}/{highlightRefs.length}
+                </span>
+              )}
+            </div>
           </div>
         </form>
       </div>

@@ -51,6 +51,7 @@ interface DataTableProps<T extends DataItem> {
   onDeleteItem: (id: string) => void;
   renderAdditionalCols?: (item: T) => React.ReactNode;
   additionalFieldsForm?: React.ReactNode; // For complex add forms
+   isAdmin?: boolean; 
 }
 
 function DataTable<T extends DataItem>({
@@ -61,6 +62,7 @@ function DataTable<T extends DataItem>({
   onEditItem,
   onDeleteItem,
   renderAdditionalCols,
+    isAdmin = false,
 }: DataTableProps<T>) {
   const [newItemName, setNewItemName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -141,6 +143,7 @@ function DataTable<T extends DataItem>({
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
+                     {isAdmin && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -149,6 +152,7 @@ function DataTable<T extends DataItem>({
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
+                     )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -265,7 +269,7 @@ export default function DataManagementSettings() {
         setServiceDefinitions((prev) => prev.filter((item) => item.id !== id));
         toast({
           title: "Service Deleted",
-          description: "Service has been removed.",
+          description: "Service has been deleted.",
           variant: "destructive",
         });
       } catch (err) {
@@ -317,29 +321,12 @@ export default function DataManagementSettings() {
     }
   };
 
+    const userRole = localStorage.getItem("userRole");
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
   return (
     <div className="space-y-6">
-      {/* <DataTable
-        title="Manage States"
-        description="Add, edit, or delete states for franchise locations."
-        items={states}
-        onAddItem={stateHandler.add}
-        onEditItem={stateHandler.edit}
-        onDeleteItem={stateHandler.delete}
-      /> */}
-      {/* <DataTable
-        title="Manage Areas"
-        description="Add, edit, or delete areas within states."
-        items={areas}
-        onAddItem={(name) => areaHandler.add(name, { stateId: states[0]?.id || "defaultState" })} // Example: assign to first state
-        onEditItem={areaHandler.edit}
-        onDeleteItem={areaHandler.delete}
-        renderAdditionalCols={(item) => (
-          <span className="text-xs text-muted-foreground">
-            State: {states.find(s => s.id === item.stateId)?.name || "N/A"}
-          </span>
-        )}
-      /> */}
+    
       <DataTable
         title="Manage Service Definitions"
         description="Define the types of compliance services offered."
@@ -354,6 +341,7 @@ export default function DataManagementSettings() {
             Default Status: {item.defaultStatus}
           </span>
         )}
+        isAdmin={isAdmin}
       />
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

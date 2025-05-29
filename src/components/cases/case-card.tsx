@@ -1,5 +1,5 @@
 import type { Case } from "@/types/franchise";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink , useNavigate} from "react-router-dom";
 import {
   Select,
   SelectTrigger,
@@ -35,14 +35,19 @@ import { fetchCurrentUser } from "../../features/userSlice";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-export interface CaseCardViewProps {
-  cases: Case[];
-  onDelete?: (caseId: string) => void | Promise<void>; // add this line
+interface CaseCardViewProps {
+  cases: Case[]; // array of Case objects
+  onDelete: (caseId: string) => void; // function called when delete happens
+  unreadRemarks?: Record<string, number>; // caseId -> unread count
+  unreadChats?: Record<string, number>; // caseId -> unread count
 }
 
 interface CaseCardProps {
   caseData: Case;
-  onDelete?: (caseId: string) => void; // new optional prop
+  onDelete?: (caseId: string) => void;
+  unreadRemarks?: Record<string, number>;
+  unreadChats?: Record<string, number>;
+  isActive?: boolean;
 }
 
 const statusStyles: Record<string, string> = {
@@ -58,7 +63,13 @@ const statusStyles: Record<string, string> = {
 
 const allowedStatuses = ["New-Case", "In-Progress", "Completed", "Rejected"];
 
-export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
+export default function CaseCard({
+  caseData,
+  onDelete,
+  unreadRemarks,
+  unreadChats,
+  isActive,
+}: CaseCardProps) {
   const [currentStatus, setCurrentStatus] = useState<string>(
     caseData.status || "New-Case"
   );
@@ -73,6 +84,29 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
   const userRole = localStorage.getItem("userRole");
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+   const navigate = useNavigate();
+
+    // Extract current user ID from localStorage
+    const currentUserStr = localStorage.getItem("user");
+   const currentUserId = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user")!)._id
+    : null;
+
+   const markChatsRead = async () => {
+    if (!caseData.id || !currentUserId) return;
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(
+        `https://fcobackend-23v7.onrender.com/api/chats/mark-read/${caseData.id}`,
+         { userId: currentUserId },  // Send the ObjectId here
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log(`Marked chats as read for case ${caseData.id}`);
+    } catch (error) {
+      console.error('Error marking chats read:', error);
+    }
+  };
 
   useEffect(() => {
     dispatch(fetchCurrentUser());
@@ -172,18 +206,51 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
     }
   };
 
+   const handleViewClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await markChatsRead();
+    navigate(`/cases/${caseData.id}`);
+  };
+
+  const unreadRemarkCount = unreadRemarks?.[caseData.id ?? ""] || 0;
+  const unreadChatCount = unreadChats?.[caseData.id ?? ""] || 0;
+
+  // useEffect(() => {
+  //   console.log("Case ID:", caseData.id);
+  //   console.log("Unread Remark Count:", unreadRemarkCount);
+  //   console.log("Unread Chat Count:", unreadChatCount);
+  // }, [unreadRemarkCount, unreadChatCount, caseData.id]);
+
   return (
     <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors">
+          <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors flex items-center gap-2">
             <RouterLink
               to={`/cases/${caseData.id}`}
               className="hover:underline"
             >
               {caseData.unitName}
             </RouterLink>
+            {unreadRemarkCount > 0 && (
+              <span
+                className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
+                title="New Remark"
+              >
+                {unreadRemarkCount}
+              </span>
+            )}
+            {!isActive &&
+              unreadChatCount > 0 && ( // Only show if not active
+                <span
+                  className="bg-green-600 text-white text-xs px-1.5 rounded-full"
+                  title="New Chat"
+                >
+                  💬 {unreadChatCount}
+                </span>
+              )}
           </CardTitle>
+
           {isAdmin || permissions?.edit ? (
             <Select
               value={currentStatus}
@@ -280,6 +347,7 @@ export default function CaseCard({ caseData, onDelete }: CaseCardProps) {
             size="sm"
             asChild
             aria-label="View Case Details"
+             onClick={handleViewClick}
           >
             <RouterLink to={`/cases/${caseData.id}`}>
               <Eye className="h-4 w-4 mr-1.5" />
