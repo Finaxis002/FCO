@@ -48,13 +48,13 @@ export default function DashboardPage() {
       try {
         // Fetch cases from API
         const casesResponse = await fetch(
-          "https://fcobackend-23v7.onrender.com/api/cases"
+          "https://tumbledrybe.sharda.co.in/api/cases"
         );
         const casesData = await casesResponse.json();
 
         // Fetch users from API
         const usersResponse = await fetch(
-          "https://fcobackend-23v7.onrender.com/api/users"
+          "https://tumbledrybe.sharda.co.in/api/users"
         );
         const usersData = await usersResponse.json();
 
@@ -87,7 +87,7 @@ export default function DashboardPage() {
     const fetchCases = async () => {
       try {
         const res = await fetch(
-          "https://fcobackend-23v7.onrender.com/api/cases"
+          "https://tumbledrybe.sharda.co.in/api/cases"
         );
         if (!res.ok) throw new Error("Failed to fetch cases");
 

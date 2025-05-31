@@ -13,7 +13,7 @@ const useRoleWatcher = (token: string | null, userId: string | null) => {
     const interval = setInterval(async () => {
       try {
         const res = await axios.get(
-          `https://fcobackend-23v7.onrender.com/api/users/${userId}`,
+          `https://tumbledrybe.sharda.co.in/api/users/${userId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

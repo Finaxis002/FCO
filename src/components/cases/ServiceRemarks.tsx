@@ -67,8 +67,8 @@ export default function ServiceRemarks({
 
       // Choose API based on token availability
       const url = token
-        ? `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`
-        : `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}`;
+        ? `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`
+        : `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}`;
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -110,7 +110,7 @@ export default function ServiceRemarks({
       const token = localStorage.getItem("token"); // or wherever you store it
 
       const res = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/services/${serviceId}/remarks`,
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`,
         {
           method: "POST",
           headers: {
@@ -172,7 +172,7 @@ export default function ServiceRemarks({
     try {
       const token = localStorage.getItem("token");
       await fetch(
-        `https://fcobackend-23v7.onrender.com/api/remarks/${remarkId}/read`,
+        `https://tumbledrybe.sharda.co.in/api/remarks/${remarkId}/read`,
         {
           method: "PATCH",
           headers: {

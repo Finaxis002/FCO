@@ -86,7 +86,7 @@ export default function CaseChat({
     const loadMessages = async () => {
       try {
         const response = await fetch(
-          `https://fcobackend-23v7.onrender.com/api/cases/${caseId}/messages`
+          `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/messages`
         );
         const data = await response.json();
 
@@ -110,7 +110,7 @@ export default function CaseChat({
 
   // Socket connection and event handlers
   useEffect(() => {
-    socket = io("https://fcobackend-23v7.onrender.com", {
+    socket = io("https://tumbledrybe.sharda.co.in", {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
@@ -275,7 +275,7 @@ export default function CaseChat({
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `https://fcobackend-23v7.onrender.com/api/chats/mark-read/${caseId}`,
+        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
         {
           userId: userIdToSend, // send _id from localStorage user object
         },

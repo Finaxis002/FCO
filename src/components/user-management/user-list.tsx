@@ -86,7 +86,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
     setPermissionsError(null);
     try {
       const response = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/users/${userId}`
+        `https://tumbledrybe.sharda.co.in/api/users/${userId}`
       );
       if (!response.ok) throw new Error("Failed to fetch permissions");
       const data = await response.json();
@@ -123,7 +123,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
   }, []);
 
   // Backend base URL - adjust accordingly
-  const BASE_URL = "https://fcobackend-23v7.onrender.com/api/users";
+  const BASE_URL = "https://tumbledrybe.sharda.co.in/api/users";
 
   // Fetch users from backend
   const fetchUsers = async () => {

@@ -215,7 +215,7 @@ export default function MainHeader() {
         const token = localStorage.getItem("token");
 
         const res = await fetch(
-          "https://fcobackend-23v7.onrender.com/api/notifications",
+          "https://tumbledrybe.sharda.co.in/api/notifications",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -252,7 +252,7 @@ export default function MainHeader() {
       const currentUser = userStr ? JSON.parse(userStr) : null;
 
       const res = await fetch(
-        "https://fcobackend-23v7.onrender.com/api/remarks/recent",
+        "https://tumbledrybe.sharda.co.in/api/remarks/recent",
         {
           headers: {
             Authorization: `Bearer ${token}`,

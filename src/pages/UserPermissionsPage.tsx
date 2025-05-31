@@ -49,7 +49,7 @@ export default function UserPermissionsPage() {
     const fetchUser = async () => {
       try {
         const res = await fetch(
-          `https://fcobackend-23v7.onrender.com/api/users/${userId}/permissions`
+          `https://tumbledrybe.sharda.co.in/api/users/${userId}/permissions`
         );
         if (!res.ok) {
           setUser(undefined);
@@ -83,7 +83,7 @@ export default function UserPermissionsPage() {
     if (!user || !user._id) return;
     try {
       const res = await fetch(
-        `https://fcobackend-23v7.onrender.com/api/users/${user._id}/permissions`,
+        `https://tumbledrybe.sharda.co.in/api/users/${user._id}/permissions`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

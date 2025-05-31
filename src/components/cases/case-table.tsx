@@ -93,7 +93,7 @@ export default function CaseCardView({
     const token = localStorage.getItem("token");
     try {
       await axios.put(
-        `https://fcobackend-23v7.onrender.com/api/chats/mark-read/${caseId}`,
+        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
         { userId: currentUserId }, // Send the ObjectId here
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -187,7 +187,7 @@ export default function CaseCardView({
       const token = localStorage.getItem("token");
 
       const response = await axios.put(
-        `https://fcobackend-23v7.onrender.com/api/cases/${caseId}`,
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
         payload,
         {
           headers: {
