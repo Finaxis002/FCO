@@ -111,35 +111,43 @@ export const MOCK_SERVICES_TEMPLATES: Omit<
 >[] = [
   {
     name: "DPR (Detailed Project Report)",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "UDYAM Registration",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "GST Registration",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "PMEGP Application",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "Store Setup & Branding",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "Local Body Permits",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "Bank Loan Application",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
   {
     name: "FSSAI License (if applicable)",
-    serviceId: undefined
+    serviceId: undefined,
+    _id: ""
   },
 ];
 
