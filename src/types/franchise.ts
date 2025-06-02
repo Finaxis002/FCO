@@ -14,8 +14,15 @@ export type CaseStatus =
   | "In-Progress"
   | "Completed"
   | "Rejected";
+type Tag = {
+  _id: string;
+  name: string;
+  color: string;
+};
 
 export interface Service {
+  _id: string;  
+   tags?: Tag[];
   serviceId: any;
   id: string;
   name: string;

@@ -344,6 +344,7 @@ export default function ClientCaseDetailPage({
             <CardContent>
               {caseData.services && caseData.services.length > 0 ? (
                 <CaseServices
+                 
                   caseId={caseId!}
                   caseName={caseData.unitName}
                   services={caseData.services}
@@ -354,6 +355,7 @@ export default function ClientCaseDetailPage({
                   }
                   onUpdate={handleCaseUpdate} // NEW PROP
                   allRemarks={allRemarks}
+                  showTags={false}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

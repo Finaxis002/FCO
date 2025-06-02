@@ -18,7 +18,7 @@ const useRoleWatcher = (token: string | null, userId: string | null) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        console.log("Polled user data:", res.data);
+        // console.log("Polled user data:", res.data);
 
         const latestRole =
           res.data.role ||
@@ -27,8 +27,8 @@ const useRoleWatcher = (token: string | null, userId: string | null) => {
 
         const storedRole = localStorage.getItem("userRole");
 
-        console.log("Stored role:", storedRole);
-        console.log("Latest role:", latestRole);
+        // console.log("Stored role:", storedRole);
+        // console.log("Latest role:", latestRole);
 
         if (
           latestRole?.toString().toLowerCase().trim() !==
@@ -48,7 +48,7 @@ const useRoleWatcher = (token: string | null, userId: string | null) => {
       } catch (error) {
         console.error("Error checking user role:", error);
       }
-    }, 300);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [token, userId, navigate]);

@@ -433,6 +433,7 @@ export default function CaseDetailPage({
                   highlightServiceId={highlightServiceId || undefined}
                   allRemarks={allRemarks}
                   onRemarkRead={handleRemarkRead} // ✅ new
+                  showTags={true}  
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

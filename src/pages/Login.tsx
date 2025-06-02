@@ -51,9 +51,12 @@ const handleLogin = async (e: React.FormEvent) => {
     navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
 
   } catch (err: any) {
-    console.error("Login failed:", err);
+  if (err.response?.status === 429) {
+    setError(err.response.data.message || "Too many attempts. Please try again later.");
+  } else {
     setError(err.response?.data?.message || "Login failed");
   }
+}
 };
 
   return (

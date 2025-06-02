@@ -9,6 +9,16 @@ import type { CaseStatus, Service, ServiceStatus } from "@/types/franchise"; // 
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store"; // adjust path as per your project
 import { fetchPermissions } from "@/features/permissionsSlice";
+import ServiceTagsModal from "./ServiceTagsModal";
+import axios from "axios";
+
+// Define the Tag type according to your tag structure
+type Tag = {
+  _id: string;
+  name: string;
+  color: string;
+};
+import { Tag as TagIcon } from "lucide-react";
 
 interface CaseServicesProps {
   caseId: string;
@@ -25,6 +35,7 @@ interface CaseServicesProps {
     serviceId: string;
     readBy: string[]; // ✅ fixed from read: boolean
   }>;
+  showTags?: boolean;
 }
 
 const statusStyles: Record<string, string> = {
@@ -49,6 +60,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   onRemarkRead, // ✅ Add this missing line
   highlightServiceId,
   allRemarks = [],
+  showTags, // <-- Add this line
 }) => {
   // const [showAll, setShowAll] = useState(false);
   const [showAll, setShowAll] = useState(() => !!highlightServiceId);
@@ -58,11 +70,89 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   const [updatingServices, setUpdatingServices] = useState<
     Record<string, boolean>
   >({});
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [selectedServiceForTags, setSelectedServiceForTags] = useState<
+    string | null
+  >(null);
+  const [existingTags, setExistingTags] = useState<Tag[]>([]);
+
+  const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
+
+  const [serviceTags, setServiceTags] = useState<Tag[]>([]);
+  const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
   const { toast } = useToast();
 
   const serviceRefs = useRef<Record<string, HTMLLIElement | null>>({});
+
+  // Fetch all tags when component mounts
+  useEffect(() => {
+    const fetchAllTags = async () => {
+      try {
+        const response = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/tags"
+        );
+        const tags = response.data;
+        const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
+          acc[tag._id] = tag;
+          return acc;
+        }, {});
+        setTagsMap(map);
+      } catch (error) {
+        console.error("Failed to fetch tags", error);
+      }
+    };
+
+    fetchAllTags();
+  }, []);
+
+  const handleRemoveTag = async (serviceId: string, tagId: string) => {
+    try {
+      setIsRemoving(tagId);
+
+      await axios.delete(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags/${tagId}`
+      );
+
+      // Update UI
+      setLocalServices((prevServices) =>
+        prevServices.map((service) =>
+          service.id === serviceId
+            ? {
+                ...service,
+                tags:
+                  service.tags?.filter((tag) =>
+                    typeof tag === "string" ? tag !== tagId : tag._id !== tagId
+                  ) || [],
+              }
+            : service
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: "Tag removed successfully",
+      });
+    } catch (error) {
+      console.error("Failed to remove tag:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove tag",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRemoving(null);
+    }
+  };
+
+  // Map service tags to full tag objects
+  const getServiceTags = (service: Service): Tag[] => {
+    if (!service.tags || !Array.isArray(service.tags)) return [];
+    return service.tags
+      .map((tagId) => (typeof tagId === "string" ? tagsMap[tagId] : tagId))
+      .filter((tag): tag is Tag => !!tag);
+  };
 
   // In your component
   useEffect(() => {
@@ -148,8 +238,6 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       });
   };
 
-  
-
   // console.log(overallCompletionPercentage);
 
   const visibleServices = showAll ? localServices : localServices.slice(0, 3);
@@ -234,6 +322,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       {/* Services List */}
       <ul className="space-y-4">
         {visibleServices.map((service) => {
+          const serviceTags = getServiceTags(service);
           // Filter remarks belonging to this service and are unread
           const unreadRemarkCount = allRemarks.filter(
             (r) =>
@@ -258,7 +347,77 @@ const CaseServices: React.FC<CaseServicesProps> = ({
               <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-md">{service.name}</h4>
-
+                  {/* Render tags */}
+                  <div className="flex gap-1 flex-wrap">
+                    {showTags &&
+                      serviceTags.map((tag) => (
+                        <span
+                          key={tag._id}
+                          className="inline-flex items-center mr-2 mb-2 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors duration-200"
+                          style={{
+                            backgroundColor: tag.color,
+                            color: "#fff",
+                            paddingRight: "0.5rem", // Extra space for close button
+                          }}
+                        >
+                          {tag.name}
+                          {showTags && (
+                            <button
+                              type="button"
+                              disabled={isRemoving === tag._id}
+                              className="ml-1 -mr-0.5 flex-shrink-0 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/50 disabled:opacity-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveTag(service.id, tag._id);
+                              }}
+                              aria-label={`Remove ${tag.name} tag`}
+                            >
+                              {isRemoving === tag._id ? (
+                                <Spinner className="h-2.5 w-2.5" />
+                              ) : (
+                                <svg
+                                  className="h-2.5 w-2.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                  </div>
+                  {/* Tag modal trigger button */}
+                  <button
+                    className="ml-2 p-1.5 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+                    onClick={() => {
+                      setSelectedServiceForTags(service.id);
+                      setExistingTags(service.tags || []);
+                      setTagModalOpen(true);
+                    }}
+                    title="Manage Tags"
+                    aria-label="Manage Tags"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
                   {/* Show badge only if unread remarks exist */}
                   {unreadRemarkCount > 0 && userRole && (
                     <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
@@ -279,7 +438,6 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                           "You are a Viewer and cannot change the service status.",
                         variant: "destructive",
                       });
-                      // Reset select value to current status (optional)
                       e.target.value = service.status;
                     }
                   }}
@@ -302,19 +460,32 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                 </select>
               </div>
 
-              {/* Optionally display remarks text if needed - comment out if redundant */}
-              {/* {remarkCount > 0 && (
-          <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
-            <strong>Remarks Count:</strong> {remarkCount}
-          </p>
-        )} */}
-
+              {/* Service Remarks Section */}
               <ServiceRemarks
                 caseId={caseId}
                 serviceId={service.id}
                 currentUser={currentUser}
                 serviceName={service.name}
-                onRemarkRead={onRemarkRead} // ✅ added
+                onRemarkRead={onRemarkRead}
+              />
+
+              {/* Tag Modal - place outside flex for best UX */}
+              <ServiceTagsModal
+                open={tagModalOpen}
+                onClose={() => setTagModalOpen(false)}
+                caseId={caseId} // <-- Pass from parent prop or context
+                serviceId={selectedServiceForTags ?? ""}
+                existingTags={existingTags}
+                onTagsUpdated={(updatedTags) => {
+                  setLocalServices((prev) =>
+                    prev.map((s) =>
+                      s.id === (selectedServiceForTags ?? "")
+                        ? { ...s, tags: updatedTags }
+                        : s
+                    )
+                  );
+                }}
+                currentUser={currentUser}
               />
             </li>
           );
@@ -335,3 +506,26 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 };
 
 export default CaseServices;
+
+const Spinner = ({ className }: { className?: string }) => (
+  <svg
+    className={`animate-spin ${className}`}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    ></circle>
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
+);

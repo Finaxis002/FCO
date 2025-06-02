@@ -387,10 +387,11 @@ export default function AddCaseForm() {
       const newCaseServices = data.services
         .filter((s) => s.selected)
         .map((s, index) => ({
-          serviceId: `service-${index}-${Date.now()}`, // <-- use 'serviceId' as required by type
+          _id: `service-${index}-${Date.now()}`, // Add _id property as required by Service interface
+          serviceId: `service-${index}-${Date.now()}`,
           id: `service-${index}-${Date.now()}`,
           name: s.name,
-          status: "New-Case" as ServiceStatus, // <-- Cast to ServiceStatus type
+          status: "New-Case" as ServiceStatus,
           remarks: "",
           completionPercentage: 0,
         }));
