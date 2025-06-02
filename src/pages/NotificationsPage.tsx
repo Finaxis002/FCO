@@ -311,163 +311,159 @@ export default function NotificationsPage() {
         </div>
       </PageHeader>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bell className="mr-2 h-5 w-5 text-primary" />
-            Notification Feed
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {notifications.length > 0 ? (
-            <ScrollArea className="h-[calc(100vh-280px)] pr-4">
-              {" "}
-              {/* Adjust height as needed */}
-              <ul className="space-y-4">
-                {notifications.map((notification) => {
-                  const Icon =
-                    NOTIFICATION_ICONS_PAGE[notification.type] || Activity;
-                  const caseName = getCaseName(notification.caseId);
-                  const messagePrefix = caseName ? (
-                    <RouterLink
-                      to={`/cases/${notification.caseId}`}
-                      className="font-semibold text-primary hover:underline"
-                    >{`Case '${caseName}'`}</RouterLink>
-                  ) : (
-                    ""
-                  );
+  <CardHeader>
+    <CardTitle className="flex items-center">
+      <Bell className="mr-2 h-5 w-5 text-primary" />
+      Notification Feed
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    {notifications.length > 0 ? (
+      <ScrollArea className="h-[calc(100vh-280px)] pr-0 sm:pr-4">
+        {/* Responsive: Remove right padding on mobile, keep on desktop */}
+        <ul className="space-y-4">
+          {notifications.map((notification) => {
+            const Icon = NOTIFICATION_ICONS_PAGE[notification.type] || Activity;
+            const caseName = getCaseName(notification.caseId);
+            const messagePrefix = caseName ? (
+              <RouterLink
+                to={`/cases/${notification.caseId}`}
+                className="font-semibold text-primary hover:underline break-all"
+              >{`Case '${caseName}'`}</RouterLink>
+            ) : (
+              ""
+            );
 
-                  return (
-                    <li
-                      key={notification.id}
-                      className={`flex items-start space-x-4 p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
+            return (
+              <li
+                key={notification.id}
+                className={`flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
+                  !notification.read
+                    ? "bg-primary/5 border-primary/20"
+                    : "bg-card"
+                }`}
+              >
+                <div className="flex-shrink-0">
+                  <Avatar className="h-10 w-10 mt-1 sm:mt-0">
+                    <AvatarFallback
+                      className={`${
                         !notification.read
-                          ? "bg-primary/5 border-primary/20"
-                          : "bg-card"
+                          ? "bg-primary/20 text-primary"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      <Avatar className="h-10 w-10 mt-1">
-                        <AvatarFallback
-                          className={`${
-                            !notification.read
-                              ? "bg-primary/20 text-primary"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-sm leading-snug">
-                              {messagePrefix}
-                              {messagePrefix && ":"}
-
-                              {/* Split changes by semicolon and render separately */}
-                              {notification.message
-                                .split(";")
-                                .filter(Boolean) // remove empty strings
-                                .map((change, idx) => (
-                                  <div
-                                    key={idx}
-                                    className=" border rounded-md p-2 my-1"
-                                  >
-                                    {change.trim()}
-                                    {idx !==
-                                    notification.message.split(";").length - 1
-                                      ? ";"
-                                      : ""}
-                                  </div>
-                                ))}
+                      <Icon className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="flex-1 min-w-0 w-full">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                    <div className="min-w-0">
+                      <div className="text-sm leading-snug break-words">
+                        {messagePrefix}
+                        {messagePrefix && ":"}
+                        {notification.message
+                          .split(";")
+                          .filter(Boolean)
+                          .map((change, idx) => (
+                            <div
+                              key={idx}
+                              className="border rounded-md p-2 my-1 break-words"
+                            >
+                              {change.trim()}
+                              {idx !==
+                              notification.message.split(";").length - 1
+                                ? ";"
+                                : ""}
                             </div>
-
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {getRelativeTime(notification.timestamp)}
-                            </p>
-                          </div>
-                          {!notification.read && (
-                            <Badge
-                              variant="default"
-                              className="text-xs h-5 shrink-0"
-                            >
-                              New
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="mt-3 flex gap-2 flex-wrap">
-                          {notification.caseId && (
-                            <Button variant="outline" size="xs" asChild>
-                              <RouterLink to={`/cases/${notification.caseId}`}>
-                                <Eye className="mr-1.5 h-3.5 w-3.5" /> View Case
-                              </RouterLink>
-                            </Button>
-                          )}
-                          {!notification.read && (
-                            <Button
-                              variant="secondary"
-                              size="xs"
-                              onClick={() =>
-                                notification.id && markAsRead(notification.id)
-                              }
-                            >
-                              Mark as Read
-                            </Button>
-                          )}
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="xs"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 px-2 py-1"
-                              >
-                                <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Delete Notification?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this
-                                  notification? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    notification.id &&
-                                    deleteNotification(notification.id)
-                                  }
-                                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
+                          ))}
                       </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </ScrollArea>
-          ) : (
-            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-muted/20">
-              <Bell className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-xl font-semibold text-muted-foreground">
-                No Notifications
-              </p>
-              <p className="text-sm text-muted-foreground">
-                You're all caught up! New notifications will appear here.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {getRelativeTime(notification.timestamp)}
+                      </p>
+                    </div>
+                    {!notification.read && (
+                      <Badge
+                        variant="default"
+                        className="text-xs h-5 shrink-0 mt-1 sm:mt-0 w-[50px]"
+                      >
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    {notification.caseId && (
+                      <Button variant="outline" size="xs" asChild>
+                        <RouterLink to={`/cases/${notification.caseId}`}>
+                          <Eye className="mr-1.5 h-3.5 w-3.5" /> View Case
+                        </RouterLink>
+                      </Button>
+                    )}
+                    {!notification.read && (
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        onClick={() =>
+                          notification.id && markAsRead(notification.id)
+                        }
+                      >
+                        Mark as Read
+                      </Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 px-2 py-1"
+                        >
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" /> 
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Delete Notification?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this
+                            notification? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() =>
+                              notification.id &&
+                              deleteNotification(notification.id)
+                            }
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </ScrollArea>
+    ) : (
+      <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-muted/20">
+        <Bell className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+        <p className="text-xl font-semibold text-muted-foreground">
+          No Notifications
+        </p>
+        <p className="text-sm text-muted-foreground">
+          You're all caught up! New notifications will appear here.
+        </p>
+      </div>
+    )}
+  </CardContent>
+</Card>
     </>
   );
 }

@@ -3,6 +3,14 @@
 import type { Case } from "@/types/franchise";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store"; // adjust path as per your project
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 import {
   Table,
@@ -303,203 +311,213 @@ export default function CaseCardView({
   }
 
   useEffect(() => {
-    setDisplayCases(cases);
+    if (JSON.stringify(cases) !== JSON.stringify(displayCases)) {
+      setDisplayCases(cases);
+    }
   }, [cases]);
 
   return (
     <Card>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]">SR No.</TableHead>
-              <TableHead>Unit Name</TableHead>
-              <TableHead>Owner Name</TableHead>
-              <TableHead className="w-[150px]">Status</TableHead>
-              <TableHead className="w-[180px]">Last Update</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Progress</TableHead>
-              <TableHead className="text-right w-[160px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayCases.map((caseData: Case) => {
-              const lastUpdateDisplay =
-                lastUpdateDisplayCache[caseData.id ?? ""] || "Loading...";
+        <div className="w-full overflow-x-auto">
+          <Table className="min-w-[700px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className=" w-[100px] sm:w-[80px]">SR No.</TableHead>
+                <TableHead>Unit Name</TableHead>
+                <TableHead>Owner Name</TableHead>
+                <TableHead className="w-[150px]">Status</TableHead>
+                <TableHead className="w-[180px]">Last Update</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayCases.map((caseData: Case) => {
+                const lastUpdateDisplay =
+                  lastUpdateDisplayCache[caseData.id ?? ""] || "Loading...";
 
-              const displayStatus =
-                caseStatuses[caseData.id ?? ""] ||
-                caseData.status ||
-                "New-Case";
+                const displayStatus =
+                  caseStatuses[caseData.id ?? ""] ||
+                  caseData.status ||
+                  "New-Case";
 
-              const unreadRemarkCount = unreadRemarks?.[caseData.id ?? ""] || 0;
-              const unreadChatCount = unreadChats?.[caseData.id ?? ""] || 0;
+                const unreadRemarkCount =
+                  unreadRemarks?.[caseData.id ?? ""] || 0;
+                const unreadChatCount = unreadChats?.[caseData.id ?? ""] || 0;
 
-              // console.log("unreadRemarkCount:", unreadRemarkCount);
-              useEffect(() => {
-                console.log("unreadChats prop changed:", unreadChats);
-              }, [unreadChats]);
+                // console.log("unreadRemarkCount:", unreadRemarkCount);
 
-              return (
-                <TableRow
-                  key={caseData.id}
-                  data-testid={`case-row-${caseData.id}`}
-                >
-                  <TableCell className="font-medium flex items-center gap-2">
-                    {caseData.srNo}
-                    {unreadRemarkCount > 0 && (
-                      <span
-                        className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
-                        title="New Remark"
-                      >
-                        {unreadRemarkCount}
-                      </span>
-                    )}
-                    {unreadChatCount > 0 && (
-                      <span
-                        className="bg-green-600 text-white text-xs px-1.5 rounded-full"
-                        title="New Chat"
-                      >
-                        {unreadChatCount}
-                      </span>
-                    )}
-                  </TableCell>
-
-                  {/* <TableCell>{caseData.unitName}</TableCell> */}
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {caseData.unitName}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>{caseData.ownerName}</TableCell>
-                  <TableCell>
-                    <Select
-                      value={displayStatus}
-                      onValueChange={(value) =>
-                        handleStatusChange(caseData.id ?? "", value)
-                      }
-                    >
-                      <SelectTrigger
-                        className={`w-[150px] rounded-md case-table ${
-                          statusStyles[caseStatuses[caseData.id ?? ""]] || ""
-                        }`}
-                      >
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {allowedStatuses.map((status) => (
-                          <SelectItem
-                            key={status}
-                            value={status}
-                            className={`flex items-center rounded-md px-2 py-1 ${statusStyles[status]}`}
-                          >
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-
-                  <TableCell>{lastUpdateDisplay}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      {caseData.assignedUsers?.length ? (
-                        caseData.assignedUsers.map((user, index) => {
-                          const userName =
-                            typeof user === "string"
-                              ? user.trim()
-                              : user?.name?.trim() || "Unknown";
-                          const formattedName =
-                            userName.length > 0
-                              ? userName.charAt(0).toUpperCase() +
-                                userName.slice(1).toLowerCase()
-                              : "Unknown";
-                          return (
-                            <span
-                              key={index}
-                              className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-gray-200 transition cursor-default"
-                              title={formattedName}
-                            >
-                              {formattedName}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span className="italic text-gray-400">N/A</span>
+                return (
+                  <TableRow
+                    key={caseData.id}
+                    data-testid={`case-row-${caseData.id}`}
+                  >
+                    <TableCell className="font-medium flex items-center gap-2">
+                      {caseData.srNo}
+                      {unreadRemarkCount > 0 && (
+                        <span
+                          className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
+                          title="New Remark"
+                        >
+                          {unreadRemarkCount}
+                        </span>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{`${caseData.overallCompletionPercentage.toFixed(
-                    2
-                  )}%`}</TableCell>
-
-                  <TableCell className="text-right">
-                    <div className="flex gap-1 justify-end">
-                      {/* View button - assuming everyone can view */}
-                      {isAdmin || permissions?.viewRights ? (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          asChild
-                          aria-label="View Case Details"
-                          onClick={(e) => handleViewClick(caseData.id!, e)}
+                      {unreadChatCount > 0 && (
+                        <span
+                          className="bg-green-600 text-white text-xs px-1.5 rounded-full"
+                          title="New Chat"
                         >
-                          <RouterLink
-                            to={`/cases/${
-                              ((caseData as any)._id ?? caseData.id) as string
-                            }`}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </RouterLink>
-                        </Button>
-                      ) : null}
+                          {unreadChatCount}
+                        </span>
+                      )}
+                    </TableCell>
 
-                      {/* Share button */}
+                    {/* <TableCell>{caseData.unitName}</TableCell> */}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {caseData.unitName}
+                      </div>
+                    </TableCell>
 
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleGenerateLink(caseData)}
-                        aria-label="Share Case"
+                    <TableCell>{caseData.ownerName}</TableCell>
+                    <TableCell>
+                      <Select
+                        value={displayStatus}
+                        onValueChange={(value) =>
+                          handleStatusChange(caseData.id ?? "", value)
+                        }
                       >
-                        <LinkIcon className="h-4 w-4" />
-                      </Button>
-
-                      {/* Edit button */}
-                      {isAdmin || permissions?.edit ? (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          asChild
-                          aria-label="Edit Case"
+                        <SelectTrigger
+                          className={`w-[150px] rounded-md case-table ${
+                            statusStyles[caseStatuses[caseData.id ?? ""]] || ""
+                          }`}
                         >
-                          <RouterLink to={`/cases/${caseData.id}/edit`}>
-                            <Edit className="h-4 w-4" />
-                          </RouterLink>
-                        </Button>
-                      ) : null}
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
 
-                      {/* Delete button */}
-                      {isAdmin || permissions?.delete ? (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => onDelete && onDelete(caseData.id!)}
-                          aria-label="Delete Case"
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                        <SelectContent>
+                          {allowedStatuses.map((status) => (
+                            <SelectItem
+                              key={status}
+                              value={status}
+                              className={`flex items-center rounded-md px-2 py-1 ${statusStyles[status]}`}
+                            >
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+
+                    <TableCell>{lastUpdateDisplay}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                        {caseData.assignedUsers?.length ? (
+                          caseData.assignedUsers.map((user, index) => {
+                            const userName =
+                              typeof user === "string"
+                                ? user.trim()
+                                : user?.name?.trim() || "Unknown";
+                            const formattedName =
+                              userName.length > 0
+                                ? userName.charAt(0).toUpperCase() +
+                                  userName.slice(1).toLowerCase()
+                                : "Unknown";
+                            return (
+                              <span
+                                key={index}
+                                className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-gray-200 transition cursor-default"
+                                title={formattedName}
+                              >
+                                {formattedName}
+                              </span>
+                            );
+                          })
+                        ) : (
+                          <span className="italic text-gray-400">N/A</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{`${caseData.overallCompletionPercentage.toFixed(
+                      2
+                    )}%`}</TableCell>
+
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="flex items-center justify-center"
+                            aria-label="Open actions"
+                          >
+                            <MoreVertical className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {/* View */}
+                          {(isAdmin || permissions?.viewRights) && (
+                            <DropdownMenuItem
+                              asChild
+                              onClick={(e) => handleViewClick(caseData.id!, e)}
+                            >
+                              <RouterLink
+                                to={`/cases/${
+                                  ((caseData as any)._id ??
+                                    caseData.id) as string
+                                }`}
+                                className="flex items-center gap-2"
+                              >
+                                <Eye className="h-4 w-4" /> View
+                              </RouterLink>
+                            </DropdownMenuItem>
+                          )}
+
+                          {/* Share */}
+                          <DropdownMenuItem
+                            onClick={() => handleGenerateLink(caseData)}
+                            className="flex items-center gap-2"
+                          >
+                            <LinkIcon className="h-4 w-4" /> Share
+                          </DropdownMenuItem>
+
+                          {/* Edit */}
+                          {(isAdmin || permissions?.edit) && (
+                            <DropdownMenuItem asChild>
+                              <RouterLink
+                                to={`/cases/${caseData.id}/edit`}
+                                className="flex items-center gap-2"
+                              >
+                                <Edit className="h-4 w-4" /> Edit
+                              </RouterLink>
+                            </DropdownMenuItem>
+                          )}
+
+                          {/* Delete */}
+                          {(isAdmin || permissions?.delete) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onDelete && onDelete(caseData.id!)
+                                }
+                                className="flex items-center gap-2 text-red-600 focus:text-red-800"
+                              >
+                                <Trash className="h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

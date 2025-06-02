@@ -222,7 +222,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <HeaderWithBranding currentUser={{ name: currentUser.name }} />
+     <div className="flex flex-col gap-4 ">
+       <HeaderWithBranding currentUser={{ name: currentUser.name }} />
 
       <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -257,6 +258,7 @@ export default function DashboardPage() {
           />
         )}
       </div>
+     </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">

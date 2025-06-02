@@ -1,6 +1,6 @@
-import { Link as RouterLink } from "react-router-dom"; // Changed import
+import { Link as RouterLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import type { RootState } from "../../store"; // adjust path as per your project
+import type { RootState } from "../../store";
 import { useSelector } from "react-redux";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -30,10 +30,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import MainSidebarNavigation from "./main-sidebar-navigation";
-import { APP_NAME, MOCK_USERS, MOCK_NOTIFICATIONS } from "@/lib/constants";
-import React, { useMemo } from "react";
+import { APP_NAME } from "@/lib/constants";
+import React from "react";
 import type { AppNotification } from "@/types/franchise";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added AvatarImage
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function getRelativeTimeShort(dateString: string) {
   const date = new Date(dateString);
@@ -66,19 +66,11 @@ export default function MainHeader() {
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [recentRemarks, setRecentRemarks] = useState<any[]>([]);
   const [unreadRemarkCount, setUnreadRemarkCount] = useState(0);
-  //serachbar
-  const [searchQuery, setSearchQuery] = useState("");
-  // State to hold current search term
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Array of highlighted elements (<mark> tags)
   const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
-
-  // Index to track currently selected highlighted match
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    // Clear previous highlights
     document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
       const parent = mark.parentNode;
       if (!parent) return;
@@ -95,16 +87,14 @@ export default function MainHeader() {
       return;
     }
 
-    // Escape regex special characters in searchTerm
     const escapedTerm = searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
     const regex = new RegExp(`(${escapedTerm})`, "gi");
 
     const foundMarks: HTMLElement[] = [];
 
-    // Recursive function to walk text nodes and highlight matches
     const walk = (node: Node) => {
       if (
-        node.nodeType === 3 && // text node
+        node.nodeType === 3 &&
         node.parentNode &&
         node.parentNode.nodeName !== "SCRIPT" &&
         node.parentNode.nodeName !== "STYLE"
@@ -126,7 +116,6 @@ export default function MainHeader() {
           node.parentNode.replaceChild(fragment, node);
         }
       } else if (node.nodeType === 1) {
-        // element node
         for (let i = 0; i < node.childNodes.length; i++) {
           walk(node.childNodes[i]);
         }
@@ -149,14 +138,12 @@ export default function MainHeader() {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.style.background = "orange";
 
-        // Reset other highlights to yellow
         highlightRefs.forEach((mark, idx) => {
           if (idx !== currentIndex) mark.style.background = "yellow";
         });
 
         setCurrentIndex((prev) => (prev + 1) % highlightRefs.length);
       } else if (e.key === "Escape") {
-        // Clear search and highlights on Escape
         setSearchTerm("");
         setHighlightRefs([]);
         setCurrentIndex(0);
@@ -192,23 +179,7 @@ export default function MainHeader() {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
 
-  const clearSearch = () => {
-    setSearchTerm("");
-    setHighlightRefs([]);
-    setCurrentIndex(0);
-
-    document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
-      const parent = mark.parentNode;
-      if (!parent) return;
-      parent.replaceChild(
-        document.createTextNode(mark.textContent || ""),
-        mark
-      );
-      parent.normalize();
-    });
-  };
-
-  //notification badge
+  // notification badge
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -239,10 +210,8 @@ export default function MainHeader() {
     fetchNotifications();
   }, []);
 
-  //remarks badge
-
+  // remarks badge
   const userRole = localStorage.getItem("userRole");
-
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
 
   const fetchRecentRemarks = async () => {
@@ -250,6 +219,8 @@ export default function MainHeader() {
       const token = localStorage.getItem("token");
       const userStr = localStorage.getItem("user");
       const currentUser = userStr ? JSON.parse(userStr) : null;
+      const currentUserId =
+        currentUser?._id || currentUser?.id || currentUser?.userId;
 
       const res = await fetch(
         "https://tumbledrybe.sharda.co.in/api/remarks/recent",
@@ -264,13 +235,7 @@ export default function MainHeader() {
       const data = await res.json();
 
       setRecentRemarks(data);
-      // console.log("Current user ID:", currentUserId);
-      // console.log(
-      //   "Remarks readBy arrays:",
-      //   data.map((r: { readBy: any }) => r.readBy)
-      // );
 
-      // Calculate unread count based on currentUser.id and readBy array
       const unread = data.filter((r: any) => {
         return !(r.readBy ?? []).includes(currentUserId);
       }).length;
@@ -287,25 +252,18 @@ export default function MainHeader() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear localStorage or any auth tokens/state
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     localStorage.removeItem("user");
-
-    // Optionally clear other app state or context if needed
-
-    // Redirect to login page
     navigate("/login");
   };
 
   const userStr = localStorage.getItem("user");
   const currentUser = userStr ? JSON.parse(userStr) : null;
-  const currentUserId =
-    currentUser?._id || currentUser?.id || currentUser?.userId;
 
   useEffect(() => {
     const handleUpdate = () => {
-      fetchRecentRemarks(); // Make sure this function sets unreadRemarkCount
+      fetchRecentRemarks();
     };
 
     window.addEventListener("remarks-updated", handleUpdate);
@@ -314,10 +272,9 @@ export default function MainHeader() {
     };
   }, []);
 
-  // console.log("unread remark count", unreadRemarkCount);
-
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 print:hidden">
+    <header className="sticky sm:relative top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background sm:border-b-transparent  sm:bg-transparent  px-2 sm:px-6 print:hidden">
+      {/* Mobile sidebar trigger */}
       <Sheet>
         <SheetTrigger asChild>
           <Button size="icon" variant="outline" className="sm:hidden">
@@ -338,27 +295,38 @@ export default function MainHeader() {
               <span className="sr-only">{APP_NAME}</span>
             </RouterLink>
             <MainSidebarNavigation isMobile={true} />
+            {/* Add this for admin */}
+            {isAdmin && (
+              <RouterLink
+                to="/settings"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </RouterLink>
+            )}
           </nav>
         </SheetContent>
       </Sheet>
 
-      <div className="relative ml-auto flex-1 md:grow-0">
-        {/* Placeholder for Breadcrumbs or Page Title if needed */}
-      </div>
+      {/* Spacer for left side */}
+      <div className="flex-1" />
 
-      <div className="relative ml-auto flex-shrink-0 md:grow-0">
+      {/* Search bar - responsive width and stacking */}
+      <div className="relative flex-shrink-0 w-full max-w-[180px] xs:max-w-[220px] sm:max-w-[240px] md:max-w-[320px] ml-auto">
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search in page..."
-              className="w-full rounded-lg bg-muted pl-8 md:w-[200px] lg:w-[320px]"
+              className="w-full rounded-lg bg-muted pl-8 py-2 text-sm"
               aria-label="Search cases"
               onChange={(e) => setSearchTerm(e.target.value)}
               autoComplete="off"
+              id="global-search-input"
             />
-            <div className="absolute inset-y-0 right-3 mr-5 flex items-center gap-2">
+            <div className="absolute inset-y-0 right-3 flex items-center gap-2">
               {highlightRefs.length > 0 && (
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {currentIndex === 0 ? 1 : currentIndex}/{highlightRefs.length}
@@ -369,229 +337,233 @@ export default function MainHeader() {
         </form>
       </div>
 
-      {/* notification  */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadNotificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-              </span>
-            )}
-            <span className="sr-only">Toggle notifications</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-96">
-          <DropdownMenuLabel className="flex justify-between items-center">
-            <span>Notifications</span>
-            {unreadNotificationCount > 0 && (
-              <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
-                {unreadNotificationCount} New
-              </span>
-            )}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {recentNotifications.length > 0 ? (
-            recentNotifications
-              .slice(0, 3) // ✅ Limit to latest 3
-              .map((notification: AppNotification, index: number) => {
-                const Icon =
-                  NOTIFICATION_ICONS_DROPDOWN[notification.type] || Activity;
-
-                return (
-                  <DropdownMenuItem
-                    key={notification.id ?? index}
-                    asChild
-                    className="cursor-pointer !p-0"
-                  >
-                    <RouterLink
-                      to={
-                        notification.caseId
-                          ? `/cases/${notification.caseId}`
-                          : "/notifications"
-                      }
-                      className="flex items-start gap-2 p-2 w-full"
-                    >
-                      <Avatar className="h-8 w-8 mt-0.5 shrink-0">
-                        {" "}
-                        {/* Added shrink-0 */}
-                        <AvatarFallback
-                          className={
-                            notification.read
-                              ? "bg-muted"
-                              : "bg-primary/10 text-primary"
-                          }
-                        >
-                          <Icon className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 overflow-hidden">
-                        {" "}
-                        {/* Added overflow-hidden */}
-                        <p
-                          className={`text-xs leading-snug ${
-                            !notification.read ? "font-medium" : ""
-                          } truncate`}
-                        >
-                          {notification.message}
-                        </p>{" "}
-                        {/* Added truncate */}
-                        <p className="text-xs text-muted-foreground">
-                          {getRelativeTimeShort(notification.timestamp)}
-                        </p>
-                      </div>
-                    </RouterLink>
-                  </DropdownMenuItem>
-                );
-              })
-          ) : (
-            <DropdownMenuItem disabled>
-              <div className="text-xs text-muted-foreground text-center py-2 w-full">
-                No new notifications
-              </div>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="!p-0">
-            <RouterLink
-              to="/notifications"
-              className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
-            >
-              View all notifications
-            </RouterLink>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* remarks  */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="relative">
-            <MessageSquarePlus className="h-5 w-5" />
-            {unreadRemarkCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
-              </span>
-            )}
-            <span className="sr-only">Toggle remarks</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-96">
-          <DropdownMenuLabel className="flex justify-between items-center">
-            <span>Recent Remarks</span>
-            {unreadRemarkCount > 0 && (
-              <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                {unreadRemarkCount} New
-              </span>
-            )}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {recentRemarks.length > 0 ? (
-            recentRemarks.slice(0, 3).map((remark) => (
-              <DropdownMenuItem
-                key={remark._id}
-                asChild
-                className="cursor-pointer !p-0"
-              >
-                <RouterLink
-                  to={`/cases/${remark.caseId}?serviceId=${remark.serviceId}`}
-                  className="flex items-start gap-2 p-2 w-full"
-                >
-                  <Avatar className="h-8 w-8 mt-0.5 shrink-0">
-                    <AvatarFallback className="bg-blue-100 text-blue-600">
-                      {remark.userName
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-xs font-medium truncate">
-                      {remark.remark.length > 50
-                        ? remark.remark.slice(0, 47) + "..."
-                        : remark.remark}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {getRelativeTimeShort(remark.createdAt)}
-                    </p>
-                  </div>
-                </RouterLink>
-              </DropdownMenuItem>
-            ))
-          ) : (
-            <DropdownMenuItem disabled>
-              <div className="text-xs text-muted-foreground text-center py-2 w-full">
-                No recent remarks
-              </div>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="!p-0">
-            <RouterLink
-              to="/remarks"
-              className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
-            >
-              View all remarks
-            </RouterLink>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="overflow-hidden rounded-full"
-          >
-            <Avatar className="h-full w-full">
-              {currentUser.avatarUrl ? (
-                <AvatarImage
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  data-ai-hint={currentUser.dataAIHint || "user avatar"}
-                />
-              ) : (
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {currentUser.name
-                    ? currentUser.name.charAt(0).toUpperCase()
-                    : "U"}
-                </AvatarFallback>
+      {/* Notification, Remarks, User - stack horizontally, shrink on mobile */}
+      <div className="flex items-center gap-1 sm:gap-2 ml-1">
+        {/* Notification */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
               )}
-            </Avatar>
-            <span className="sr-only">Toggle user menu</span>
-          </Button>
-        </DropdownMenuTrigger>
+              <span className="sr-only">Toggle notifications</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-80 sm:w-96 max-w-[95vw]"
+          >
+            <DropdownMenuLabel className="flex justify-between items-center">
+              <span>Notifications</span>
+              {unreadNotificationCount > 0 && (
+                <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                  {unreadNotificationCount} New
+                </span>
+              )}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {recentNotifications.length > 0 ? (
+              recentNotifications
+                .slice(0, 3)
+                .map((notification: AppNotification, index: number) => {
+                  const Icon =
+                    NOTIFICATION_ICONS_DROPDOWN[notification.type] || Activity;
 
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <RouterLink to="/profile" className="flex items-center gap-2">
-              <UserCircle className="h-4 w-4" /> Profile
-            </RouterLink>
-          </DropdownMenuItem>
-          {isAdmin ? (
-            <DropdownMenuItem asChild>
-              <RouterLink to="/settings" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" /> Settings
+                  return (
+                    <DropdownMenuItem
+                      key={notification.id ?? index}
+                      asChild
+                      className="cursor-pointer !p-0"
+                    >
+                      <RouterLink
+                        to={
+                          notification.caseId
+                            ? `/cases/${notification.caseId}`
+                            : "/notifications"
+                        }
+                        className="flex items-start gap-2 p-2 w-full"
+                      >
+                        <Avatar className="h-8 w-8 mt-0.5 shrink-0">
+                          <AvatarFallback
+                            className={
+                              notification.read
+                                ? "bg-muted"
+                                : "bg-primary/10 text-primary"
+                            }
+                          >
+                            <Icon className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 overflow-hidden">
+                          <p
+                            className={`text-xs leading-snug ${
+                              !notification.read ? "font-medium" : ""
+                            } truncate`}
+                          >
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {getRelativeTimeShort(notification.timestamp)}
+                          </p>
+                        </div>
+                      </RouterLink>
+                    </DropdownMenuItem>
+                  );
+                })
+            ) : (
+              <DropdownMenuItem disabled>
+                <div className="text-xs text-muted-foreground text-center py-2 w-full">
+                  No new notifications
+                </div>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="!p-0">
+              <RouterLink
+                to="/notifications"
+                className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
+              >
+                View all notifications
               </RouterLink>
             </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={handleLogout}
-            className="cursor-pointer flex items-center gap-2"
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Remarks */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="relative">
+              <MessageSquarePlus className="h-5 w-5" />
+              {unreadRemarkCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
+                </span>
+              )}
+              <span className="sr-only">Toggle remarks</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-80 sm:w-96 max-w-[95vw]"
           >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuLabel className="flex justify-between items-center">
+              <span>Recent Remarks</span>
+              {unreadRemarkCount > 0 && (
+                <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                  {unreadRemarkCount} New
+                </span>
+              )}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {recentRemarks.length > 0 ? (
+              recentRemarks.slice(0, 3).map((remark) => (
+                <DropdownMenuItem
+                  key={remark._id}
+                  asChild
+                  className="cursor-pointer !p-0"
+                >
+                  <RouterLink
+                    to={`/cases/${remark.caseId}?serviceId=${remark.serviceId}`}
+                    className="flex items-start gap-2 p-2 w-full"
+                  >
+                    <Avatar className="h-8 w-8 mt-0.5 shrink-0">
+                      <AvatarFallback className="bg-blue-100 text-blue-600">
+                        {remark.userName
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-xs font-medium truncate">
+                        {remark.remark.length > 50
+                          ? remark.remark.slice(0, 47) + "..."
+                          : remark.remark}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {getRelativeTimeShort(remark.createdAt)}
+                      </p>
+                    </div>
+                  </RouterLink>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled>
+                <div className="text-xs text-muted-foreground text-center py-2 w-full">
+                  No recent remarks
+                </div>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="!p-0">
+              <RouterLink
+                to="/remarks"
+                className="flex items-center justify-center py-2 text-sm font-medium text-primary hover:bg-accent w-full"
+              >
+                View all remarks
+              </RouterLink>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* User menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="overflow-hidden rounded-full"
+            >
+              <Avatar className="h-full w-full">
+                {currentUser?.avatarUrl ? (
+                  <AvatarImage
+                    src={currentUser.avatarUrl}
+                    alt={currentUser.name}
+                    data-ai-hint={currentUser.dataAIHint || "user avatar"}
+                  />
+                ) : (
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {currentUser?.name
+                      ? currentUser.name.charAt(0).toUpperCase()
+                      : "U"}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <RouterLink to="/profile" className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4" /> Profile
+              </RouterLink>
+            </DropdownMenuItem>
+            {isAdmin ? (
+              <DropdownMenuItem asChild>
+                <RouterLink to="/settings" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" /> Settings
+                </RouterLink>
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }

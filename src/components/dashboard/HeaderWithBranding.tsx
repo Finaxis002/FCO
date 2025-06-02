@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "../../assets/sharda-logo.png"; // Adjust the path as necessary
+import logo from "../../assets/sharda-logo.png";
 
 interface HeaderWithBrandingProps {
   currentUser: {
@@ -12,163 +12,55 @@ interface HeaderWithBrandingProps {
 function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
   const userRole = localStorage.getItem("userRole");
   return (
-    <div
-      style={{
-        background: "linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)",
-        padding: "24px 40px",
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <div className="relative overflow-hidden bg-gradient-to-br from-[#f5f7fa] to-[#e4e8f0] px-4 py-6 md:px-10 md:py-6 shadow-md border-b border-white/20">
       {/* Decorative elements */}
-      <div
-        style={{
-          position: "absolute",
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.3)",
-        }}
-      ></div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: -30,
-          right: 100,
-          width: 150,
-          height: 150,
-          borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.2)",
-        }}
-      ></div>
+      <div className="absolute -top-12 -right-12 w-40 h-40 md:w-52 md:h-52 rounded-full bg-white/30 pointer-events-none"></div>
+      <div className="absolute -bottom-8 right-24 w-32 h-32 md:w-40 md:h-40 rounded-full bg-white/20 pointer-events-none"></div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
+      <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-center gap-6">
         {/* Branding Section */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              padding: "10px",
-              borderRadius: "12px",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-            }}
-          >
+        <div className="flex items-center gap-4">
+          <div className="bg-white p-2.5 rounded-xl shadow-sm">
             <img
               src={logo}
               alt="Sharda Associates Logo"
-              style={{
-                height: 60,
-                width: "auto",
-                display: "block",
-              }}
+              className="h-12 w-auto block"
             />
           </div>
           <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "2rem",
-                fontWeight: "700",
-                color: "#1a365d",
-                letterSpacing: "-0.5px",
-              }}
-            >
+            <h1 className="m-0 text-2xl md:text-3xl font-bold text-[#1a365d] tracking-tight">
               Sharda Associates
             </h1>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "1rem",
-                color: "#4a5568",
-                fontWeight: "500",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  background: "#48bb78",
-                }}
-              ></span>
+            <p className="mt-1 flex items-center gap-2 text-base text-[#4a5568] font-medium">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
               FCA - Franchise Compliance Automation
             </p>
           </div>
         </div>
 
         {/* User Welcome Section */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "right",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "1.5rem",
-                fontWeight: "600",
-                color: "#2d3748",
-              }}
-            >
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <h2 className="m-0 text-lg md:text-xl font-semibold text-[#2d3748]">
               Welcome back, {currentUser.name}!
             </h2>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "1rem",
-                color: "#718096",
-                fontWeight: "500",
-              }}
-            >
+            <p className="mt-1 text-base text-[#718096] font-medium">
               {currentUser.role || "Account Manager"}
             </p>
           </div>
-
           <div
-            style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "50%",
-              background: currentUser.avatar
-                ? `url(${currentUser.avatar}) center/cover`
-                : "#4299e1",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-              border: "2px solid white",
-            }}
+            className={`w-14 h-14 rounded-full flex items-center justify-center font-semibold text-white shadow-md border-2 border-white ${
+              currentUser.avatar
+                ? ""
+                : "bg-blue-500"
+            }`}
+            style={
+              currentUser.avatar
+                ? {
+                    background: `url(${currentUser.avatar}) center/cover`,
+                  }
+                : undefined
+            }
           >
             {!currentUser.avatar && currentUser.name.charAt(0).toUpperCase()}
           </div>
@@ -176,40 +68,12 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
       </div>
 
       {/* Status bar */}
-      <div
-        style={{
-          marginTop: "20px",
-          display: "flex",
-          gap: "12px",
-        }}
-      >
-        <div
-          style={{
-            padding: "6px 12px",
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: "20px",
-            fontSize: "1rem",
-            fontWeight: "500",
-            color: "#4a5568",
-            backdropFilter: "blur(5px)",
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-          }}
-        >
+      <div className="mt-6 flex flex-col sm:flex-row gap-3">
+        <div className="px-3 py-1.5 bg-white/70 rounded-full text-base font-medium text-[#4a5568] backdrop-blur-sm shadow">
           Last updated: {new Date().toLocaleDateString()}
         </div>
-        <div
-          style={{
-            padding: "6px 12px",
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: "20px",
-            fontSize: "1rem",
-            fontWeight: "500",
-            color: "#4a5568",
-            backdropFilter: "blur(5px)",
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-          }}
-        >
-          Role: <span style={{ color: "#38a169" }}>{userRole}</span>
+        <div className="px-3 py-1.5 bg-white/70 rounded-full text-base font-medium text-[#4a5568] backdrop-blur-sm shadow">
+          Role: <span className="text-green-600">{userRole}</span>
         </div>
       </div>
     </div>

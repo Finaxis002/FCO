@@ -369,9 +369,26 @@ export default function CasesPage() {
     }
   }, [currentUser, allCases]);
 
-  const pageActions = (
-    <div className="flex items-center gap-2">
-      <TooltipProvider>
+const pageActions = (
+  <div className="flex flex-wrap items-center gap-2">
+    <TooltipProvider>
+      {/* Only show Card View icon on mobile, both icons on desktop */}
+      <div className="block sm:hidden">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="secondary"
+              size="icon"
+              aria-label="Card View"
+              disabled
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Card View</TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="hidden sm:flex">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -398,41 +415,44 @@ export default function CasesPage() {
           </TooltipTrigger>
           <TooltipContent>Card View</TooltipContent>
         </Tooltip>
-      </TooltipProvider>
+      </div>
+    </TooltipProvider>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            <FilterIcon className="mr-2 h-4 w-4" /> {currentFilterLabel}
-            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {FILTER_OPTIONS.map((option) => (
-            <DropdownMenuItem
-              key={option.value}
-              onSelect={() => handleFilterChange(option.value)}
-              className={cn(
-                activeFilter === option.value &&
-                  "bg-accent text-accent-foreground"
-              )}
-            >
-              {option.label}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {canSeeAddButton && (
-        <Button asChild>
-          <RouterLink to="/cases/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Case
-          </RouterLink>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">
+          <FilterIcon className="mr-2 h-4 w-4" /> {currentFilterLabel}
+          <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
         </Button>
-      )}
-    </div>
-  );
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-w-[95vw] right-0 left-auto">
+        <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {FILTER_OPTIONS.map((option) => (
+          <DropdownMenuItem
+            key={option.value}
+            onSelect={() => handleFilterChange(option.value)}
+            className={cn(
+              activeFilter === option.value &&
+                "bg-accent text-accent-foreground"
+            )}
+          >
+            {option.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+    {canSeeAddButton && (
+      <Button asChild>
+        <RouterLink to="/cases/new">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          <span className="hidden xs:inline">Add New Case</span>
+          <span className="inline xs:hidden">Add</span>
+        </RouterLink>
+      </Button>
+    )}
+  </div>
+);
 
   if (
     loading ||
@@ -480,10 +500,10 @@ export default function CasesPage() {
       >
         {pageActions}
       </PageHeader>
-      {filteredCases.length === 0 ? (
-        <div className="text-center p-10 text-gray-500">
-          No cases found for this filter.
-        </div>
+      {/* {filteredCases.length === 0 ? (
+       <div className="text-center p-6 sm:p-10 text-gray-500 text-sm sm:text-base">
+            No cases found for this filter.
+          </div>
       ) : viewMode === "table" ? (
         <CaseTable
           cases={filteredCases}
@@ -499,7 +519,44 @@ export default function CasesPage() {
           unreadChats={unreadChats}
           activeCaseId={caseId} // Pass the activeCaseId here
         />
+      )} */}
+
+      {filteredCases.length === 0 ? (
+  <div className="text-center p-6 sm:p-10 text-gray-500 text-sm sm:text-base">
+    No cases found for this filter.
+  </div>
+) : (
+  // On mobile, always show CardView. On desktop, allow switching.
+  <div>
+    <div className="block sm:hidden">
+      <CaseCardView
+        cases={filteredCases}
+        onDelete={handleDelete}
+        unreadRemarks={unreadRemarks}
+        unreadChats={unreadChats}
+        activeCaseId={caseId}
+      />
+    </div>
+    <div className="hidden sm:block">
+      {viewMode === "table" ? (
+        <CaseTable
+          cases={filteredCases}
+          onDelete={handleDelete}
+          unreadRemarks={unreadRemarks}
+          unreadChats={unreadChats}
+        />
+      ) : (
+        <CaseCardView
+          cases={filteredCases}
+          onDelete={handleDelete}
+          unreadRemarks={unreadRemarks}
+          unreadChats={unreadChats}
+          activeCaseId={caseId}
+        />
       )}
+    </div>
+  </div>
+)}
     </>
   );
 }

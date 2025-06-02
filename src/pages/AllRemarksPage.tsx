@@ -124,7 +124,7 @@ export default function AllRemarksPage() {
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : remarks.length > 0 ? (
-            <ScrollArea className="h-[calc(100vh-280px)] pr-4">
+            <ScrollArea className="h-[calc(100vh-280px)] pr-0 sm:pr-4">
               <ul className="space-y-4">
                 {remarks.map((remark) => {
                   const isUnread = !(remark.readBy ?? []).includes(
@@ -134,39 +134,45 @@ export default function AllRemarksPage() {
                   return (
                     <li
                       key={remark._id}
-                      className={`p-4 border rounded-lg shadow-sm ${
+                      className={`p-3 sm:p-4 border rounded-lg shadow-sm ${
                         isUnread ? "bg-blue-50" : "bg-card"
                       }`}
                     >
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-9 w-9 mt-1">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                        <Avatar className="h-9 w-9 mt-1 sm:mt-0">
                           <AvatarFallback>
                             {remark.userName.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center">
+                        <div className="flex-1 min-w-0 w-full">
+                          <div className="flex  sm:flex-row justify-between sm:items-center gap-1">
                             <div>
-                              <p className="font-semibold">{remark.userName}</p>
+                              <p className="font-semibold truncate">
+                                {remark.userName}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(remark.createdAt).toLocaleString()}
                               </p>
                             </div>
                             {isUnread && (
-                              <Badge variant="default" className="text-xs">
+                              <Badge
+                                variant="default"
+                                className="text-xs mt-1 sm:mt-0 w-[50px] text-center"
+                              >
                                 New
                               </Badge>
                             )}
                           </div>
-                          <p className="mt-2 text-sm whitespace-pre-wrap">
-                            {remark.remark} 
+                          <p className="mt-2 text-sm whitespace-pre-wrap break-words">
+                            {remark.remark}
                           </p>
-                          <div className="flex gap-2 mt-3">
+                          <div className="flex gap-2 mt-3 flex-wrap">
                             <Button variant="outline" size="xs" asChild>
                               <RouterLink
                                 to={`/cases/${remark.caseId}?serviceId=${remark.serviceId}`}
                               >
-                                <Eye className="mr-1.5 h-3.5 w-3.5" /> View
+                                <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                <span className=" xs:inline">View</span>
                               </RouterLink>
                             </Button>
                           </div>

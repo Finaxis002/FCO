@@ -110,187 +110,115 @@ export default function RecentActivity({
   const isLoading = loading || remarksLoading;
 
   return (
-    // <Card className="h-full">
-    //   <CardHeader>
-    //     <CardTitle className="flex items-center">
-    //       <Activity className="mr-2 h-5 w-5 text-primary" />
-    //       Recent Case Updates
-    //     </CardTitle>
-    //     <CardDescription>
-    //       Latest case progress and status changes.
-    //     </CardDescription>
-    //   </CardHeader>
-    //   <CardContent className="flex flex-col h-[calc(100%-72px)]">
-    //     {loading ? (
-    //       <div className="space-y-4">
-    //         {[...Array(5)].map((_, i) => (
-    //           <div key={i} className="h-6 bg-gray-200 rounded animate-pulse" />
-    //         ))}
-    //       </div>
-    //     ) : recentCases.length > 0 ? (
-    //       <ScrollArea className="flex-grow pr-4">
-    //         <ul className="space-y-4">
-    //           {recentCases.slice(0, 3).map((c) => (
-    //             <li
-    //               key={c._id}
-    //               className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-    //             >
-    //               {/* Left colored status indicator */}
-    //               <div
-    //                 className={`
-    //       w-2 h-12 rounded-full
-    //       ${
-    //         c.overallStatus === "Completed" || c.overallStatus === "Approved"
-    //           ? "bg-green-500"
-    //           : ""
-    //       }
-    //       ${c.overallStatus === "Pending" ? "bg-yellow-500" : ""}
-    //       ${c.overallStatus === "In-Progress" ? "bg-blue-500" : ""}
-    //       ${c.overallStatus === "Rejected" ? "bg-red-500" : ""}
-    //     `}
-    //               ></div>
-
-    //               <div className="flex flex-col flex-grow min-w-0">
-    //                 <p className="text-lg font-semibold text-gray-900 truncate">
-    //                   {c.unitName}
-    //                 </p>
-    //                 <p className="text-sm text-gray-600 truncate">
-    //                   Status:{" "}
-    //                   <span className="font-medium">{c.overallStatus}</span>{" "}
-    //                   &mdash; Updated {getRelativeTime(c.lastUpdate)}
-    //                 </p>
-
-    //                 {c.latestRemark && (
-    //                   <p className="text-sm text-muted-foreground truncate">
-    //                     📝 {c.latestRemark}
-    //                   </p>
-    //                 )}
-    //               </div>
-
-    //               <RouterLink
-    //                 to={`/cases/${c._id}`}
-    //                 className="text-sm font-medium text-primary hover:underline whitespace-nowrap"
-    //               >
-    //                 View Details →
-    //               </RouterLink>
-    //             </li>
-    //           ))}
-    //         </ul>
-    //       </ScrollArea>
-    //     ) : (
-    //       <div className="flex-grow flex flex-col items-center justify-center text-center py-8">
-    //         <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-    //         <p className="text-muted-foreground">
-    //           No recent case updates to display.
-    //         </p>
-    //       </div>
-    //     )}
-    //   </CardContent>
-    // </Card>
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Activity className="mr-2 h-5 w-5 text-primary" />
-          Recent Activity
-        </CardTitle>
-        <CardDescription>
-          Latest case updates and remarks from your team.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col h-[calc(100%-72px)]">
-  {isLoading ? (
-    <div className="space-y-4">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="h-6 bg-gray-200 rounded animate-pulse" />
-      ))}
-    </div>
-  ) : combinedActivities.length > 0 ? (
-    <ScrollArea className="flex-grow pr-4">
-      <ul className="space-y-4">
-        {combinedActivities.slice(0, 3).map((activity) => (
-          <li
-            key={`${activity.type}-${activity.id}-${activity.date}`}
-            className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-          >
-            {/* Vertical indicator - different colors for cases vs remarks */}
-            <div
-              className={`
-                w-2 h-12 rounded-full
-                ${
-                  activity.type === "case"
-                    ? activity.status === "Completed" || activity.status === "Approved"
-                      ? "bg-green-500"
-                      : activity.status === "Pending"
-                      ? "bg-yellow-500"
-                      : activity.status === "In-Progress"
-                      ? "bg-blue-500"
-                      : activity.status === "Rejected"
-                      ? "bg-red-500"
-                      : "bg-gray-300"
-                    : "bg-purple-500" // Different color for remarks
-                }
-              `}
-            ></div>
-
-            <div className="flex flex-col flex-grow min-w-0">
-              <p className="text-lg font-semibold text-gray-900 truncate">
-                {activity.title}
-              </p>
-              <p className="text-sm text-gray-800 truncate">
-                {activity.type === "case" ? "Status" : "Remark added"}:{" "}
-                <span 
-                  className={`font-medium ${
+    
+ // ...existing code...
+<Card className="h-full">
+  <CardHeader>
+    <CardTitle className="flex items-center">
+      <Activity className="mr-2 h-5 w-5 text-primary" />
+      Recent Activity
+    </CardTitle>
+    <CardDescription>
+      Latest case updates and remarks from your team.
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="flex flex-col h-[calc(100%-72px)]">
+    {isLoading ? (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-6 bg-gray-200 rounded animate-pulse" />
+        ))}
+      </div>
+    ) : combinedActivities.length > 0 ? (
+      <ScrollArea className="flex-grow pr-0 md:pr-4">
+        <ul className="space-y-4">
+          {combinedActivities.slice(0, 3).map((activity) => (
+            <li
+              key={`${activity.type}-${activity.id}-${activity.date}`}
+              className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+            >
+              {/* Vertical indicator - different colors for cases vs remarks */}
+              <div
+                className={`
+                  w-2 h-8 sm:h-12 rounded-full
+                  ${
                     activity.type === "case"
                       ? activity.status === "Completed" || activity.status === "Approved"
-                        ? "text-green-600"
+                        ? "bg-green-500"
                         : activity.status === "Pending"
-                        ? "text-yellow-600"
+                        ? "bg-yellow-500"
                         : activity.status === "In-Progress"
-                        ? "text-blue-600"
+                        ? "bg-blue-500"
                         : activity.status === "Rejected"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                      : "text-purple-600" // Different color for remarks
-                  }`}
-                >
-                  {activity.status}
-                </span>{" "}
-                &mdash; Updated {getRelativeTime(activity.date)}
-              </p>
+                        ? "bg-red-500"
+                        : "bg-gray-300"
+                      : "bg-purple-500"
+                  }
+                `}
+              ></div>
 
-              {activity.content && (
-                <div className="mt-1">
-                  <p className={`text-sm ${
-                    activity.type === "remark" 
-                      ? "text-purple-700 bg-purple-50 p-2 rounded" 
-                      : "text-muted-foreground"
-                  } truncate`}>
-                    {activity.type === "remark" ? "💬 " : "📝 "}
-                    {activity.content}
-                  </p>
-                </div>
-              )}
-            </div>
+              <div className="flex flex-col flex-grow min-w-0">
+                <p className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                  {activity.title}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-800 truncate">
+                  {activity.type === "case" ? "Status" : "Remark added"}:{" "}
+                  <span
+                    className={`font-medium ${
+                      activity.type === "case"
+                        ? activity.status === "Completed" || activity.status === "Approved"
+                          ? "text-green-600"
+                          : activity.status === "Pending"
+                          ? "text-yellow-600"
+                          : activity.status === "In-Progress"
+                          ? "text-blue-600"
+                          : activity.status === "Rejected"
+                          ? "text-red-600"
+                          : "text-gray-600"
+                        : "text-purple-600"
+                    }`}
+                  >
+                    {activity.status}
+                  </span>{" "}
+                  &mdash; Updated {getRelativeTime(activity.date)}
+                </p>
 
-            <RouterLink
-              to={`/cases/${activity.id}`}
-              className="text-sm font-medium text-primary hover:underline whitespace-nowrap"
-            >
-              View Details →
-            </RouterLink>
-          </li>
-        ))}
-      </ul>
-    </ScrollArea>
-  ) : (
-    <div className="flex-grow flex flex-col items-center justify-center text-center py-8">
-      <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-      <p className="text-muted-foreground">
-        No recent activity to display.
-      </p>
-    </div>
-  )}
-</CardContent>
-    </Card>
+                {activity.content && (
+                  <div className="mt-1">
+                    <p
+                      className={`text-xs sm:text-sm ${
+                        activity.type === "remark"
+                          ? "text-purple-700 bg-purple-50 p-2 rounded"
+                          : "text-muted-foreground"
+                      } truncate`}
+                    >
+                      {activity.type === "remark" ? "💬 " : "📝 "}
+                      {activity.content}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <RouterLink
+                to={`/cases/${activity.id}`}
+                className="text-xs sm:text-sm font-medium text-primary hover:underline whitespace-nowrap mt-2 sm:mt-0"
+              >
+                View Details →
+              </RouterLink>
+            </li>
+          ))}
+        </ul>
+      </ScrollArea>
+    ) : (
+      <div className="flex-grow flex flex-col items-center justify-center text-center py-8">
+        <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+        <p className="text-muted-foreground">
+          No recent activity to display.
+        </p>
+      </div>
+    )}
+  </CardContent>
+</Card>
+// ...existing code...
   );
 }
