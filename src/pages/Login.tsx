@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import ReCAPTCHA from "react-google-recaptcha";
+
+const RECAPTCHA_SITE_KEY = "6LfwLlMrAAAAAIFtLSnFxwGP_xfkeDU7xuz69sLa";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -11,53 +14,65 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState("");
 
+  const handleCaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token || "");
+  };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
+    try {
+      const res = await axios.post(
+        "https://tumbledrybe.sharda.co.in/api/auth/login",
+        {
+          userId,
+          password,
+          isAdminLogin,
+          recaptchaToken,
+        }
+      );
 
-  try {
-    const res = await axios.post("https://tumbledrybe.sharda.co.in/api/auth/login", {
-      userId,
-      password,
-      isAdminLogin,
-    });
+      const { token, role, user } = res.data;
 
-    const { token, role, user } = res.data;
+      let fullUser = user;
 
-    let fullUser = user;
+      // If not admin, fetch full user details
+      if (role !== "Admin") {
+        try {
+          const userRes = await axios.get(
+            `https://tumbledrybe.sharda.co.in/api/users/${user._id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          fullUser = userRes.data;
+        } catch (fetchErr) {
+          console.error("Failed to fetch full user data:", fetchErr);
+        }
+      }
 
-    // If not admin, fetch full user details
-    if (role !== "Admin") {
-      try {
-        const userRes = await axios.get(`https://tumbledrybe.sharda.co.in/api/users/${user._id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        fullUser = userRes.data;
-      } catch (fetchErr) {
-        console.error("Failed to fetch full user data:", fetchErr);
+      // Save token, role, and full user data to localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("user", JSON.stringify(fullUser));
+
+      navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
+    } catch (err: any) {
+      if (err.response?.status === 429) {
+        setError(
+          err.response.data.message ||
+            "Too many attempts. Please try again later."
+        );
+      } else {
+        setError(err.response?.data?.message || "Login failed");
       }
     }
-
-    // Save token, role, and full user data to localStorage
-    localStorage.setItem("token", token);
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("user", JSON.stringify(fullUser));
-
-    navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
-
-  } catch (err: any) {
-  if (err.response?.status === 429) {
-    setError(err.response.data.message || "Too many attempts. Please try again later.");
-  } else {
-    setError(err.response?.data?.message || "Login failed");
-  }
-}
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 px-4">
@@ -123,7 +138,6 @@ const handleLogin = async (e: React.FormEvent) => {
           {/* Role toggle */}
           <div className="mb-8">
             <div className="relative flex items-center bg-gray-100 rounded-full p-1">
-           
               <button
                 type="button"
                 onClick={() => setIsAdminLogin(true)}
@@ -135,7 +149,7 @@ const handleLogin = async (e: React.FormEvent) => {
               >
                 Admin
               </button>
-                 <button
+              <button
                 type="button"
                 onClick={() => setIsAdminLogin(false)}
                 className={`relative flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all duration-300 ${
@@ -286,7 +300,10 @@ const handleLogin = async (e: React.FormEvent) => {
               </div>
             </div>
 
-          
+            <ReCAPTCHA
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={handleCaptchaChange}
+            />
 
             <div>
               <button
@@ -316,8 +333,6 @@ const handleLogin = async (e: React.FormEvent) => {
             </div>
           </form>
         </div>
-
-     
       </div>
     </div>
   );
