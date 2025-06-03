@@ -2,7 +2,6 @@
   "name": "vite-franchiseflow",
   "version": "0.1.0",
   "private": true,
-   "proxy": "https://tumbledrybe.sharda.co.in",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -10,7 +9,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
-    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts"
+    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
+    "start": "node server.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
@@ -43,10 +43,12 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
+    "express": "^5.1.0",
     "firebase": "^11.7.0",
     "geist": "^1.3.1",
     "genkit": "^1.8.0",
     "heroicons": "^2.2.0",
+    "http-proxy-middleware": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.475.0",
     "next-auth": "^4.24.11",
