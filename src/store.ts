@@ -3,7 +3,7 @@ import caseReducer from './features/caseSlice';
 import userReducer from './features/userSlice';
 import permissionsReducer from "./features/permissionsSlice";
 import authReducer from "./features/authSlice"; // Add this import
-import serviceReducer from './features/serviceSlice'; // Import the service reducer
+import serviceReducer from './features/ServiceSlice'; // Import the service reducer
 
 export const store = configureStore({
   reducer: {
