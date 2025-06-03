@@ -159,7 +159,7 @@ export default function AddCaseForm() {
     const fetchServices = async () => {
       try {
         const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/services"
+          "/api/services"
         );
         setGlobalServices(res.data);
 
@@ -197,7 +197,7 @@ export default function AddCaseForm() {
       setLoadingEdit(true);
       try {
         const res = await axios.get(
-          `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+          `/api/cases/${caseId}`
         );
         const caseData = res.data;
 
@@ -260,7 +260,7 @@ export default function AddCaseForm() {
     const fetchOwners = async () => {
       try {
         const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/owners"
+          "/api/owners"
         );
         setOwnerOptions(
           res.data.map((o: any) => ({
@@ -280,7 +280,7 @@ export default function AddCaseForm() {
     const fetchClients = async () => {
       try {
         const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/clients"
+          "/api/clients"
         );
         setClientOptions(
           res.data.map((c: any) => ({
@@ -304,7 +304,7 @@ export default function AddCaseForm() {
   const createOwner = async (name: string) => {
     try {
       const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/owners",
+        "/api/owners",
         {
           name,
         }
@@ -327,7 +327,7 @@ export default function AddCaseForm() {
     console.log("Attempting to create client:", name);
     try {
       const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/clients",
+        "/api/clients",
         {
           name,
         }

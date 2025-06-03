@@ -1,17 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Edit, Settings2, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  MoreVertical,
+  Edit,
+  Settings2,
+  ShieldCheck,
+  Trash2,
+  EyeOff,
+  Eye,
+  Plus
+} from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import { UserRole } from "@/types/franchise";
+import AddEditUserDialog from "./add-edit-user-dialog";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast"; // If you use a toast/snackbar
 
 interface User {
   _id: string;
@@ -29,7 +49,7 @@ interface UserCardViewProps {
   refreshKey?: any;
 }
 
-const BASE_URL = "https://tumbledrybe.sharda.co.in/api/users";
+const BASE_URL = "/api/users";
 
 const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -37,8 +57,20 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
   const [error, setError] = useState<string | null>(null);
 
   // You can add your permission logic here if needed
-  const userRole = localStorage.getItem("userRole") || "User";
+
   const [permissions, setPermissions] = useState<any>({});
+  const [isAddEditUserDialogOpen, setIsAddEditUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+
+  const userRole = localStorage.getItem("userRole") || "User";
+
+  const toast = useToast();
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -61,22 +93,57 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
     // eslint-disable-next-line
   }, [refreshKey]);
 
-  // Dummy handlers for edit, delete, reset password
-  const handleEditUser = (user: User) => {
-    // Implement your edit logic or dialog here
-    alert(`Edit user: ${user.name}`);
-  };
-  const handleDeleteUser = (userId: string) => {
-    // Implement your delete logic here
-    alert(`Delete user: ${userId}`);
-  };
-  const handleResetPassword = (user: User) => {
-    // Implement your reset password logic here
-    alert(`Reset password for: ${user.name}`);
+   const handleAddUser = () => {
+    setEditingUser(null);
+    setIsAddEditUserDialogOpen(true);
   };
 
+  // Dummy handlers for edit, delete, reset password
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setIsAddEditUserDialogOpen(true);
+  };
+  const handleResetPassword = (user: User) => {
+    setSelectedUser(user);
+    setShowResetDialog(true);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const user = users.find((u) => u._id === userId) || null;
+    setSelectedUser(user);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmResetPassword = async () => {
+    // Implement your reset password API call here
+    setShowResetDialog(false);
+    if (selectedUser) {
+      // Example: await api.resetPassword(selectedUser._id);
+      toast.toast({
+        title: "Password reset",
+        description: `Password reset for ${selectedUser.name}`,
+      });
+    }
+    setSelectedUser(null);
+  };
+
+  const confirmDeleteUser = async () => {
+    // Implement your delete user API call here
+    setShowDeleteDialog(false);
+    if (selectedUser) {
+      // Example: await api.deleteUser(selectedUser._id);
+      setUsers(users.filter((u) => u._id !== selectedUser._id));
+      toast.toast({
+        title: "User deleted",
+        description: `${selectedUser.name} has been deleted.`,
+      });
+    }
+    setSelectedUser(null);
+  };
   if (loading) {
-    return <div className="p-6 text-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="p-6 text-center text-muted-foreground">Loading...</div>
+    );
   }
   if (error) {
     return <div className="p-6 text-center text-red-600">Error: {error}</div>;
@@ -90,6 +157,20 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
   }
 
   return (
+    <>
+    {(userRole === "Admin" || permissions?.userRolesAndResponsibility) && (
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="default"
+            className="flex items-center gap-2"
+            onClick={handleAddUser}
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add New User</span>
+          </Button>
+        </div>
+      )}
+   
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ">
       {users.map((user) => (
         <Card key={user._id} className="flex flex-col h-full">
@@ -108,7 +189,9 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
             )}
             <div>
               <CardTitle className="text-base">{user.name}</CardTitle>
-              <CardDescription className="text-xs">{user.email}</CardDescription>
+              <CardDescription className="text-xs">
+                {user.email}
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="flex-1">
@@ -122,50 +205,162 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
               </Badge>
             </div>
           </CardContent>
-    
-{(userRole === "Admin" || permissions?.userRolesAndResponsibility) && (
-  <CardFooter className="flex flex-wrap gap-2 justify-end p-3 sm:p-4">
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleEditUser(user)}
-      className="text-blue-600 hover:!bg-blue-600 hover:!text-white flex items-center"
-    >
-      <Edit className="h-4 w-4 mr-1" />
-      <span className="hidden xs:inline">Edit</span>
-    </Button>
-    <RouterLink
-      to={`/users/${user._id}/permissions`}
-      className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
-    >
-      <Settings2 className="h-4 w-4 mr-1" />
-      <span className="hidden xs:inline">Manage</span>
-    </RouterLink>
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleResetPassword(user)}
-      className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white flex items-center"
-    >
-      <ShieldCheck className="h-4 w-4 mr-1" />
-      <span className="hidden xs:inline">Reset</span>
-      <span className="hidden sm:inline"> Password</span>
-    </Button>
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleDeleteUser(user._id)}
-      className="text-red-600 hover:!bg-red-600 hover:!text-white flex items-center"
-    >
-      <Trash2 className="h-4 w-4 mr-1" />
-      <span className="hidden xs:inline">Delete</span>
-    </Button>
-  </CardFooter>
-)}
 
+          {(userRole === "Admin" ||
+            permissions?.userRolesAndResponsibility) && (
+            <CardFooter className="flex flex-wrap gap-2 justify-end p-3 sm:p-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEditUser(user)}
+                className="text-blue-600 hover:!bg-blue-600 hover:!text-white flex items-center"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Edit</span>
+              </Button>
+              <RouterLink
+                to={`/users/${user._id}/permissions`}
+                className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
+              >
+                <Settings2 className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Manage</span>
+              </RouterLink>
+               <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleResetPassword(user)}
+                className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white flex items-center"
+              >
+                <ShieldCheck className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Reset</span>
+                <span className="hidden sm:inline"> Password</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDeleteUser(user._id)}
+                className="text-red-600 hover:!bg-red-600 hover:!text-white flex items-center"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Delete</span>
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       ))}
+      {isAddEditUserDialogOpen && (
+        <AddEditUserDialog
+          user={
+            editingUser
+              ? {
+                  ...editingUser,
+                  id: editingUser.id ?? editingUser._id ?? "",
+                }
+              : undefined // undefined for add new user
+          }
+          isOpen={isAddEditUserDialogOpen}
+          onClose={() => {
+            setIsAddEditUserDialogOpen(false);
+            setEditingUser(null);
+          }}
+          onSave={() => {
+            setIsAddEditUserDialogOpen(false);
+            setEditingUser(null);
+            fetchUsers();
+          }}
+        />
+      )}
+
+      {isAddEditUserDialogOpen && editingUser && (
+        <AddEditUserDialog
+          user={
+            editingUser
+              ? {
+                  ...editingUser,
+                  id: editingUser.id ?? editingUser._id ?? "",
+                }
+              : editingUser
+          }
+          isOpen={isAddEditUserDialogOpen}
+          onClose={() => {
+            setIsAddEditUserDialogOpen(false);
+            setEditingUser(null);
+          }}
+          onSave={() => {
+            setIsAddEditUserDialogOpen(false);
+            setEditingUser(null);
+            fetchUsers(); // Optionally refresh users after save
+          }}
+        />
+      )}
+
+       {/* Reset Password Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter a new password for <strong>{selectedUser?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 relative">
+            <label className="text-sm font-medium">New Password</label>
+      <input
+        type={showPassword ? "text" : "password"}
+        value={resetPassword}
+        onChange={(e) => setResetPassword(e.target.value)}
+        placeholder="Enter new password"
+        className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring focus:ring-blue-500"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword((prev) => !prev)}
+        className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
+      >
+        {showPassword ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+      </button>
     </div>
+    <DialogFooter className="pt-4">
+      <Button variant="outline" onClick={() => setShowResetDialog(false)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={confirmResetPassword}
+        disabled={!resetPassword}
+      >
+        Reset Password
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <b>{selectedUser?.name}</b>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteUser}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+     </>
   );
 };
 

@@ -45,20 +45,20 @@ export default function SettingsLayout({
 
   return (
     <Tabs
-      value={defaultSection} // Controlled prop
+      value={defaultSection}
       onValueChange={(val) => {
-        if (onSectionChange) onSectionChange(val); // Call URL update handler
+        if (onSectionChange) onSectionChange(val);
       }}
       className="w-full"
     >
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
+      <TabsList className="flex w-full overflow-x-auto gap-2 mb-6 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent md:grid md:grid-cols-3 lg:grid-cols-5">
         {visibleSections.map((section) => {
           const IconComponent = iconMap[section.icon] || SettingsIconLucide;
           return (
             <TabsTrigger
               key={section.value}
               value={section.value}
-              className="flex-1 flex items-center justify-center gap-2 py-2"
+              className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-2 whitespace-nowrap"
             >
               <IconComponent className="h-4 w-4" />
               {section.label}
@@ -74,4 +74,3 @@ export default function SettingsLayout({
     </Tabs>
   );
 }
-

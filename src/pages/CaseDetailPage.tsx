@@ -60,14 +60,11 @@ export default function CaseDetailPage({
     const fetchAllRemarks = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch("/api/remarks/recent", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!res.ok) throw new Error("Failed to fetch recent remarks");
         const data = await res.json();
@@ -77,7 +74,7 @@ export default function CaseDetailPage({
         const unread = data.filter((r: any) => !r.read).length;
         setUnreadRemarkCount(unread);
 
-        console.log("unread remarks count:", unread);
+        // console.log("unread remarks count:", unread);
       } catch (err) {
         console.error("Error loading recent remarks:", err);
       }
@@ -122,7 +119,7 @@ export default function CaseDetailPage({
   }, []);
 
   useEffect(() => {
-    console.log("✅ Highlight Service ID:", highlightServiceId);
+    // console.log("✅ Highlight Service ID:", highlightServiceId);
   }, [highlightServiceId]);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -230,9 +227,7 @@ export default function CaseDetailPage({
   const fetchCaseById = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-      );
+      const response = await fetch(`/api/cases/${caseId}`);
       if (!response.ok) {
         setCaseData(undefined);
       } else {
@@ -433,7 +428,7 @@ export default function CaseDetailPage({
                   highlightServiceId={highlightServiceId || undefined}
                   allRemarks={allRemarks}
                   onRemarkRead={handleRemarkRead} // ✅ new
-                  showTags={true}  
+                  showTags={true}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

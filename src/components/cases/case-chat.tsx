@@ -68,7 +68,7 @@ export default function CaseChat({
   assignedUsers,
   initialMessages = [],
 }: CaseChatProps) {
-  console.log("Assigned users prop:", assignedUsers);
+  // console.log("Assigned users prop:", assignedUsers);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
@@ -86,7 +86,7 @@ export default function CaseChat({
     const loadMessages = async () => {
       try {
         const response = await fetch(
-          `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/messages`
+          `/api/cases/${caseId}/messages`
         );
         const data = await response.json();
 
@@ -275,7 +275,7 @@ export default function CaseChat({
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
+        `/api/chats/mark-read/${caseId}`,
         {
           userId: userIdToSend, // send _id from localStorage user object
         },

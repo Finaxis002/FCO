@@ -44,7 +44,7 @@ export default function MainSidebarNavigation({
   const permissions = useSelector(
     (state: RootState) => state.permissions.permissions
   );
-    console.log("is mobile open", isMobile);
+    // console.log("is mobile open", isMobile);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";

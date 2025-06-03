@@ -53,7 +53,7 @@ export default function ClientCaseDetailPage({
   >([]);
   useEffect(() => {
     const fetchAllRemarks = async () => {
-      const url = "https://tumbledrybe.sharda.co.in/api/remarks/public/recent"; // always public endpoint
+      const url = "/api/remarks/public/recent"; // always public endpoint
 
       try {
         const res = await fetch(url, {
@@ -173,7 +173,7 @@ export default function ClientCaseDetailPage({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+        `/api/cases/${caseId}`
       );
       if (!response.ok) {
         setCaseData(undefined);
@@ -296,198 +296,194 @@ export default function ClientCaseDetailPage({
   const userRole = localStorage.getItem("userRole");
 
   return (
-    <>
-      <PageHeader
-        title={`Case Details: ${caseData.unitName}`}
-        description={`SRN: ${caseData.srNo}`}
-      ></PageHeader>
+   <>
+  <PageHeader
+    title={`Case Details: ${caseData.unitName}`}
+    description={`SRN: ${caseData.srNo}`}
+  ></PageHeader>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-primary" />
-                Franchise & Owner Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                <div>
-                  <strong>Unit Name:</strong> {caseData.unitName}
-                </div>
-                <div>
-                  <strong>Owner Name:</strong> {caseData.ownerName}
-                </div>
-                <div className="sm:col-span-2">
-                  <strong>Franchise Address:</strong>{" "}
-                  {caseData.franchiseAddress}
-                </div>
-                <div>
-                  <strong>Promoters:</strong> {caseData.stateHead || "N/A"}
-                </div>
-                <div>
-                  <strong>Authorized Person:</strong>{" "}
-                  {caseData.authorizedPerson || "N/A"}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  <div className="grid gap-6 md:grid-cols-3">
+    <div className="md:col-span-2 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            Franchise & Owner Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+            <div>
+              <strong>Unit Name:</strong> {caseData.unitName}
+            </div>
+            <div>
+              <strong>Owner Name:</strong> {caseData.ownerName}
+            </div>
+            <div className="sm:col-span-2">
+              <strong>Franchise Address:</strong> {caseData.franchiseAddress}
+            </div>
+            <div>
+              <strong>Promoters:</strong> {caseData.stateHead || "N/A"}
+            </div>
+            <div>
+              <strong>Authorized Person:</strong> {caseData.authorizedPerson || "N/A"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-6 w-6 text-primary" />
-                Compliance Services
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {caseData.services && caseData.services.length > 0 ? (
-                <CaseServices
-                 
-                  caseId={caseId!}
-                  caseName={caseData.unitName}
-                  services={caseData.services}
-                  currentUser={currentUser}
-                  overallStatus={caseData.overallStatus ?? "New-Case"} // calculate or fetch this value from db
-                  overallCompletionPercentage={
-                    caseData.overallCompletionPercentage ?? 50
-                  }
-                  onUpdate={handleCaseUpdate} // NEW PROP
-                  allRemarks={allRemarks}
-                  showTags={false}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No services listed for this case.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                Overall Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Current Status:</span>
-                <StatusIndicator
-                  status={caseData.overallStatus ?? "New-Case"}
-                  showText={true}
-                  className="text-sm px-3 py-1"
-                />
-              </div>
-              {caseData.reasonForStatus && (
-                <div>
-                  <p className="text-sm font-medium mb-1">Reason/Note:</p>
-                  <p className="text-xs p-2 bg-muted/50 rounded-md border text-muted-foreground">
-                    {caseData.reasonForStatus}
-                  </p>
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-muted-foreground" />{" "}
-                  Last Updated:
-                </p>
-                <p className="text-sm text-foreground">
-                  {getFormattedDate(caseData.lastUpdate)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UsersIcon className="h-5 w-5 text-primary" />
-                Assigned Team
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {assignedUserObjects.length > 0 ? (
-                <ul className="space-y-3">
-                  {assignedUserObjects.map((user) => (
-                    <li key={user.id} className="flex items-center gap-3">
-                      <img
-                        src={
-                          user.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            user.name || ""
-                          )}&background=random`
-                        }
-                        alt={user.name}
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                        data-ai-hint="user avatar"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {user.role}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No users assigned to this case.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {caseData.viewLink && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Public View Link
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-2">
-                  A shareable link for external viewers (if applicable).
-                </p>
-                <Button variant="outline" asChild className="w-full">
-                  <RouterLink
-                    to={caseData.viewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Open Public Link
-                  </RouterLink>
-                </Button>
-              </CardContent>
-            </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            Compliance Services
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {caseData.services && caseData.services.length > 0 ? (
+            <CaseServices
+              caseId={caseId!}
+              caseName={caseData.unitName}
+              services={caseData.services}
+              currentUser={currentUser}
+              overallStatus={caseData.overallStatus ?? "New-Case"}
+              overallCompletionPercentage={
+                caseData.overallCompletionPercentage ?? 50
+              }
+              onUpdate={handleCaseUpdate}
+              allRemarks={allRemarks}
+              showTags={false}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No services listed for this case.
+            </p>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+    </div>
 
-      {/* Team Chat Section */}
-      <div className="mt-6">
-        {caseData && caseId && currentUser && (
-          <CaseChat
-            caseId={caseId}
-            currentUser={currentUser}
-            assignedUsers={(caseData.assignedUsers || []).map((user: any) => ({
-              id: user.userId,
-              name: user.name,
-              email: user.email || "",
-              avatarUrl: user.avatarUrl || "",
-              role: user.role || "Team Member",
-            }))}
-          />
-        )}
-      </div>
-    </>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Info className="h-5 w-5 text-primary" />
+            Overall Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span className="text-sm font-medium">Current Status:</span>
+            <StatusIndicator
+              status={caseData.overallStatus ?? "New-Case"}
+              showText={true}
+              className="text-sm px-3 py-1"
+            />
+          </div>
+          {caseData.reasonForStatus && (
+            <div>
+              <p className="text-sm font-medium mb-1">Reason/Note:</p>
+              <p className="text-xs p-2 bg-muted/50 rounded-md border text-muted-foreground">
+                {caseData.reasonForStatus}
+              </p>
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" /> Last Updated:
+            </p>
+            <p className="text-sm text-foreground">
+              {getFormattedDate(caseData.lastUpdate)}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <UsersIcon className="h-5 w-5 text-primary" />
+            Assigned Team
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {assignedUserObjects.length > 0 ? (
+            <ul className="space-y-3">
+              {assignedUserObjects.map((user) => (
+                <li key={user.id} className="flex items-center gap-3">
+                  <img
+                    src={
+                      user.avatarUrl ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        user.name || ""
+                      )}&background=random`
+                    }
+                    alt={user.name}
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                    data-ai-hint="user avatar"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.role}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No users assigned to this case.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {caseData.viewLink && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <FileText className="h-5 w-5 text-primary" />
+              Public View Link
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-2">
+              A shareable link for external viewers (if applicable).
+            </p>
+            <Button variant="outline" asChild className="w-full">
+              <RouterLink
+                to={caseData.viewLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open Public Link
+              </RouterLink>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  </div>
+
+  {/* Team Chat Section */}
+  <div className="mt-6">
+    {caseData && caseId && currentUser && (
+      <CaseChat
+        caseId={caseId}
+        currentUser={currentUser}
+        assignedUsers={(caseData.assignedUsers || []).map((user: any) => ({
+          id: user.userId,
+          name: user.name,
+          email: user.email || "",
+          avatarUrl: user.avatarUrl || "",
+          role: user.role || "Team Member",
+        }))}
+      />
+    )}
+  </div>
+</>
   );
 }

@@ -186,7 +186,7 @@ export default function MainHeader() {
         const token = localStorage.getItem("token");
 
         const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/notifications",
+          "/api/notifications",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -223,7 +223,7 @@ export default function MainHeader() {
         currentUser?._id || currentUser?.id || currentUser?.userId;
 
       const res = await fetch(
-        "https://tumbledrybe.sharda.co.in/api/remarks/recent",
+        "/api/remarks/recent",
         {
           headers: {
             Authorization: `Bearer ${token}`,

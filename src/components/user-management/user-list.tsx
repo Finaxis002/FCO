@@ -75,6 +75,8 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const { toast } = useToast();
 
@@ -86,7 +88,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
     setPermissionsError(null);
     try {
       const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/users/${userId}`
+        `/api/users/${userId}`
       );
       if (!response.ok) throw new Error("Failed to fetch permissions");
       const data = await response.json();
@@ -123,7 +125,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
   }, []);
 
   // Backend base URL - adjust accordingly
-  const BASE_URL = "https://tumbledrybe.sharda.co.in/api/users";
+  const BASE_URL = "/api/users";
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -165,28 +167,25 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
         });
         if (!response.ok) throw new Error("Failed to update user");
         const data = await response.json();
-        
-      // Check for role change and if updated user is current logged-in user
-      if (
-        data.roleChanged &&
-        data.updatedUser._id === currentUser?.userId
-      ) {
-        toast({
-          title: "Role Changed",
-          description:
-            "Your role has been changed. You will be logged out now.",
-          variant: "destructive",
-        });
 
-        // Clear user session & redirect to login page
-        localStorage.removeItem("user");
-        localStorage.removeItem("userRole");
-        // Any other session/token cleanup logic here
+        // Check for role change and if updated user is current logged-in user
+        if (data.roleChanged && data.updatedUser._id === currentUser?.userId) {
+          toast({
+            title: "Role Changed",
+            description:
+              "Your role has been changed. You will be logged out now.",
+            variant: "destructive",
+          });
 
-        // Redirect (using react-router-dom or window.location)
-        window.location.href = "/login"; // or your login route
-        return; // stop further processing
-      }
+          // Clear user session & redirect to login page
+          localStorage.removeItem("user");
+          localStorage.removeItem("userRole");
+          // Any other session/token cleanup logic here
+
+          // Redirect (using react-router-dom or window.location)
+          window.location.href = "/login"; // or your login route
+          return; // stop further processing
+        }
       } else {
         const response = await fetch(BASE_URL, {
           method: "POST",
@@ -399,7 +398,10 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteUser(user._id)}
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setShowDeleteDialog(true);
+                          }}
                           className="text-red-600 hover:!bg-red-600 hover:!text-white"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
@@ -489,6 +491,52 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
           </DialogContent>
         </Dialog>
       )}
+
+      {showDeleteDialog && (
+  <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Delete User</DialogTitle>
+        <DialogDescription>
+          Are you sure you want to delete <strong>{userToDelete?.name}</strong>? This action cannot be undone.
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+          Cancel
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={async () => {
+            if (!userToDelete) return;
+            try {
+              const response = await fetch(`${BASE_URL}/${userToDelete._id}`, {
+                method: "DELETE",
+              });
+              if (!response.ok) throw new Error("Failed to delete user");
+              toast({
+                title: "User Deleted",
+                description: `${userToDelete.name} deleted successfully.`,
+                variant: "destructive",
+              });
+              setShowDeleteDialog(false);
+              setUserToDelete(null);
+              fetchUsers();
+            } catch (err: any) {
+              toast({
+                title: "Error",
+                description: err.message || "Failed to delete user.",
+                variant: "destructive",
+              });
+            }
+          }}
+        >
+          Delete
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+)}
     </Card>
   );
 }

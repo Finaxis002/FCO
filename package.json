@@ -2,6 +2,7 @@
   "name": "vite-franchiseflow",
   "version": "0.1.0",
   "private": true,
+   "proxy": "https://tumbledrybe.sharda.co.in",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

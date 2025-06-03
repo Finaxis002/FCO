@@ -12,5 +12,12 @@ export default defineConfig({
   },
   server: {
     port: 9002,
+    proxy: {
+      '/api': {
+        target: 'https://tumbledrybe.sharda.co.in', // or your backend URL
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   }
 })

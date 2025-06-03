@@ -131,7 +131,7 @@ export default function AddEditUserDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[480px]">
+     <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[480px] p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit User" : "Add New User"}</DialogTitle>
           <DialogDescription>

@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { Navigate } from "react-router-dom";
 
 const api = axios.create({
-  baseURL: "https://tumbledrybe.sharda.co.in/api",
+  baseURL: "/api",
 });
 
 api.interceptors.request.use((config) => {

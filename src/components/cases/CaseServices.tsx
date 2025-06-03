@@ -90,9 +90,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   useEffect(() => {
     const fetchAllTags = async () => {
       try {
-        const response = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/tags"
-        );
+        const response = await axios.get("/api/tags");
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
           acc[tag._id] = tag;
@@ -112,7 +110,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       setIsRemoving(tagId);
 
       await axios.delete(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags/${tagId}`
+        `/api/cases/${caseId}/services/${serviceId}/tags/${tagId}`
       );
 
       // Update UI
@@ -213,7 +211,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
       lastUpdate: new Date().toISOString(),
       readBy: [],
     };
-    console.log("Update Payload:", updatePayload);
+    // console.log("Update Payload:", updatePayload);
     // Rest of your dispatch code remains the same...
     dispatch(updateCase(updatePayload))
       .unwrap()
@@ -257,7 +255,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   }
 
   const userRole = localStorage.getItem("userRole");
-  console.log("prrmissions", permissions);
+  // console.log("prrmissions", permissions);
 
   useEffect(() => {
     if (!highlightServiceId) return;
@@ -268,7 +266,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         const element = serviceRefs.current[highlightServiceId];
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
-          console.log(`✅ Scrolled to service ID: ${highlightServiceId}`);
+          // console.log(`✅ Scrolled to service ID: ${highlightServiceId}`);
 
           element.classList.add("animate-pulse", "bg-blue-50");
           setTimeout(() => {
@@ -289,8 +287,8 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
   const canEdit = isAdmin || (permissions?.permissions?.edit ?? false);
 
-  console.log("isAdmin", isAdmin);
-  console.log("canEdit", canEdit);
+  // console.log("isAdmin", isAdmin);
+  // console.log("canEdit", canEdit);
 
   return (
     <div>
@@ -329,9 +327,9 @@ const CaseServices: React.FC<CaseServicesProps> = ({
               r.serviceId === service.id && !r.readBy?.includes(currentUser?.id)
           ).length;
 
-          console.log(
-            `Service: ${service.name} (ID: ${service.serviceId}), Unread Remark Count: ${unreadRemarkCount}`
-          );
+          // console.log(
+          //   `Service: ${service.name} (ID: ${service.serviceId}), Unread Remark Count: ${unreadRemarkCount}`
+          // );
 
           return (
             <li
@@ -342,13 +340,16 @@ const CaseServices: React.FC<CaseServicesProps> = ({
               }}
               className={`p-3 border rounded-lg shadow-xs bg-card hover:shadow-md transition-shadow ${
                 highlightServiceId === service.id ? "ring-2 ring-blue-500" : ""
-              }`}
+              } w-full`}
             >
-              <div className="flex justify-between items-center mb-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-md">{service.name}</h4>
+              {/* Responsive row: stack on mobile, row on desktop */}
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 gap-2 w-full">
+                <div className="flex flex-col xs:flex-row sm-flex-row xs:items-center gap-y-1 gap-x-2 flex-wrap w-full min-w-0">
+                  <h4 className="font-semibold text-md break-words">
+                    {service.name}
+                  </h4>
                   {/* Render tags */}
-                  <div className="flex gap-1 flex-wrap">
+                  <div className="flex gap-1 flex-wrap overflow-x-auto max-w-full">
                     {showTags &&
                       serviceTags.map((tag) => (
                         <span
@@ -357,7 +358,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                           style={{
                             backgroundColor: tag.color,
                             color: "#fff",
-                            paddingRight: "0.5rem", // Extra space for close button
+                            paddingRight: "0.5rem",
                           }}
                         >
                           {tag.name}
@@ -394,9 +395,63 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                         </span>
                       ))}
                   </div>
-                  {/* Tag modal trigger button */}
+                  {/* Show badge only if unread remarks exist */}
+                  {unreadRemarkCount > 0 && userRole && (
+                    <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                      {unreadRemarkCount} unread remark
+                      {unreadRemarkCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+
+                <div className="w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0">
+                  <select
+                    value={service.status}
+                    onChange={(e) => {
+                      if (canEdit) {
+                        handleStatusChange(service.id, e.target.value);
+                      } else {
+                        toast({
+                          title: "Permission Denied",
+                          description:
+                            "You are a Viewer and cannot change the service status.",
+                          variant: "destructive",
+                        });
+                        e.target.value = service.status;
+                      }
+                    }}
+                    className={`block w-full sm:w-auto cursor-pointer rounded-2xl px-3 py-2 font-semibold border text-sm ${
+                      statusStyles[service.status] ||
+                      "bg-blue-100 text-blue-800 border-gray-300 text-xs"
+                    }`}
+                  >
+                    {Object.values(SERVICE_STATUS).map((statusOption) => (
+                      <option
+                        key={statusOption}
+                        value={statusOption}
+                        className={`${
+                          statusStyles[statusOption] || "bg-white text-black"
+                        }`}
+                      >
+                        {statusOption}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Service Remarks Section */}
+              <div className="flex xs:flex-row xs:items-center gap-2 mt-2">
+                <ServiceRemarks
+                  caseId={caseId}
+                  serviceId={service.id}
+                  currentUser={currentUser}
+                  serviceName={service.name}
+                  onRemarkRead={onRemarkRead}
+                />
+                {showTags && (
                   <button
-                    className="ml-2 p-1.5 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+                    className="ml-0 xs:ml-2 mt-1 xs:mt-0 p-1.5 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                     onClick={() => {
                       setSelectedServiceForTags(service.id);
                       setExistingTags(service.tags || []);
@@ -418,62 +473,14 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                       />
                     </svg>
                   </button>
-                  {/* Show badge only if unread remarks exist */}
-                  {unreadRemarkCount > 0 && userRole && (
-                    <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
-                      {unreadRemarkCount} unread remark
-                      {unreadRemarkCount > 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
-                <select
-                  value={service.status}
-                  onChange={(e) => {
-                    if (canEdit) {
-                      handleStatusChange(service.id, e.target.value);
-                    } else {
-                      toast({
-                        title: "Permission Denied",
-                        description:
-                          "You are a Viewer and cannot change the service status.",
-                        variant: "destructive",
-                      });
-                      e.target.value = service.status;
-                    }
-                  }}
-                  className={`cursor-pointer rounded-2xl px-3 py-1 font-semibold border ${
-                    statusStyles[service.status] ||
-                    "bg-blue-100 text-blue-800 border-gray-300 text-xs"
-                  }`}
-                >
-                  {Object.values(SERVICE_STATUS).map((statusOption) => (
-                    <option
-                      key={statusOption}
-                      value={statusOption}
-                      className={`${
-                        statusStyles[statusOption] || "bg-white text-black"
-                      }`}
-                    >
-                      {statusOption}
-                    </option>
-                  ))}
-                </select>
+                )}
               </div>
-
-              {/* Service Remarks Section */}
-              <ServiceRemarks
-                caseId={caseId}
-                serviceId={service.id}
-                currentUser={currentUser}
-                serviceName={service.name}
-                onRemarkRead={onRemarkRead}
-              />
 
               {/* Tag Modal - place outside flex for best UX */}
               <ServiceTagsModal
                 open={tagModalOpen}
                 onClose={() => setTagModalOpen(false)}
-                caseId={caseId} // <-- Pass from parent prop or context
+                caseId={caseId}
                 serviceId={selectedServiceForTags ?? ""}
                 existingTags={existingTags}
                 onTagsUpdated={(updatedTags) => {

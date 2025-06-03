@@ -44,7 +44,7 @@ export default function AllRemarksPage() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        "https://tumbledrybe.sharda.co.in/api/remarks/recent",
+        "/api/remarks/recent",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -67,7 +67,7 @@ export default function AllRemarksPage() {
   };
 
   const markAllAsRead = async () => {
-    await fetch(`https://tumbledrybe.sharda.co.in/api/remarks/read-all`, {
+    await fetch(`/api/remarks/read-all`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
@@ -81,7 +81,7 @@ export default function AllRemarksPage() {
   };
 
   const deleteRemark = async (id: string) => {
-    await fetch(`https://tumbledrybe.sharda.co.in/api/remarks/${id}`, {
+    await fetch(`/api/remarks/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
@@ -89,7 +89,7 @@ export default function AllRemarksPage() {
   };
 
   const deleteAllRemarks = async () => {
-    await fetch(`https://tumbledrybe.sharda.co.in/api/remarks`, {
+    await fetch(`/api/remarks`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
