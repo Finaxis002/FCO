@@ -18,6 +18,7 @@ import React, { useEffect } from "react";
 import EditCasePage from "./pages/EditCasePage";
 import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
 import AllRemarksPage from "./pages/AllRemarksPage";
+import ServicesPage from "./pages/ServicesPage";
 
 // Simplified PlaceholderPage for debugging
 
@@ -83,6 +84,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/cases" element={<CasesPage />} />
+                <Route path="/services" element={<ServicesPage />} />
                 <Route path="/cases/new" element={<NewCasePage />} />
                 <Route path="/cases/:caseId" element={<CaseDetailPage />} />
                 <Route path="/cases/:caseId/edit" element={<EditCasePage />} />

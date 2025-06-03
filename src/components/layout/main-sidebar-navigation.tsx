@@ -8,7 +8,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Home, Users, FolderKanban, Settings } from "lucide-react"; // Added Users2
+import { Home, Users, FolderKanban, Settings , Server } from "lucide-react"; // Added Users2
 import { useSelector } from "react-redux";
 import { RootState } from "@/store"; // Adjust import path for your RootState
 
@@ -30,8 +30,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/", icon: Home },
   { id: "cases", label: "Cases", href: "/cases", icon: FolderKanban },
+   { id: "services", label: "Services", href: "/services", icon: Server }, // Added Services
   { id: "users", label: "Users", href: "/users", icon: Users, role: ["Admin"] },
-  // { id: "settings", label: "Settings", href: "/settings", icon: Settings, role: ["Admin"] },
 ];
 
 interface MainSidebarNavigationProps {

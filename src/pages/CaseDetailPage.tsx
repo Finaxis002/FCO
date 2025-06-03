@@ -60,11 +60,14 @@ export default function CaseDetailPage({
     const fetchAllRemarks = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("https://tumbledrybe.sharda.co.in/api/remarks/recent", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(
+          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!res.ok) throw new Error("Failed to fetch recent remarks");
         const data = await res.json();
@@ -227,7 +230,9 @@ export default function CaseDetailPage({
   const fetchCaseById = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}`);
+      const response = await fetch(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+      );
       if (!response.ok) {
         setCaseData(undefined);
       } else {
@@ -491,7 +496,7 @@ export default function CaseDetailPage({
                       <img
                         src={
                           user.avatarUrl ||
-                          `https://ui-avatars.comhttps://tumbledrybe.sharda.co.in/api/?name=${encodeURIComponent(
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
                             user.name || ""
                           )}&background=random`
                         }

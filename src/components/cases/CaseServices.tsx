@@ -347,6 +347,12 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                 <div className="flex flex-col xs:flex-row sm-flex-row xs:items-center gap-y-1 gap-x-2 flex-wrap w-full min-w-0">
                   <h4 className="font-semibold text-md break-words">
                     {service.name}
+                     {unreadRemarkCount > 0 && userRole && (
+                    <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                      {unreadRemarkCount} unread remark
+                      {unreadRemarkCount > 1 ? "s" : ""}
+                    </span>
+                  )}
                   </h4>
                   {/* Render tags */}
                   <div className="flex gap-1 flex-wrap overflow-x-auto max-w-full">
@@ -396,12 +402,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                       ))}
                   </div>
                   {/* Show badge only if unread remarks exist */}
-                  {unreadRemarkCount > 0 && userRole && (
-                    <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
-                      {unreadRemarkCount} unread remark
-                      {unreadRemarkCount > 1 ? "s" : ""}
-                    </span>
-                  )}
+                 
                 </div>
 
                 <div className="w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0">
