@@ -33,7 +33,7 @@ export const fetchPermissions = createAsyncThunk<
     if (!token) return rejectWithValue("Auth token not found");
 
     const res = await axios.get(
-      `/api/users/${userId}/permissions`,
+      `https://tumbledrybe.sharda.co.in/api/users/${userId}/permissions`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }

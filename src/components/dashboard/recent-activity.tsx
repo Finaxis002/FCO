@@ -64,7 +64,7 @@ export default function RecentActivity({
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          "/api/remarks/recent",
+          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
           {
             headers: {
               Authorization: `Bearer ${token}`,

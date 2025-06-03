@@ -60,7 +60,7 @@ export default function CaseDetailPage({
     const fetchAllRemarks = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/remarks/recent", {
+        const res = await fetch("https://tumbledrybe.sharda.co.in/api/remarks/recent", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -227,7 +227,7 @@ export default function CaseDetailPage({
   const fetchCaseById = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/cases/${caseId}`);
+      const response = await fetch(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}`);
       if (!response.ok) {
         setCaseData(undefined);
       } else {
@@ -491,7 +491,7 @@ export default function CaseDetailPage({
                       <img
                         src={
                           user.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          `https://ui-avatars.comhttps://tumbledrybe.sharda.co.in/api/?name=${encodeURIComponent(
                             user.name || ""
                           )}&background=random`
                         }

@@ -53,7 +53,7 @@ export default function ClientCaseDetailPage({
   >([]);
   useEffect(() => {
     const fetchAllRemarks = async () => {
-      const url = "/api/remarks/public/recent"; // always public endpoint
+      const url = "https://tumbledrybe.sharda.co.in/api/remarks/public/recent"; // always public endpoint
 
       try {
         const res = await fetch(url, {
@@ -173,7 +173,7 @@ export default function ClientCaseDetailPage({
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/cases/${caseId}`
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
       );
       if (!response.ok) {
         setCaseData(undefined);

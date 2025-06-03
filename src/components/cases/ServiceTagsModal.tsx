@@ -40,7 +40,7 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
     (async () => {
       setLoading(true);
       try {
-        const res = await axios.get("/api/tags"); // relative path if running via proxy
+        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/tags"); // relative path if running via proxy
         setAllTags(res.data);
         setSelectedTags(existingTags || []);
       } catch (err) {
@@ -56,7 +56,7 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
     if (!input.trim()) return;
     setAddLoading(true);
     try {
-      const { data } = await axios.post("/api/tags", {
+      const { data } = await axios.post("https://tumbledrybe.sharda.co.in/api/tags", {
         name: input.trim(),
         createdBy: currentUser?.id,
       });
@@ -89,7 +89,7 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
   const handleSave = async () => {
     setLoading(true);
     try {
-      await axios.patch(`/api/cases/${caseId}/services/${serviceId}/tags`, {
+      await axios.patch(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags`, {
        tagIds: selectedTags.map(tag => tag._id)
       });
       onTagsUpdated(selectedTags);

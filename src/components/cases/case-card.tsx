@@ -98,7 +98,7 @@ export default function CaseCard({
     const token = localStorage.getItem('token');
     try {
       await axios.put(
-        `/api/chats/mark-read/${caseData.id}`,
+        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseData.id}`,
          { userId: currentUserId },  // Send the ObjectId here
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -180,7 +180,7 @@ export default function CaseCard({
       const token = localStorage.getItem("token"); // Retrieve JWT token from storage
 
       await axios.put(
-        `/api/cases/${caseData.id}`,
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
         payload,
         {
           headers: {

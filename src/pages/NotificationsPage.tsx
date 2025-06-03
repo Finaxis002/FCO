@@ -68,7 +68,7 @@ export default function NotificationsPage() {
       setLoading(true);
       try {
         const res = await fetch(
-          "/api/notifications",
+          "https://tumbledrybe.sharda.co.in/api/notifications",
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `/api/notifications/${id}/read`,
+        `https://tumbledrybe.sharda.co.in/api/notifications/${id}/read`,
         {
           method: "PUT", // Use PUT as per your existing API
           headers: {
@@ -139,7 +139,7 @@ export default function NotificationsPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        "/api/notifications/read-all",
+        "https://tumbledrybe.sharda.co.in/api/notifications/read-all",
         {
           method: "PUT",
           headers: {
@@ -170,7 +170,7 @@ export default function NotificationsPage() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `/api/notifications/${id}`,
+        `https://tumbledrybe.sharda.co.in/api/notifications/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -200,7 +200,7 @@ export default function NotificationsPage() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `/api/notifications`,
+        `https://tumbledrybe.sharda.co.in/api/notifications`,
         {
           method: "DELETE",
           headers: {

@@ -188,7 +188,7 @@ export default function DataManagementSettings() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get("/api/services");
+        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/services");
         const formatted = res.data.map((s: any) => ({
           id: s._id,
           name: s.name,
@@ -241,7 +241,7 @@ export default function DataManagementSettings() {
   const serviceDefHandler = {
     add: async (name: string, p0: { defaultStatus: string }) => {
       try {
-        const res = await axios.post("/api/services", {
+        const res = await axios.post("https://tumbledrybe.sharda.co.in/api/services", {
           name,
         });
         const newItem: ServiceDefinition = {
@@ -265,7 +265,7 @@ export default function DataManagementSettings() {
 
     delete: async (id: string) => {
       try {
-        await axios.delete(`/api/services/${id}`);
+        await axios.delete(`https://tumbledrybe.sharda.co.in/api/services/${id}`);
         setServiceDefinitions((prev) => prev.filter((item) => item.id !== id));
         toast({
           title: "Service Deleted",
@@ -297,7 +297,7 @@ export default function DataManagementSettings() {
   const handleEditSave = async () => {
     if (!editItem) return;
     try {
-      await axios.put(`/api/services/${editItem.id}`, {
+      await axios.put(`https://tumbledrybe.sharda.co.in/api/services/${editItem.id}`, {
         name: editServiceName,
       });
 

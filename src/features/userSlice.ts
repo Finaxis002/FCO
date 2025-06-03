@@ -17,7 +17,7 @@ export interface User {
 export type UserRole = "Admin" | "User"; // adjust according to your app
 
 // Base URL
-const API_BASE_URL = "/api/users"; // replace with your backend
+const API_BASE_URL = "https://tumbledrybe.sharda.co.in/api/users"; // replace with your backend
 
 // Async Thunks
 export const getAllUsers = createAsyncThunk<User[]>(
