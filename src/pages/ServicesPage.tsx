@@ -6,7 +6,6 @@ import { flattenServices } from "@/utils/flattenServices";
 import ServiceTable from "@/components/Services/ServiceTable";
 import ServiceCardView from "@/components/Services/ServiceCardView";
 import PageHeader from "@/components/ui/page-header";
-import { Button } from "@/components/ui/button";
 import type { Case, User } from "@/types/franchise";
 import { fetchPermissions } from "@/features/permissionsSlice";
 import {
@@ -23,7 +22,28 @@ import {
   TooltipContent,
   Tooltip,
 } from "@radix-ui/react-tooltip";
-import { List, LayoutGrid } from "lucide-react";
+import {
+  List,
+  LayoutGrid,
+  Filter,
+  ListFilter,
+  CheckCircle,
+  ChevronDown,
+  FilterIcon,
+  PlusCircle,
+  ServerIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup
+} from "@/components/ui/dropdown-menu";
 
 type ViewMode = "table" | "card";
 
@@ -203,7 +223,7 @@ export default function ServicesPage() {
         title="All Services"
         description="View and manage all services across cases."
       >
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center justify-center">
           <div className="flex items-center gap-2 ml-auto">
             <TooltipProvider>
               <div className="hidden sm:flex">
@@ -248,71 +268,116 @@ export default function ServicesPage() {
             </TooltipProvider>
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            {/* Service Filter */}
-            <div>
-              <label className="block text-xs mb-1">Service</label>
-              <Select
-                value={serviceFilter}
-                onValueChange={setServiceFilter}
-                onOpenChange={handleServiceSelectOpenChange}
+          <div className="flex gap-3 items-center">
+            {/* Service Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 px-4 py-2 rounded-md border-2 border-gray-300 hover:border-blue-500 transition-all !important"
+                >
+                  <ServerIcon className="h-4 w-4" />
+                  {serviceFilter === "all" ? "All Services" : serviceFilter}
+                  <ChevronDown className="ml-auto h-4 w-4 opacity-50 !important" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-w-[95vw] max-h-[500px] overflow-y-auto  right-0 bg-white p-4 flex flex-col gap-3 shadow-lg rounded-md border border-gray-200 !important"
               >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Select service" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="p-2">
-                    <Input
-                      placeholder="Search service..."
-                      value={serviceSearch}
-                      onChange={(e) => setServiceSearch(e.target.value)}
-                      className="mb-2"
-                      onClick={(e) => e.stopPropagation()} // Prevent Select from closing
-                      onKeyDown={(e) => e.stopPropagation()} // Prevent keydown bubbling
-                    />
-                  </div>
-                  <SelectItem value="all">All</SelectItem>
+                <DropdownMenuLabel className="text-sm font-medium text-gray-700 !important">
+                  Filter by Service
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-2 border-t border-gray-300 !important" />
+                <div className="p-2">
+                  <Input
+                    placeholder="Search services..."
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    className="h-8 text-sm px-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 !important"
+                  />
+                </div>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onSelect={() => setServiceFilter("all")}
+                    className={cn(
+                      serviceFilter === "all" &&
+                        "bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 transition-all !important"
+                    )}
+                  >
+                    All Services
+                  </DropdownMenuItem>
                   {uniqueServiceNames
                     .filter((name) =>
                       name.toLowerCase().includes(serviceSearch.toLowerCase())
                     )
                     .map((name) => (
-                      <SelectItem key={name} value={name}>
+                      <DropdownMenuItem
+                        key={name}
+                        onSelect={() => setServiceFilter(name)}
+                        className={cn(
+                          serviceFilter === name &&
+                            "bg-accent text-white hover:bg-blue-200 transition-all !important"
+                        )}
+                      >
                         {name}
-                      </SelectItem>
+                      </DropdownMenuItem>
                     ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Status Filter */}
-            <div>
-              <label className="block text-xs mb-1">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="p-2">
-                    <Input
-                      placeholder="Search status..."
-                      value={statusSearch}
-                      onChange={(e) => setStatusSearch(e.target.value)}
-                      className="mb-2"
-                    />
-                  </div>
-                  <SelectItem value="all">All</SelectItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Status Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <FilterIcon className="h-4 w-4" />
+                  {statusFilter === "all" ? "All Statuses" : statusFilter}
+                  <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-[240px] bg-white p-4 flex flex-col gap-2 shadow-lg rounded-md"
+              >
+                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-2">
+                  <Input
+                    placeholder="Search statuses..."
+                    value={statusSearch}
+                    onChange={(e) => setStatusSearch(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onSelect={() => setStatusFilter("all")}
+                    className={cn(
+                      statusFilter === "all" && "bg-accent hover:bg-blue-200"
+                    )}
+                  >
+                    All Statuses
+                  </DropdownMenuItem>
                   {uniqueStatuses
                     .filter((status) =>
                       status.toLowerCase().includes(statusSearch.toLowerCase())
                     )
                     .map((status) => (
-                      <SelectItem key={status} value={status}>
+                      <DropdownMenuItem
+                        key={status}
+                        onSelect={() => setStatusFilter(status)}
+                        className={cn(
+                          statusFilter === status &&
+                            "bg-accent hover:bg-blue-200"
+                        )}
+                      >
                         {status}
-                      </SelectItem>
+                      </DropdownMenuItem>
                     ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </PageHeader>

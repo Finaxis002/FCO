@@ -155,36 +155,85 @@ export default function AddCaseForm() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/services"
-        );
-        setGlobalServices(res.data);
+  // useEffect(() => {
+  //   const fetchServices = async () => {
+  //     try {
+  //       const res = await axios.get(
+  //         "https://tumbledrybe.sharda.co.in/api/services"
+  //       );
+  //       setGlobalServices(res.data);
 
-        // Only reset services if not editing
-        if (!isEditing) {
-          form.reset({
-            ...form.getValues(),
-            services: res.data.map((service: any) => ({
-              name: service.name,
-              selected: false,
-            })),
-          });
-        }
-      } catch (e) {
-        console.error("Failed to fetch services", e);
-        toast({
-          title: "Error",
-          description: "Failed to load services",
-          variant: "destructive",
+  //       // Only reset services if not editing
+  //       if (!isEditing) {
+  //         form.reset({
+  //           ...form.getValues(),
+  //           services: res.data.map((service: any) => ({
+  //             name: service.name,
+  //             selected: false,
+  //           })),
+  //         });
+  //       }
+  //     } catch (e) {
+  //       console.error("Failed to fetch services", e);
+  //       toast({
+  //         title: "Error",
+  //         description: "Failed to load services",
+  //         variant: "destructive",
+  //       });
+  //     }
+  //   };
+
+  //   fetchServices();
+  // }, []);
+
+useEffect(() => {
+  const fetchServices = async () => {
+    try {
+      const res = await axios.get(
+        "https://tumbledrybe.sharda.co.in/api/services"
+      );
+      setGlobalServices(res.data);
+
+      // Only reset services if not editing
+      if (!isEditing) {
+        form.reset({
+          ...form.getValues(),
+          services: res.data.map((service: any) => ({
+            name: service.name,
+            selected: false,
+          })),
+        });
+      } else {
+        // If editing, update the services with newly added ones.
+        const existingServices = form.getValues("services");
+        const combinedServices = [
+          ...existingServices,
+          ...res.data.map((service: any) => ({
+            name: service.name,
+            selected: false,
+          })),
+        ];
+
+        // Update form values with the combined services list
+        form.reset({
+          ...form.getValues(),
+          services: combinedServices,
         });
       }
-    };
+    } catch (e) {
+      console.error("Failed to fetch services", e);
+      toast({
+        title: "Error",
+        description: "Failed to load services",
+        variant: "destructive",
+      });
+    }
+  };
 
-    fetchServices();
-  }, []);
+  fetchServices();
+}, [isEditing]);
+
+
 
   useEffect(() => {
     dispatch(getAllUsers());

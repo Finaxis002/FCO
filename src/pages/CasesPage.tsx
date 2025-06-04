@@ -500,27 +500,7 @@ const pageActions = (
       >
         {pageActions}
       </PageHeader>
-      {/* {filteredCases.length === 0 ? (
-       <div className="text-center p-6 sm:p-10 text-gray-500 text-sm sm:text-base">
-            No cases found for this filter.
-          </div>
-      ) : viewMode === "table" ? (
-        <CaseTable
-          cases={filteredCases}
-          onDelete={handleDelete}
-          unreadRemarks={unreadRemarks}
-          unreadChats={unreadChats}
-        />
-      ) : (
-        <CaseCardView
-          cases={filteredCases}
-          onDelete={handleDelete}
-          unreadRemarks={unreadRemarks}
-          unreadChats={unreadChats}
-          activeCaseId={caseId} // Pass the activeCaseId here
-        />
-      )} */}
-
+     
       {filteredCases.length === 0 ? (
   <div className="text-center p-6 sm:p-10 text-gray-500 text-sm sm:text-base">
     No cases found for this filter.
