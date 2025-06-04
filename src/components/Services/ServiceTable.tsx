@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -7,8 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Trash, Eye, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -20,6 +19,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { SERVICE_STATUS } from "@/lib/statusConfig";
 import Remarks from "./Remarks";
+import axios from "axios";
+import { Eye } from "lucide-react";
+
+type Tag = {
+  _id: string;
+  name: string;
+  color?: string;
+};
 
 const statusStyles: Record<string, string> = {
   "To be Started":
@@ -55,13 +62,35 @@ export default function ServiceTable({
   showTags,
   onRemarkRead,
 }: ServiceTableProps) {
-  const { toast } = useToast();
   const [updatingServices, setUpdatingServices] = useState<
     Record<string, boolean>
   >({});
   const [selectedServiceForRemarks, setSelectedServiceForRemarks] = useState<
     string | null
   >(null);
+
+  const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/tags"
+        );
+        const tags = response.data;
+        const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
+          acc[tag._id] = tag;
+          return acc;
+        }, {});
+        setTagsMap(map);
+      } catch (error) {
+        console.error("Failed to fetch tags", error);
+      }
+    };
+    fetchTags();
+  }, []);
 
   const handleStatusChange = async (serviceId: string, newStatus: string) => {
     try {
@@ -111,10 +140,12 @@ export default function ServiceTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[60px] text-center">Sr</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead className="w-[150px]">Status</TableHead>
+                <TableHead className="w-[400px]">Service</TableHead>
+                <TableHead className="w-[200px]">Tag</TableHead>
+                <TableHead className="w-[300px]">Status</TableHead>
                 <TableHead>Case Name</TableHead>
                 <TableHead className="w-[200px]">Remarks</TableHead>
+                <TableHead className="">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -127,6 +158,53 @@ export default function ServiceTable({
                     {idx + 1}
                   </TableCell>
                   <TableCell className="font-medium">{service.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {Array.isArray(service.tags) && service.tags.length > 0 ? (
+                      (() => {
+                        // Filter out tagIds that don't exist in tagsMap
+                        const validTags = service.tags
+                          .map((tagId: string) => tagsMap[tagId])
+                          .filter((tag: { name: any }) => tag && tag.name);
+
+                        return validTags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {validTags.map(
+                              (
+                                tag: {
+                                  _id: React.Key | null | undefined;
+                                  name:
+                                    | string
+                                    | number
+                                    | boolean
+                                    | React.ReactElement<
+                                        any,
+                                        | string
+                                        | React.JSXElementConstructor<any>
+                                      >
+                                    | Iterable<React.ReactNode>
+                                    | React.ReactPortal
+                                    | null
+                                    | undefined;
+                                },
+                                idx: any
+                              ) => (
+                                <span
+                                  key={tag._id}
+                                  className="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs"
+                                >
+                                  {tag.name}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No tags</span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-muted-foreground">No tags</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={service.status}
@@ -180,33 +258,6 @@ export default function ServiceTable({
                         </>
                       ) : (
                         <>
-                          {/* <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="h-8 gap-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 border-none shadow-sm transition"
-                              onClick={() =>
-                                onViewRemarks && onViewRemarks(service)
-                              }
-                            >
-                              <Eye className="h-4 w-4 text-blue-600" />
-                              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                View
-                              </span>
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="h-8 gap-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 border-none shadow-sm transition"
-                              onClick={() =>
-                                onAddRemark && onAddRemark(service)
-                              }
-                            >
-                              <Plus className="h-4 w-4 text-green-600" />
-                              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                Add
-                              </span>
-                            </Button>
-                          </div> */}
-
                           <Remarks
                             caseId={service.parentCase?._id}
                             serviceId={service.id}
@@ -217,6 +268,19 @@ export default function ServiceTable({
                         </>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <button
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium text-xs transition"
+                      onClick={() => navigate(`/cases/${service.parentCase?._id}?from=services`)}
+                      title="View Case"
+                      type="button"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        View Case
+                      </span>
+                    </button>
                   </TableCell>
                 </TableRow>
               ))}

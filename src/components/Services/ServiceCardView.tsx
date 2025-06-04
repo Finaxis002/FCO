@@ -1,32 +1,297 @@
-import React from "react";
-import type { Service } from "../../types/service";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { SERVICE_STATUS } from "@/lib/statusConfig";
+import Remarks from "./Remarks";
+import axios from "axios";
+import { Eye, Trash, Edit, PercentSquare, Users, User, CalendarDays, Tag as TagIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-interface Props {
-  services: Service[];
-  onDelete: (id: string) => void;
-  activeServiceId?: string;
+type Tag = {
+  _id: string;
+  name: string;
+  color?: string;
+};
+
+const statusStyles: Record<string, string> = {
+  "To be Started": "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900",
+  "Detail Required": "bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900",
+  "In-Progress": "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900",
+  Completed: "bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900",
+};
+
+interface ServiceCardViewProps {
+  caseId: string;
+  services: any[];
+  onDelete: (service: any) => void;
+  onViewRemarks?: (service: any) => void;
+  onAddRemark?: (service: any) => void;
+  onStatusChange?: (serviceId: string, newStatus: string) => Promise<void>;
+  currentUser?: any;
+  showTags?: boolean;
+  onRemarkRead?: (serviceId: string, userId: string) => void;
 }
 
-export default function ServiceCardView({ services, onDelete }: Props) {
+export default function ServiceCardView({
+  services,
+  onDelete,
+  onViewRemarks,
+  onAddRemark,
+  onStatusChange,
+  currentUser,
+  caseId,
+  showTags,
+  onRemarkRead,
+}: ServiceCardViewProps) {
+  const [updatingServices, setUpdatingServices] = useState<Record<string, boolean>>({});
+  const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await axios.get("https://tumbledrybe.sharda.co.in/api/tags");
+        const tags = response.data;
+        const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
+          acc[tag._id] = tag;
+          return acc;
+        }, {});
+        setTagsMap(map);
+      } catch (error) {
+        console.error("Failed to fetch tags", error);
+      }
+    };
+    fetchTags();
+  }, []);
+
+  const handleStatusChange = async (serviceId: string, newStatus: string) => {
+    try {
+      setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
+
+      if (onStatusChange) {
+        await onStatusChange(serviceId, newStatus);
+      }
+
+      toast({
+        title: "Status Updated",
+        description: `Service status updated to "${newStatus}".`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update service status. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingServices((prev) => ({ ...prev, [serviceId]: false }));
+    }
+  };
+
+  if (!services.length) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-lg">
+            <p className="text-xl font-semibold text-muted-foreground">
+              No services found.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Try adjusting your filters or add a new service.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {services.map((service) => (
-        <Card key={service._id} className="relative">
-          <CardContent className="p-4">
-            <div className="font-bold">{service.name}</div>
-            <div className="text-sm text-muted-foreground mb-2">{service.status}</div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onDelete(service._id)}
-            >
-              Delete
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {services.map((service, idx) => {
+        const validTags = Array.isArray(service.tags)
+          ? service.tags
+              .map((tagId: string) => tagsMap[tagId])
+              .filter((tag: { name: any; }) => tag && tag.name)
+          : [];
+
+        return (
+          <Card key={service._id || idx} className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors flex items-center gap-2">
+                  {service.name}
+                  {/* Optionally, you can add a badge for "last edited" or similar */}
+                  {service.isLastEdited && (
+                    <span className="bg-blue-600 text-white text-xs px-1.5 rounded-full" title="Recently Edited">
+                      Last Edited
+                    </span>
+                  )}
+                </CardTitle>
+                <Select
+                  value={service.status}
+                  onValueChange={(value) => handleStatusChange(service.id, value)}
+                  disabled={updatingServices[service.id]}
+                >
+                  <SelectTrigger
+                    className={`w-[150px] rounded-md ${statusStyles[service.status] || ""}`}
+                  >
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(SERVICE_STATUS).map(([key, status]) => (
+                      <SelectItem
+                        key={key}
+                        value={status}
+                        className={`flex items-center rounded-md px-2 py-1 ${statusStyles[status] || ""}`}
+                      >
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <CardDescription className="text-xs text-muted-foreground pt-1">
+                {service.parentCase?.unitName || "N/A"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-3 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <User className="h-4 w-4 shrink-0" />
+                <span>{service.parentCase?.ownerName || "N/A"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CalendarDays className="h-4 w-4 shrink-0" />
+                <span>
+                  Last Update:{" "}
+                  {service.parentCase?.lastUpdate
+                    ? new Date(service.parentCase.lastUpdate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <PercentSquare className="h-4 w-4 shrink-0" />
+                <span>
+                  Progress:{" "}
+                  {typeof service.parentCase?.overallCompletionPercentage === "number"
+                    ? `${service.parentCase.overallCompletionPercentage.toFixed(2)}%`
+                    : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="h-4 w-4 shrink-0" />
+                <div className="flex flex-wrap gap-2 text-sm">
+                  {service.parentCase?.assignedUsers?.length ? (
+                    service.parentCase.assignedUsers.map(
+                      (user: string | { name?: string }, index: number) => {
+                        const userName =
+                          typeof user === "string"
+                            ? user.trim()
+                            : user?.name?.trim() || "Unknown";
+                        const formattedName =
+                          userName.length > 0
+                            ? userName.charAt(0).toUpperCase() +
+                              userName.slice(1).toLowerCase()
+                            : "Unknown";
+                        return (
+                          <span
+                            key={index}
+                            className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-blue-200 transition cursor-default"
+                            title={formattedName}
+                          >
+                            {formattedName}
+                          </span>
+                        );
+                      }
+                    )
+                  ) : (
+                    <span className="italic text-gray-400">N/A</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <TagIcon className="h-4 w-4 shrink-0" />
+                <div className="flex flex-wrap gap-1">
+                  {validTags.length > 0 ? (
+                    validTags.map((tag: { _id: React.Key | null | undefined; name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }) => (
+                      <Badge
+                        key={tag._id}
+                        variant="outline"
+                        className="text-xs"
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground text-sm">No tags</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-1">Remarks</h4>
+                <div className="flex items-center">
+                  <Remarks
+                    caseId={service.parentCase?._id}
+                    serviceId={service.id}
+                    currentUser={currentUser}
+                    serviceName={service.name}
+                    onRemarkRead={onRemarkRead}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <div className="flex w-full justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="View Case"
+                  onClick={() => navigate(`/cases/${service.parentCase?._id}?from=services`)}
+                >
+                  <Eye className="h-4 w-4 mr-1.5" />
+                  View Case
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Edit Service"
+                  onClick={() => toast({ title: "Edit Service", description: "Edit functionality not implemented." })}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Delete Service"
+                  className="text-red-600 hover:text-red-800"
+                  onClick={() => onDelete(service)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }
