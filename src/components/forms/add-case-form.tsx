@@ -186,54 +186,52 @@ export default function AddCaseForm() {
   //   fetchServices();
   // }, []);
 
-useEffect(() => {
-  const fetchServices = async () => {
-    try {
-      const res = await axios.get(
-        "https://tumbledrybe.sharda.co.in/api/services"
-      );
-      setGlobalServices(res.data);
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/services"
+        );
+        setGlobalServices(res.data);
 
-      // Only reset services if not editing
-      if (!isEditing) {
-        form.reset({
-          ...form.getValues(),
-          services: res.data.map((service: any) => ({
-            name: service.name,
-            selected: false,
-          })),
-        });
-      } else {
-        // If editing, update the services with newly added ones.
-        const existingServices = form.getValues("services");
-        const combinedServices = [
-          ...existingServices,
-          ...res.data.map((service: any) => ({
-            name: service.name,
-            selected: false,
-          })),
-        ];
+        // Only reset services if not editing
+        if (!isEditing) {
+          form.reset({
+            ...form.getValues(),
+            services: res.data.map((service: any) => ({
+              name: service.name,
+              selected: false,
+            })),
+          });
+        } else {
+          // If editing, update the services with newly added ones.
+          const existingServices = form.getValues("services");
+          const combinedServices = [
+            ...existingServices,
+            ...res.data.map((service: any) => ({
+              name: service.name,
+              selected: false,
+            })),
+          ];
 
-        // Update form values with the combined services list
-        form.reset({
-          ...form.getValues(),
-          services: combinedServices,
+          // Update form values with the combined services list
+          form.reset({
+            ...form.getValues(),
+            services: combinedServices,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch services", e);
+        toast({
+          title: "Error",
+          description: "Failed to load services",
+          variant: "destructive",
         });
       }
-    } catch (e) {
-      console.error("Failed to fetch services", e);
-      toast({
-        title: "Error",
-        description: "Failed to load services",
-        variant: "destructive",
-      });
-    }
-  };
+    };
 
-  fetchServices();
-}, [isEditing]);
-
-
+    fetchServices();
+  }, [isEditing]);
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -251,22 +249,18 @@ useEffect(() => {
         const caseData = res.data;
 
         // Extract service names from MOCK_SERVICES_TEMPLATES
-        const templateServiceNames = MOCK_SERVICES_TEMPLATES.map((s) => s.name);
+        // Use fresh services from API, fallback to saved if unavailable
+        const freshServices =
+          globalServices.length > 0 ? globalServices : caseData.services || [];
 
-        // Extract service names from saved case data
         const savedServices = caseData.services || [];
         const savedServiceNames = savedServices.map((s: any) => s.name);
 
-        // Find any additional services saved but NOT in template
-        const additionalServices = savedServices.filter(
-          (s: any) => !templateServiceNames.includes(s.name)
-        );
-
-        // Create combined services list: template + any additional
-        const combinedServices = [
-          ...MOCK_SERVICES_TEMPLATES,
-          ...additionalServices,
-        ];
+        // Combine: show all fetched services + mark selected ones from case
+        const combinedServices = freshServices.map((s: any) => ({
+          name: s.name,
+          selected: savedServiceNames.includes(s.name),
+        }));
 
         // Now map combined list to checkbox form, mark selected if present in saved services
         const serviceDefaults = combinedServices.map((s: any) => ({
@@ -499,10 +493,12 @@ useEffect(() => {
         readBy: [], // <-- Add this line to satisfy Omit<Case, "id">
       };
 
-     if (isEditing) {
+      if (isEditing) {
         // Dispatch updateCase thunk instead of Axios directly
-        const result = await dispatch(updateCase({ ...casePayload, id: caseId }));
-        
+        const result = await dispatch(
+          updateCase({ ...casePayload, id: caseId })
+        );
+
         if (updateCase.fulfilled.match(result)) {
           toast({
             title: "Case Updated!",
