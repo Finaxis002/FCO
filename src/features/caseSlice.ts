@@ -8,7 +8,7 @@ export const addCase = createAsyncThunk(
     try {
       const token = localStorage.getItem("token"); // get token from localStorage
       const response = await axios.post(
-        "/api/cases/add",
+        "https://tumbledrybe.sharda.co.in/api/cases/add",
         caseData,
         {
           headers: {
@@ -30,7 +30,7 @@ export const getCases = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        "/api/cases"
+        "https://tumbledrybe.sharda.co.in/api/cases"
       );
       return response.data; // Assuming API returns array of cases
     } catch (error: any) {
@@ -48,7 +48,7 @@ export const deleteCase = createAsyncThunk(
     try {
       const token = localStorage.getItem("token"); // or wherever you store it
       await axios.delete(
-        `/api/cases/${caseId}`,
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ export const updateCase = createAsyncThunk(
       const token = localStorage.getItem("token"); // get token from localStorage
 
       const response = await axios.put(
-        `/api/cases/${caseData.id}`,
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
         caseData,
         {
           headers: {

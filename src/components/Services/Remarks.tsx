@@ -67,8 +67,8 @@ export default function Remarks({
 
       // Choose API based on token availability
       const url = token
-        ? `/api/cases/${caseId}/services/${serviceId}/remarks`
-        : `/api/cases/${caseId}/services/${serviceId}`;
+        ? `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`
+        : `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}`;
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -110,7 +110,7 @@ export default function Remarks({
       const token = localStorage.getItem("token"); // or wherever you store it
 
       const res = await fetch(
-        `/api/cases/${caseId}/services/${serviceId}/remarks`,
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`,
         {
           method: "POST",
           headers: {
@@ -172,7 +172,7 @@ export default function Remarks({
     try {
       const token = localStorage.getItem("token");
       await fetch(
-        `/api/remarks/${remarkId}/read`,
+        `https://tumbledrybe.sharda.co.in/api/remarks/${remarkId}/read`,
         {
           method: "PATCH",
           headers: {

@@ -76,7 +76,7 @@ export default function ServiceTable({
     const fetchTags = async () => {
       try {
         const response = await axios.get(
-          "/api/tags"
+          "https://tumbledrybe.sharda.co.in/api/tags"
         );
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {

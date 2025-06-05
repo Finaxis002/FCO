@@ -110,7 +110,7 @@ export default function CasesPage() {
         if (!token || !currentUser) return;
 
         const res = await axios.get(
-          "/api/chats/unread-counts",
+          "https://tumbledrybe.sharda.co.in/api/chats/unread-counts",
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -144,7 +144,7 @@ export default function CasesPage() {
 
         // Fetch unread remarks
         const remarksRes = await axios.get(
-          "/api/remarks/recent",
+          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -165,7 +165,7 @@ export default function CasesPage() {
 
         // Fetch unread chats
         const chatsRes = await axios.get(
-          "/api/chats/unread-counts",
+          "https://tumbledrybe.sharda.co.in/api/chats/unread-counts",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -211,7 +211,7 @@ export default function CasesPage() {
         if (!token || !caseId) return;
 
         await axios.put(
-          `/api/chats/mark-read/${caseId}`,
+          `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
