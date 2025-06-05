@@ -5,7 +5,7 @@ import type { Service } from "../types/service";
 
 export const getServices = createAsyncThunk("service/getServices", async () => {
   const token = localStorage.getItem("token");
-  const res = await axios.get("https://tumbledrybe.sharda.co.in/api/cases", {
+  const res = await axios.get("/api/cases", {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -13,7 +13,7 @@ export const getServices = createAsyncThunk("service/getServices", async () => {
 
 export const deleteService = createAsyncThunk("service/deleteService", async (id: string) => {
   const token = localStorage.getItem("token");
-  await axios.delete(`https://tumbledrybe.sharda.co.in/api/services/${id}`, {
+  await axios.delete(`/api/services/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return id;

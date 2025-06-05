@@ -61,7 +61,7 @@ export default function CaseDetailPage({
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
+          "/api/remarks/recent",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -231,7 +231,7 @@ export default function CaseDetailPage({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+        `/api/cases/${caseId}`
       );
       if (!response.ok) {
         setCaseData(undefined);

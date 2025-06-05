@@ -67,7 +67,7 @@ export default function ServiceCardView({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await axios.get("https://tumbledrybe.sharda.co.in/api/tags");
+        const response = await axios.get("/api/tags");
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
           acc[tag._id] = tag;

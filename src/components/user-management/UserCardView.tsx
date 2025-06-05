@@ -49,7 +49,7 @@ interface UserCardViewProps {
   refreshKey?: any;
 }
 
-const BASE_URL = "https://tumbledrybe.sharda.co.in/api/users";
+const BASE_URL = "/api/users";
 
 const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
   const [users, setUsers] = useState<User[]>([]);

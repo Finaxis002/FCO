@@ -27,7 +27,7 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/auth/login",
+        "/api/auth/login",
         {
           userId,
           password,
@@ -44,7 +44,7 @@ const Login = () => {
       if (role !== "Admin") {
         try {
           const userRes = await axios.get(
-            `https://tumbledrybe.sharda.co.in/api/users/${user._id}`,
+            `/api/users/${user._id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,

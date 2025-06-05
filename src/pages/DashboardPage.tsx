@@ -48,13 +48,13 @@ export default function DashboardPage() {
       try {
         // Fetch cases from API
         const casesResponse = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/cases"
+          "/api/cases"
         );
         const casesData = await casesResponse.json();
 
         // Fetch users from API
         const usersResponse = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/users"
+          "/api/users"
         );
         const usersData = await usersResponse.json();
 
@@ -87,7 +87,7 @@ export default function DashboardPage() {
     const fetchCases = async () => {
       try {
         const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/cases"
+          "/api/cases"
         );
         if (!res.ok) throw new Error("Failed to fetch cases");
 

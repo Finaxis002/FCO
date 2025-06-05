@@ -15,7 +15,7 @@ export function AppNameProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     axios
-      .get("https://tumbledrybe.sharda.co.in/api/settings/app-name")
+      .get("/api/settings/app-name")
       .then((res) => setAppNameState(res.data.appName))
       .catch(console.error);
   }, []);
@@ -28,7 +28,7 @@ export function AppNameProvider({ children }: { children: ReactNode }) {
 
 
   const setAppName = async (name: string) => {
-    await axios.post("https://tumbledrybe.sharda.co.in/api/settings/app-name", { appName: name });
+    await axios.post("/api/settings/app-name", { appName: name });
     setAppNameState(name);
   };
 
