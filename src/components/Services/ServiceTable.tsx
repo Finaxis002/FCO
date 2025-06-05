@@ -137,17 +137,26 @@ export default function ServiceTable({
       <CardContent className="p-0">
         <div className="w-full overflow-x-auto">
           <Table className="min-w-[700px]">
-            <TableHeader>
+            <TableHeader className="bg-gray-100  shadow-sm border-b text-gray-700 text-sm font-semibold uppercase tracking-wide">
               <TableRow>
-                <TableHead className="w-[60px] text-center">Sr</TableHead>
-                <TableHead className="w-[400px]">Service</TableHead>
-                <TableHead className="w-[200px]">Tag</TableHead>
-                <TableHead className="w-[300px]">Status</TableHead>
-                <TableHead>Case Name</TableHead>
-                <TableHead className="w-[200px]">Remarks</TableHead>
-                <TableHead className="">Actions</TableHead>
+                <TableHead className="w-[60px] text-center px-3 py-2">
+                  Sr
+                </TableHead>
+                <TableHead className="w-[300px] px-3 py-2">
+                  Service Name
+                </TableHead>
+                <TableHead className="w-[180px] px-3 py-2">Tags</TableHead>
+                <TableHead className="w-[200px] px-3 py-2">
+                  Current Status
+                </TableHead>
+                <TableHead className="px-3 py-2">Client / Case Name</TableHead>
+                <TableHead className="w-[220px] px-3 py-2">
+                  Latest Remark
+                </TableHead>
+                <TableHead className="text-center px-3 py-2">Actions</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {services.map((service, idx) => (
                 <TableRow
@@ -272,7 +281,11 @@ export default function ServiceTable({
                   <TableCell className="text-center">
                     <button
                       className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium text-xs transition"
-                      onClick={() => navigate(`/cases/${service.parentCase?._id}?from=services`)}
+                      onClick={() =>
+                        navigate(
+                          `/cases/${service.parentCase?._id}?from=services`
+                        )
+                      }
                       title="View Case"
                       type="button"
                     >

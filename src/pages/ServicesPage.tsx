@@ -175,47 +175,37 @@ export default function ServicesPage() {
     dispatch(getCases());
   };
 
-  useEffect(() => {
-    const mapped = flattenServices(allCases || []).map((service: any) => ({
-      ...service,
-      status: mapServiceStatus(service.status),
-      lastUpdate: service.parentCase?.lastUpdate || "",
-      lastEditedServiceId: service.parentCase?.lastEditedService?.id || "",
-      lastEditedServiceEditedAt:
-        service.parentCase?.lastEditedService?.editedAt || null,
-      isLastEdited: service.id === service.parentCase?.lastEditedService?.id,
-    }));
-    const getTimeSafe = (d: any) => {
-      if (!d) return 0;
-      const t = new Date(d).getTime();
-      return isNaN(t) ? 0 : t;
-    };
+useEffect(() => {
+  const servicesWithEditTime: any[] = [];
 
-    const sorted = mapped.sort((a, b) => {
-      // 1. Put all last edited services on top, sorted by editedAt (desc)
-      if (a.isLastEdited && b.isLastEdited) {
-        // Both are lastEdited for their cases, sort by editedAt
-        return (
-          getTimeSafe(b.lastEditedServiceEditedAt) -
-          getTimeSafe(a.lastEditedServiceEditedAt)
-        );
-      }
-      if (a.isLastEdited) return -1; // a comes first
-      if (b.isLastEdited) return 1; // b comes first
+  allCases.forEach((parentCase: any) => {
+    const lastEdited = parentCase.lastEditedService || {};
 
-      // 2. Then, the rest by lastUpdate (desc)
-      return getTimeSafe(b.lastUpdate) - getTimeSafe(a.lastUpdate);
+    (parentCase.services || []).forEach((service: any) => {
+      servicesWithEditTime.push({
+        ...service,
+         status: service.status === "New-Case" ? "To be Started" : service.status,
+        parentCase,
+        editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+      });
     });
+  });
 
-    setAllServices(sorted);
-  }, [allCases]);
+  // Sort all services globally by editedAt timestamp descending
+  const getTimeSafe = (date: any) => {
+    const t = new Date(date).getTime();
+    return isNaN(t) ? 0 : t;
+  };
 
-  const handleServiceSelectOpenChange = (open: boolean) => {
-    if (!open) setServiceSearch(""); // Reset search only when closing
-  };
-  const handleStatusSelectOpenChange = (open: boolean) => {
-    if (!open) setStatusSearch(""); // Reset search only when closing
-  };
+  const sortedServices = servicesWithEditTime.sort((a, b) => {
+    return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
+  });
+
+  setAllServices(sortedServices);
+}, [allCases]);
+
+
+
 
   return (
     <>
