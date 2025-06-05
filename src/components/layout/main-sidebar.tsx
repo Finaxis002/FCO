@@ -37,17 +37,7 @@ export default function MainSidebar() {
 
   return (
     <>
-      {/* Mobile Hamburger Button */}
-      {/* <button
-        className="fixed top-4 left-4 z-30 flex items-center justify-center rounded-md bg-sidebar text-sidebar-foreground shadow-md p-2 sm:hidden"
-        onClick={() => setIsMobileOpen(true)}
-        aria-label="Open sidebar"
-        type="button"
-      >
-        <Menu className="h-6 w-6" />
-      </button> */}
-
-      {/* Overlay for mobile */}
+     
       {isMobileOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/40 sm:hidden"
@@ -73,7 +63,13 @@ export default function MainSidebar() {
             className="flex items-center gap-2 font-semibold text-sidebar-foreground hover:text-sidebar-primary-foreground transition-colors"
             onClick={() => setIsMobileOpen(false)}
           >
-            <Building2 className="h-6 w-6 shrink-0" />
+            {/* <Building2 className="h-6 w-6 shrink-0" /> */}
+            <img
+              src="/favicon.png"
+              alt="FCA Logo"
+              className="h-8 w-8 shrink-0 rounded !bg-transparent object-contain"
+              style={{ background: "white" }} // Optional: white background for contrast
+            />
             {isExpanded && (
               <span className="text-lg font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                 {APP_NAME}
@@ -81,20 +77,7 @@ export default function MainSidebar() {
             )}
           </RouterLink>
 
-          {/* Expand/Collapse button for desktop */}
-          {/* <button
-            onClick={() => setIsExpanded((prev) => !prev)}
-            className="hidden sm:inline-flex p-1 rounded-full hover:bg-sidebar-accent transition-colors z-50 pointer-events-auto relative"
-            aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
-            type="button"
-          >
-            {isExpanded ? (
-              <ChevronLeft className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button> */}
-
+         
           {/* Close button for mobile */}
           <button
             className="sm:hidden p-1 rounded-full hover:bg-sidebar-accent transition-colors z-50 pointer-events-auto relative"

@@ -21,12 +21,9 @@ import { SERVICE_STATUS } from "@/lib/statusConfig";
 import Remarks from "./Remarks";
 import axios from "axios";
 import { Eye } from "lucide-react";
-
-type Tag = {
-  _id: string;
-  name: string;
-  color?: string;
-};
+import { Pencil } from "lucide-react"; // Add to existing lucide-react imports
+import ServiceTagsModal from "../cases/ServiceTagsModal";
+import type { Tag } from "@/types/tag";
 
 const statusStyles: Record<string, string> = {
   "To be Started":
@@ -65,9 +62,11 @@ export default function ServiceTable({
   const [updatingServices, setUpdatingServices] = useState<
     Record<string, boolean>
   >({});
-  const [selectedServiceForRemarks, setSelectedServiceForRemarks] = useState<
-    string | null
-  >(null);
+  const [serviceTags, setServiceTags] = useState<Record<string, Tag[]>>({});
+    const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [selectedServiceForTags, setSelectedServiceForTags] = useState<string | null>(null);
+  const [existingTags, setExistingTags] = useState<Tag[]>([]);
+
 
   const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
   const { toast } = useToast();
@@ -132,12 +131,27 @@ export default function ServiceTable({
     );
   }
 
+  const handleEditTags = (service: any) => {
+    // Map tag IDs to Tag objects using tagsMap
+    const tags: Tag[] = (service.tags || [])
+      .map((tagId: string) => tagsMap[tagId])
+      .filter((tag: Tag) => !!tag);
+    // Ensure each tag has a defined color property (fallback to empty string if undefined)
+    const tagsWithColor = tags.map((tag) => ({
+      ...tag,
+      color: tag.color ?? "",
+    }));
+    setExistingTags(tagsWithColor);
+    setSelectedServiceForTags(service._id);
+    setTagModalOpen(true);
+  };
+
   return (
     <Card>
       <CardContent className="p-0">
         <div className="w-full overflow-x-auto">
           <Table className="min-w-[700px]">
-            <TableHeader className="bg-gray-100  shadow-sm border-b text-gray-700 text-sm font-semibold uppercase tracking-wide">
+            <TableHeader className=" shadow-sm border-b text-gray-700 text-sm font-semibold uppercase tracking-wide">
               <TableRow>
                 <TableHead className="w-[60px] text-center px-3 py-2">
                   Sr
@@ -167,7 +181,7 @@ export default function ServiceTable({
                     {idx + 1}
                   </TableCell>
                   <TableCell className="font-medium">{service.name}</TableCell>
-                  <TableCell className="font-medium">
+                  {/* <TableCell className="font-medium">
                     {Array.isArray(service.tags) && service.tags.length > 0 ? (
                       (() => {
                         // Filter out tagIds that don't exist in tagsMap
@@ -213,6 +227,47 @@ export default function ServiceTable({
                     ) : (
                       <span className="text-muted-foreground">No tags</span>
                     )}
+                  </TableCell> */}
+
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {Array.isArray(service.tags) &&
+                      service.tags.length > 0 ? (
+                        (() => {
+                          const validTags = service.tags
+                            .map((tagId: string) => tagsMap[tagId])
+                            .filter((tag: { name: any }) => tag && tag.name);
+
+                          return validTags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {validTags.map((tag: Tag) => (
+                                <span
+                                  key={tag._id}
+                                  className="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs"
+                                >
+                                  {tag.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              No tags
+                            </span>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-muted-foreground">No tags</span>
+                      )}
+
+                      {/* Add pencil icon for editing */}
+                      <button
+                        onClick={() => handleEditTags(service)}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="Edit tags"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Select
@@ -301,6 +356,30 @@ export default function ServiceTable({
           </Table>
         </div>
       </CardContent>
+
+      {selectedServiceForTags && (
+        <ServiceTagsModal
+          open={tagModalOpen}
+          onClose={() => setTagModalOpen(false)}
+          caseId={caseId}
+          serviceId={selectedServiceForTags}
+          existingTags={existingTags.map(tag => ({
+            ...tag,
+            color: tag.color ?? "",
+          }))}
+          onTagsUpdated={(updatedTags) => {
+            // Update tags for the service in your local state
+            setTagModalOpen(false);
+            setSelectedServiceForTags(null);
+            setExistingTags([]);
+            setServiceTags((prev) => ({
+              ...prev,
+              [selectedServiceForTags]: updatedTags,
+            }));
+          }}
+          currentUser={currentUser}
+        />
+      )}
     </Card>
   );
 }

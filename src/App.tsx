@@ -19,17 +19,21 @@ import EditCasePage from "./pages/EditCasePage";
 import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
 import AllRemarksPage from "./pages/AllRemarksPage";
 import ServicesPage from "./pages/ServicesPage";
+import { useAppName } from "@/contenxt/AppNameContext"; // <-- Import this
+
 
 // Simplified PlaceholderPage for debugging
 
 export default function App() {
   const location = useLocation();
+   const { appName } = useAppName(); // <-- Use context value
+
 
   useEffect(() => {
     const path = location.pathname;
 
     if (path === "/login") {
-      document.title = `Login | ${APP_NAME}`;
+      document.title = `Login | ${appName}`;
       return;
     }
 
@@ -48,7 +52,9 @@ export default function App() {
       return;
     } else if (path.startsWith("/cases")) {
       pageTitleSegment = "Cases";
-    } else if (path.startsWith("/owners")) {
+    }else if (path.startsWith("/services")) { // <-- Add this block
+  pageTitleSegment = "Services";
+     } else if (path.startsWith("/owners")) {
       pageTitleSegment = "Owners";
     } else if (path.startsWith("/users/") && path.endsWith("/permissions")) {
       // UserPermissionsPage will set its own title
@@ -65,7 +71,7 @@ export default function App() {
       return;
     }
 
-    document.title = `${pageTitleSegment} | ${APP_NAME}`;
+    document.title = `${pageTitleSegment} | ${appName}`;
   }, [location.pathname]);
 
   return (
