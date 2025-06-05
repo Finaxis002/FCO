@@ -274,21 +274,22 @@ export default function AddCaseForm() {
             typeof u === "string" ? u : u._id
           ) || [];
 
-        form.reset({
-          srNo: caseData.srNo,
-          ownerName: caseData.ownerName,
-          clientName: caseData.clientName,
-          unitName: caseData.unitName,
-          franchiseAddress: caseData.franchiseAddress,
-          stateHead: Array.isArray(caseData.stateHead)
-            ? caseData.stateHead.join(", ")
-            : caseData.stateHead || "",
-          authorizedPerson: caseData.authorizedPerson,
-          assignedUsers: assignedUserIds,
-          reasonForStatus: caseData.reasonForStatus,
-          services: serviceDefaults,
-          status: caseData.status || "New-Case",
-        });
+       form.reset({
+  srNo: caseData.srNo,
+  ownerName: caseData.ownerName,
+  clientName: caseData.clientName,
+  unitName: caseData.unitName,
+  franchiseAddress: caseData.franchiseAddress,
+  stateHead: Array.isArray(caseData.stateHead)
+    ? caseData.stateHead.join(", ")
+    : caseData.stateHead || "",
+  authorizedPerson: caseData.authorizedPerson,
+  assignedUsers: assignedUserIds,
+  reasonForStatus: caseData.reasonForStatus,
+  services: combinedServices,
+  status: caseData.status || "New-Case",
+});
+
       } catch (err) {
         console.error("Failed to load case:", err);
       } finally {

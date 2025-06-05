@@ -109,46 +109,7 @@ export const MOCK_SERVICES_TEMPLATES: Omit<
   Service,
   "id" | "status" | "remarks" | "completionPercentage" | "assignedUser"
 >[] = [
-  {
-    name: "DPR (Detailed Project Report)",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "UDYAM Registration",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "GST Registration",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "PMEGP Application",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "Store Setup & Branding",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "Local Body Permits",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "Bank Loan Application",
-    serviceId: undefined,
-    _id: ""
-  },
-  {
-    name: "FSSAI License (if applicable)",
-    serviceId: undefined,
-    _id: ""
-  },
+
 ];
 
 const generateAvatarUrl = (name: string) =>
