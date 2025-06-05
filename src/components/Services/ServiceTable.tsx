@@ -37,7 +37,6 @@ const statusStyles: Record<string, string> = {
 };
 
 interface ServiceTableProps {
-  caseId: string;
   services: any[];
   onDelete: (service: any) => void;
   onViewRemarks?: (service: any) => void;
@@ -48,6 +47,42 @@ interface ServiceTableProps {
   onRemarkRead?: (serviceId: string, userId: string) => void;
 }
 
+// Add this helper at the top of your file
+function lightenColor(hex: string, percent: number) {
+  // Remove '#' if present
+  hex = hex.replace(/^#/, "");
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map((x) => x + x)
+      .join("");
+  }
+  const num = parseInt(hex, 16);
+  let r = (num >> 16) + Math.round((255 - (num >> 16)) * percent);
+  let g =
+    ((num >> 8) & 0x00ff) + Math.round((255 - ((num >> 8) & 0x00ff)) * percent);
+  let b = (num & 0x0000ff) + Math.round((255 - (num & 0x0000ff)) * percent);
+  r = Math.min(255, r);
+  g = Math.min(255, g);
+  b = Math.min(255, b);
+  return `rgb(${r},${g},${b})`;
+}
+
+function darkenColor(hex: string, percent: number) {
+  hex = hex.replace(/^#/, "");
+  if (hex.length === 3) {
+    hex = hex.split("").map((x) => x + x).join("");
+  }
+  const num = parseInt(hex, 16);
+  let r = (num >> 16) * (1 - percent);
+  let g = ((num >> 8) & 0x00ff) * (1 - percent);
+  let b = (num & 0x0000ff) * (1 - percent);
+  r = Math.max(0, Math.round(r));
+  g = Math.max(0, Math.round(g));
+  b = Math.max(0, Math.round(b));
+  return `rgb(${r},${g},${b})`;
+}
+
 export default function ServiceTable({
   services,
   onDelete,
@@ -55,7 +90,6 @@ export default function ServiceTable({
   onAddRemark,
   onStatusChange,
   currentUser,
-  caseId,
   showTags,
   onRemarkRead,
 }: ServiceTableProps) {
@@ -63,10 +97,11 @@ export default function ServiceTable({
     Record<string, boolean>
   >({});
   const [serviceTags, setServiceTags] = useState<Record<string, Tag[]>>({});
-    const [tagModalOpen, setTagModalOpen] = useState(false);
-  const [selectedServiceForTags, setSelectedServiceForTags] = useState<string | null>(null);
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [selectedServiceForTags, setSelectedServiceForTags] = useState<
+    string | null
+  >(null);
   const [existingTags, setExistingTags] = useState<Tag[]>([]);
-
 
   const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
   const { toast } = useToast();
@@ -133,6 +168,15 @@ export default function ServiceTable({
 
   const handleEditTags = (service: any) => {
     // Map tag IDs to Tag objects using tagsMap
+    const caseId = service.parentCase?._id;
+    if (!caseId) {
+      toast({
+        title: "No Case Selected",
+        description: "Cannot edit tags without a case context.",
+        variant: "destructive",
+      });
+      return;
+    }
     const tags: Tag[] = (service.tags || [])
       .map((tagId: string) => tagsMap[tagId])
       .filter((tag: Tag) => !!tag);
@@ -145,6 +189,8 @@ export default function ServiceTable({
     setSelectedServiceForTags(service._id);
     setTagModalOpen(true);
   };
+
+  // console.log("caseId :", caseId)
 
   return (
     <Card>
@@ -243,7 +289,15 @@ export default function ServiceTable({
                               {validTags.map((tag: Tag) => (
                                 <span
                                   key={tag._id}
-                                  className="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs"
+                                  className="inline-block px-2 py-0.5 rounded text-xs"
+                                  style={{
+                                    backgroundColor: lightenColor(
+                                      tag.color || "#e5e7eb",
+                                      0.7
+                                    ), // 0.7 = 70% lighter
+                                     color: darkenColor(tag.color || "#a1a1aa", 0.7), // 40% darker than original
+                                    border: "1px solid #e5e7eb",
+                                  }}
                                 >
                                   {tag.name}
                                 </span>
@@ -310,7 +364,7 @@ export default function ServiceTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {caseId && currentUser ? (
+                      {currentUser ? (
                         <>
                           <Remarks
                             caseId={service.parentCase?._id}
@@ -359,11 +413,15 @@ export default function ServiceTable({
 
       {selectedServiceForTags && (
         <ServiceTagsModal
+          caseId={
+            services.find((s) => s._id === selectedServiceForTags)?.parentCase
+              ?._id || ""
+          }
           open={tagModalOpen}
           onClose={() => setTagModalOpen(false)}
-          caseId={caseId}
+          // caseId={caseId}
           serviceId={selectedServiceForTags}
-          existingTags={existingTags.map(tag => ({
+          existingTags={existingTags.map((tag) => ({
             ...tag,
             color: tag.color ?? "",
           }))}

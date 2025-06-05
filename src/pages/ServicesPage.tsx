@@ -42,7 +42,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 
 type ViewMode = "table" | "card";
@@ -54,7 +54,7 @@ function mapServiceStatus(status: string) {
 
 export default function ServicesPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { cases: allCases, loading} = useSelector(
+  const { cases: allCases, loading } = useSelector(
     (state: RootState) => state.case
   );
 
@@ -69,7 +69,6 @@ export default function ServicesPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [viewMode, setViewMode] = useState<ViewMode>("table");
-
 
   const uniqueServiceNames = Array.from(
     new Set(allServices.map((s) => s.name).filter(Boolean))
@@ -127,48 +126,43 @@ export default function ServicesPage() {
     }
   }, [dispatch]);
 
-
   // Remove the function at the bottom:
-function getPaginatedServices(arg0: { limit: number; offset: number; }): any {
-  throw new Error("Function not implemented.");
-}
-
-useEffect(() => {
-  if (allCases.length === 0) {
-    dispatch(getCases());
+  function getPaginatedServices(arg0: { limit: number; offset: number }): any {
+    throw new Error("Function not implemented.");
   }
-}, [dispatch]);
 
+  useEffect(() => {
+    if (allCases.length === 0) {
+      dispatch(getCases());
+    }
+  }, [dispatch]);
 
   // useEffect(() => {
   //   setAllServices(flattenServices(allCases || []));
   // }, [allCases]);
 
-useEffect(() => {
-  if (allCases?.length) {
-    console.log("Loaded cases", allCases);
-  }
-}, [allCases]);
-
-
-
-useEffect(() => {
-  const timeout = setTimeout(() => {
-    let filtered = allServices;
-
-    if (serviceFilter !== "all") {
-      filtered = filtered.filter((s) => s.name === serviceFilter);
+  useEffect(() => {
+    if (allCases?.length) {
+      console.log("Loaded cases", allCases);
     }
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((s) => s.status === statusFilter);
-    }
+  }, [allCases]);
 
-    setFilteredServices(filtered);
-  }, 200); // Debounce
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      let filtered = allServices;
 
-  return () => clearTimeout(timeout);
-}, [allServices, serviceFilter, statusFilter]);
+      if (serviceFilter !== "all") {
+        filtered = filtered.filter((s) => s.name === serviceFilter);
+      }
+      if (statusFilter !== "all") {
+        filtered = filtered.filter((s) => s.status === statusFilter);
+      }
 
+      setFilteredServices(filtered);
+    }, 200); // Debounce
+
+    return () => clearTimeout(timeout);
+  }, [allServices, serviceFilter, statusFilter]);
 
   const handleDelete = (service: any) => {
     if (window.confirm(`Delete service "${service.name}"?`)) {
@@ -203,69 +197,68 @@ useEffect(() => {
     dispatch(getCases());
   };
 
-// useEffect(() => {
-//   const servicesWithEditTime: any[] = [];
+  // useEffect(() => {
+  //   const servicesWithEditTime: any[] = [];
 
-//   allCases.forEach((parentCase: any) => {
-//     const lastEdited = parentCase.lastEditedService || {};
+  //   allCases.forEach((parentCase: any) => {
+  //     const lastEdited = parentCase.lastEditedService || {};
 
-//     (parentCase.services || []).forEach((service: any) => {
-//       servicesWithEditTime.push({
-//         ...service,
-//          status: service.status === "New-Case" ? "To be Started" : service.status,
-//         parentCase,
-//         editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
-//       });
-//     });
-//   });
+  //     (parentCase.services || []).forEach((service: any) => {
+  //       servicesWithEditTime.push({
+  //         ...service,
+  //          status: service.status === "New-Case" ? "To be Started" : service.status,
+  //         parentCase,
+  //         editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+  //       });
+  //     });
+  //   });
 
-//   // Sort all services globally by editedAt timestamp descending
-//   const getTimeSafe = (date: any) => {
-//     const t = new Date(date).getTime();
-//     return isNaN(t) ? 0 : t;
-//   };
+  //   // Sort all services globally by editedAt timestamp descending
+  //   const getTimeSafe = (date: any) => {
+  //     const t = new Date(date).getTime();
+  //     return isNaN(t) ? 0 : t;
+  //   };
 
-//   const sortedServices = servicesWithEditTime.sort((a, b) => {
-//     return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
-//   });
+  //   const sortedServices = servicesWithEditTime.sort((a, b) => {
+  //     return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
+  //   });
 
-//   setAllServices(sortedServices);
-// }, [allCases]);
+  //   setAllServices(sortedServices);
+  // }, [allCases]);
 
+  useEffect(() => {
+    const servicesWithEditTime: any[] = [];
 
-useEffect(() => {
-  const servicesWithEditTime: any[] = [];
+    allCases?.forEach((parentCase: any) => {
+      if (!Array.isArray(parentCase.services)) return; // Avoid crashing on undefined
 
-  allCases?.forEach((parentCase: any) => {
-    if (!Array.isArray(parentCase.services)) return; // Avoid crashing on undefined
+      const lastEdited = parentCase.lastEditedService || {};
 
-    const lastEdited = parentCase.lastEditedService || {};
+      parentCase.services.forEach((service: any) => {
+        if (!service.id) return; // skip invalid service
 
-    parentCase.services.forEach((service: any) => {
-      if (!service.id) return; // skip invalid service
-
-      servicesWithEditTime.push({
-        ...service,
-        status: service.status === "New-Case" ? "To be Started" : service.status,
-        parentCase,
-        editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+        servicesWithEditTime.push({
+          ...service,
+          status:
+            service.status === "New-Case" ? "To be Started" : service.status,
+          parentCase,
+          editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+        });
       });
     });
-  });
 
-  const limitedServices = servicesWithEditTime.slice(0, 1000);
-  const getTimeSafe = (date: any) => {
-    const t = new Date(date).getTime();
-    return isNaN(t) ? 0 : t;
-  };
+    const limitedServices = servicesWithEditTime.slice(0, 1000);
+    const getTimeSafe = (date: any) => {
+      const t = new Date(date).getTime();
+      return isNaN(t) ? 0 : t;
+    };
 
-  const sortedServices = limitedServices.sort((a, b) => {
-    return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
-  });
+    const sortedServices = limitedServices.sort((a, b) => {
+      return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
+    });
 
-  setAllServices(sortedServices);
-}, [allCases]);
-
+    setAllServices(sortedServices);
+  }, [allCases]);
 
   return (
     <>
@@ -457,7 +450,7 @@ useEffect(() => {
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
                 currentUser={currentUser}
-                caseId={""}
+               
               />
             ) : (
               <ServiceCardView
@@ -465,7 +458,9 @@ useEffect(() => {
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
                 currentUser={currentUser}
-                caseId={""}
+                caseId={
+                  ""
+                }
               />
             )}
           </div>
@@ -474,7 +469,6 @@ useEffect(() => {
     </>
   );
 }
-function getPaginatedServices(arg0: { limit: number; offset: number; }): any {
+function getPaginatedServices(arg0: { limit: number; offset: number }): any {
   throw new Error("Function not implemented.");
 }
-
