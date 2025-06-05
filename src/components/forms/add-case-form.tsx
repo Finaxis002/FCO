@@ -238,63 +238,72 @@ export default function AddCaseForm() {
   }, [dispatch]);
 
   useEffect(() => {
-    const fetchCase = async () => {
-      if (!isEditing) return;
+   const fetchCase = async () => {
+  if (!isEditing) return;
 
-      setLoadingEdit(true);
-      try {
-        const res = await axios.get(
-          `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-        );
-        const caseData = res.data;
+  setLoadingEdit(true);
+  try {
+    const [caseRes, serviceRes] = await Promise.all([
+      axios.get(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}`),
+      axios.get(`https://tumbledrybe.sharda.co.in/api/services`)
+    ]);
 
-        // Extract service names from MOCK_SERVICES_TEMPLATES
-        // Use fresh services from API, fallback to saved if unavailable
-        const freshServices =
-          globalServices.length > 0 ? globalServices : caseData.services || [];
+    const caseData = caseRes.data;
+    const liveServices = serviceRes.data;
 
-        const savedServices = caseData.services || [];
-        const savedServiceNames = savedServices.map((s: any) => s.name);
+    // Keep only unique services (avoid duplicates)
+    const uniqueServiceNames = new Set<string>();
+    const finalServiceList: { name: string; selected: boolean }[] = [];
 
-        // Combine: show all fetched services + mark selected ones from case
-        const combinedServices = freshServices.map((s: any) => ({
+    // First, add all selected services from case (even if deleted in DB)
+    for (const s of caseData.services || []) {
+      if (!uniqueServiceNames.has(s.name)) {
+        finalServiceList.push({
           name: s.name,
-          selected: savedServiceNames.includes(s.name),
-        }));
-
-        // Now map combined list to checkbox form, mark selected if present in saved services
-        const serviceDefaults = combinedServices.map((s: any) => ({
-          name: s.name,
-          selected: savedServiceNames.includes(s.name),
-        }));
-
-        // Handle assignedUsers as before...
-        const assignedUserIds =
-          caseData.assignedUsers?.map((u: any) =>
-            typeof u === "string" ? u : u._id
-          ) || [];
-
-        form.reset({
-          srNo: caseData.srNo,
-          ownerName: caseData.ownerName,
-          clientName: caseData.clientName,
-          unitName: caseData.unitName,
-          franchiseAddress: caseData.franchiseAddress,
-          stateHead: Array.isArray(caseData.stateHead)
-            ? caseData.stateHead.join(", ")
-            : caseData.stateHead || "",
-          authorizedPerson: caseData.authorizedPerson,
-          assignedUsers: assignedUserIds,
-          reasonForStatus: caseData.reasonForStatus,
-          services: combinedServices,
-          status: caseData.status || "New-Case",
+          selected: true
         });
-      } catch (err) {
-        console.error("Failed to load case:", err);
-      } finally {
-        setLoadingEdit(false);
+        uniqueServiceNames.add(s.name);
       }
-    };
+    }
+
+    // Then, add new (unselected) services from live DB
+    for (const s of liveServices || []) {
+      if (!uniqueServiceNames.has(s.name)) {
+        finalServiceList.push({
+          name: s.name,
+          selected: false
+        });
+        uniqueServiceNames.add(s.name);
+      }
+    }
+
+    const assignedUserIds =
+      caseData.assignedUsers?.map((u: any) =>
+        typeof u === "string" ? u : u._id
+      ) || [];
+
+    form.reset({
+      srNo: caseData.srNo,
+      ownerName: caseData.ownerName,
+      clientName: caseData.clientName,
+      unitName: caseData.unitName,
+      franchiseAddress: caseData.franchiseAddress,
+      stateHead: Array.isArray(caseData.stateHead)
+        ? caseData.stateHead.join(", ")
+        : caseData.stateHead || "",
+      authorizedPerson: caseData.authorizedPerson,
+      assignedUsers: assignedUserIds,
+      reasonForStatus: caseData.reasonForStatus,
+      services: finalServiceList,
+      status: caseData.status || "New-Case"
+    });
+  } catch (err) {
+    console.error("Failed to load case:", err);
+  } finally {
+    setLoadingEdit(false);
+  }
+};
+
 
     fetchCase();
   }, [caseId, isEditing, form]);
