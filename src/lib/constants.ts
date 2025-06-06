@@ -364,6 +364,17 @@ export const ROLE_PERMISSIONS: Record<
     edit: false,
     remarks: false,
     chat: false,
+  },
+  "Super Admin": {
+    allCaseAccess: false,
+    viewRights: false,
+    createCaseRights: false,
+    createUserRights: false,
+    userRolesAndResponsibility: false,
+    delete: false,
+    edit: false,
+    remarks: false,
+    chat: false,
   }
 };
 
