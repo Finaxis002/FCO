@@ -7,7 +7,6 @@ import { Toaster } from "@/components/ui/toaster"; // Ensure Toaster is included
 import { Provider } from "react-redux"; // ✅ Import Provider
 import { store } from "./store";
 import { AppNameProvider } from "./contenxt/AppNameContext";
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
@@ -31,4 +30,10 @@ if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     .catch((error) => {
       console.error('Service Worker registration failed: ', error);
     });
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js');
+  });
 }
