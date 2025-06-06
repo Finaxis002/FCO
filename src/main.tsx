@@ -31,9 +31,3 @@ if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       console.error('Service Worker registration failed: ', error);
     });
 }
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js');
-  });
-}
