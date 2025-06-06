@@ -169,14 +169,25 @@ export default function ServiceCardView({
   };
 
   const handleEditTags = (service: any) => {
+    // Map tag IDs to Tag objects using tagsMap
+    const caseId = service.parentCase?._id;
+    if (!caseId) {
+      toast({
+        title: "No Case Selected",
+        description: "Cannot edit tags without a case context.",
+        variant: "destructive",
+      });
+      return;
+    }
     const tags: Tag[] = (service.tags || [])
       .map((tagId: string) => tagsMap[tagId])
-      .filter((tag: Tag) => !!tag)
-      .map((tag: { color: any }) => ({
-        ...tag,
-        color: tag.color ?? "",
-      }));
-    setExistingTags(tags);
+      .filter((tag: Tag) => !!tag);
+    // Ensure each tag has a defined color property (fallback to empty string if undefined)
+    const tagsWithColor = tags.map((tag) => ({
+      ...tag,
+      color: tag.color ?? "",
+    }));
+    setExistingTags(tagsWithColor);
     setSelectedServiceForTags(service._id);
     setTagModalOpen(true);
   };
@@ -199,7 +210,7 @@ export default function ServiceCardView({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {services.map((service, idx) => {
         const validTags = Array.isArray(service.tags)
           ? service.tags
@@ -207,211 +218,221 @@ export default function ServiceCardView({
               .filter((tag: { name: any }) => tag && tag.name)
           : [];
 
+        const tagSource =
+          serviceTags[service._id] ||
+          (Array.isArray(service.tags)
+            ? service.tags
+                .map((tagId: string) => tagsMap[tagId])
+                .filter((tag: { name: any }) => tag && tag.name)
+            : []);
+
         return (
-          <Card
-            key={service._id || idx}
-            className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300"
-          >
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors flex items-center gap-2">
-                  {service.name}
-                  {/* Optionally, you can add a badge for "last edited" or similar */}
-                  {service.isLastEdited && (
-                    <span
-                      className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
-                      title="Recently Edited"
-                    >
-                      Last Edited
-                    </span>
-                  )}
-                </CardTitle>
-                <Select
-                  value={service.status}
-                  onValueChange={(value) =>
-                    handleStatusChange(service.id, value)
-                  }
-                  disabled={updatingServices[service.id]}
-                >
-                  <SelectTrigger
-                    className={`w-[150px] rounded-md ${
-                      statusStyles[service.status] || ""
-                    }`}
+          <Card>
+            <CardContent key={service._id || idx}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors flex items-center gap-2">
+                    {service.name}
+                    {/* Optionally, you can add a badge for "last edited" or similar */}
+                    {service.isLastEdited && (
+                      <span
+                        className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
+                        title="Recently Edited"
+                      >
+                        Last Edited
+                      </span>
+                    )}
+                  </CardTitle>
+                  <Select
+                    value={service.status}
+                    onValueChange={(value) =>
+                      handleStatusChange(service.id, value)
+                    }
+                    disabled={updatingServices[service.id]}
                   >
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(SERVICE_STATUS).map(([key, status]) => (
-                      <SelectItem
-                        key={key}
-                        value={status}
-                        className={`flex items-center rounded-md px-2 py-1 ${
-                          statusStyles[status] || ""
-                        }`}
-                      >
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <CardDescription className="text-xs text-muted-foreground pt-1">
-                {service.parentCase?.unitName || "N/A"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-4 w-4 shrink-0" />
-                <span>{service.parentCase?.ownerName || "N/A"}</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <CalendarDays className="h-4 w-4 shrink-0" />
-                <span>
-                  Last Update:{" "}
-                  {service.parentCase?.lastUpdate
-                    ? new Date(
-                        service.parentCase.lastUpdate
-                      ).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <PercentSquare className="h-4 w-4 shrink-0" />
-                <span>
-                  Progress:{" "}
-                  {typeof service.parentCase?.overallCompletionPercentage ===
-                  "number"
-                    ? `${service.parentCase.overallCompletionPercentage.toFixed(
-                        2
-                      )}%`
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Users className="h-4 w-4 shrink-0" />
-                <div className="flex flex-wrap gap-2 text-sm">
-                  {service.parentCase?.assignedUsers?.length ? (
-                    service.parentCase.assignedUsers.map(
-                      (user: string | { name?: string }, index: number) => {
-                        const userName =
-                          typeof user === "string"
-                            ? user.trim()
-                            : user?.name?.trim() || "Unknown";
-                        const formattedName =
-                          userName.length > 0
-                            ? userName.charAt(0).toUpperCase() +
-                              userName.slice(1).toLowerCase()
-                            : "Unknown";
-                        return (
-                          <span
-                            key={index}
-                            className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-blue-200 transition cursor-default"
-                            title={formattedName}
-                          >
-                            {formattedName}
-                          </span>
-                        );
-                      }
-                    )
-                  ) : (
-                    <span className="italic text-gray-400">N/A</span>
-                  )}
+                    <SelectTrigger
+                      className={`w-[150px] rounded-md ${
+                        statusStyles[service.status] || ""
+                      }`}
+                    >
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(SERVICE_STATUS).map(([key, status]) => (
+                        <SelectItem
+                          key={key}
+                          value={status}
+                          className={`flex items-center rounded-md px-2 py-1 ${
+                            statusStyles[status] || ""
+                          }`}
+                        >
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <TagIcon className="h-4 w-4 shrink-0" />
-                <div className="flex flex-wrap gap-1 items-center">
-                  {validTags.length > 0 ? (
-                    validTags.map((tag: Tag) => (
-                      <Badge
-                        key={tag._id}
-                        variant="outline"
-                        className="text-xs"
-                        style={{
-                          backgroundColor: lightenColor(
-                            tag.color || "#e5e7eb",
-                            0.7
-                          ),
-                          color: darkenColor(tag.color || "#a1a1aa", 0.7),
-                          border: "1px solid #e5e7eb",
-                        }}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      No tags
-                    </span>
-                  )}
-                  {/* Pencil icon for editing tags */}
-                  <button
-                    onClick={() => handleEditTags(service)}
-                    className="ml-1 text-muted-foreground hover:text-primary transition-colors"
-                    title="Edit tags"
-                    type="button"
+                <CardDescription className="text-xs text-muted-foreground pt-1">
+                  {service.parentCase?.unitName || "N/A"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow space-y-3 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4 shrink-0" />
+                  <span>{service.parentCase?.ownerName || "N/A"}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CalendarDays className="h-4 w-4 shrink-0" />
+                  <span>
+                    Last Update:{" "}
+                    {service.parentCase?.lastUpdate
+                      ? new Date(
+                          service.parentCase.lastUpdate
+                        ).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <PercentSquare className="h-4 w-4 shrink-0" />
+                  <span>
+                    Progress:{" "}
+                    {typeof service.parentCase?.overallCompletionPercentage ===
+                    "number"
+                      ? `${service.parentCase.overallCompletionPercentage.toFixed(
+                          2
+                        )}%`
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="h-4 w-4 shrink-0" />
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    {service.parentCase?.assignedUsers?.length ? (
+                      service.parentCase.assignedUsers.map(
+                        (user: string | { name?: string }, index: number) => {
+                          const userName =
+                            typeof user === "string"
+                              ? user.trim()
+                              : user?.name?.trim() || "Unknown";
+                          const formattedName =
+                            userName.length > 0
+                              ? userName.charAt(0).toUpperCase() +
+                                userName.slice(1).toLowerCase()
+                              : "Unknown";
+                          return (
+                            <span
+                              key={index}
+                              className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 whitespace-nowrap shadow-sm hover:bg-blue-200 transition cursor-default"
+                              title={formattedName}
+                            >
+                              {formattedName}
+                            </span>
+                          );
+                        }
+                      )
+                    ) : (
+                      <span className="italic text-gray-400">N/A</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <TagIcon className="h-4 w-4 shrink-0" />
+                  <div className="flex flex-wrap gap-1 items-center">
+                    {tagSource.length > 0 ? (
+                      tagSource.map((tag: Tag) => (
+                        <Badge
+                          key={tag._id}
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: lightenColor(
+                              tag.color || "#e5e7eb",
+                              0.7
+                            ),
+                            color: darkenColor(tag.color || "#a1a1aa", 0.7),
+                            border: "1px solid #e5e7eb",
+                          }}
+                        >
+                          {tag.name}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        No tags
+                      </span>
+                    )}
+                    {/* Pencil icon for editing tags */}
+                    <button
+                      onClick={() => handleEditTags(service)}
+                      className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                      title="Edit tags"
+                      type="button"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">
+                    Remarks
+                  </h4>
+                  <div className="flex items-center">
+                    <Remarks
+                      caseId={service.parentCase?._id}
+                      serviceId={service.id}
+                      currentUser={currentUser}
+                      serviceName={service.name}
+                      onRemarkRead={onRemarkRead}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="flex w-full justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label="View Case"
+                    onClick={() =>
+                      navigate(
+                        `/cases/${service.parentCase?._id}?from=services`
+                      )
+                    }
+                  >
+                    <Eye className="h-4 w-4 mr-1.5" />
+                    View Case
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Edit Service"
+                    onClick={() =>
+                      toast({
+                        title: "Edit Service",
+                        description: "Edit functionality not implemented.",
+                      })
+                    }
                   >
                     <Edit className="h-4 w-4" />
-                  </button>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Delete Service"
+                    className="text-red-600 hover:text-red-800"
+                    onClick={() => onDelete(service)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                  Remarks
-                </h4>
-                <div className="flex items-center">
-                  <Remarks
-                    caseId={service.parentCase?._id}
-                    serviceId={service.id}
-                    currentUser={currentUser}
-                    serviceName={service.name}
-                    onRemarkRead={onRemarkRead}
-                  />
-                </div>
-              </div>
+              </CardFooter>
             </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="flex w-full justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="View Case"
-                  onClick={() =>
-                    navigate(`/cases/${service.parentCase?._id}?from=services`)
-                  }
-                >
-                  <Eye className="h-4 w-4 mr-1.5" />
-                  View Case
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Edit Service"
-                  onClick={() =>
-                    toast({
-                      title: "Edit Service",
-                      description: "Edit functionality not implemented.",
-                    })
-                  }
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Delete Service"
-                  className="text-red-600 hover:text-red-800"
-                  onClick={() => onDelete(service)}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardFooter>
+
             {selectedServiceForTags && (
               <ServiceTagsModal
                 caseId={

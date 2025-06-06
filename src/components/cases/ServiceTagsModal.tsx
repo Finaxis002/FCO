@@ -10,7 +10,7 @@ interface Tag {
 
 interface ServiceTagsModalProps {
   open: boolean;
-  caseId: string;        // <-- add this
+  caseId: string; // <-- add this
   onClose: () => void;
   serviceId: string;
   existingTags: Tag[];
@@ -40,7 +40,9 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
     (async () => {
       setLoading(true);
       try {
-        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/tags"); // relative path if running via proxy
+        const res = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/tags"
+        ); // relative path if running via proxy
         setAllTags(res.data);
         setSelectedTags(existingTags || []);
       } catch (err) {
@@ -56,13 +58,20 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
     if (!input.trim()) return;
     setAddLoading(true);
     try {
-      const { data } = await axios.post("https://tumbledrybe.sharda.co.in/api/tags", {
-        name: input.trim(),
-        createdBy: currentUser?.id,
-      });
+      const { data } = await axios.post(
+        "https://tumbledrybe.sharda.co.in/api/tags",
+        {
+          name: input.trim(),
+          createdBy: currentUser?.id,
+        }
+      );
       // Add to both lists if not present
-      setAllTags((prev) => (prev.find((t) => t._id === data._id) ? prev : [...prev, data]));
-      setSelectedTags((prev) => (prev.find((t) => t._id === data._id) ? prev : [...prev, data]));
+      setAllTags((prev) =>
+        prev.find((t) => t._id === data._id) ? prev : [...prev, data]
+      );
+      setSelectedTags((prev) =>
+        prev.find((t) => t._id === data._id) ? prev : [...prev, data]
+      );
       setInput("");
     } catch {
       setError("Tag already exists or failed to create");
@@ -73,10 +82,11 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
 
   // Select/deselect
   const handleSelectTag = (tag: Tag) => {
-    setSelectedTags((prev) =>
-      prev.find((t) => t._id === tag._id)
-        ? prev.filter((t) => t._id !== tag._id) // Remove if present
-        : [...prev, tag] // Add if missing
+    setSelectedTags(
+      (prev) =>
+        prev.find((t) => t._id === tag._id)
+          ? prev.filter((t) => t._id !== tag._id) // Remove if present
+          : [...prev, tag] // Add if missing
     );
   };
 
@@ -89,9 +99,12 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
   const handleSave = async () => {
     setLoading(true);
     try {
-      await axios.patch(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags`, {
-       tagIds: selectedTags.map(tag => tag._id)
-      });
+      await axios.patch(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags`,
+        {
+          tagIds: selectedTags.map((tag) => tag._id),
+        }
+      );
       onTagsUpdated(selectedTags);
       onClose();
     } catch {
@@ -108,7 +121,7 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+    <div className="fixed inset-0 flex items-center justify-center  z-50">
       <div className="bg-white rounded-xl p-6 min-w-[400px] relative shadow-lg">
         <button className="absolute top-2 right-2" onClick={onClose}>
           <X />
@@ -157,7 +170,11 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
             disabled={addLoading || !input.trim()}
             title="Add tag"
           >
-            {addLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={18} />}
+            {addLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus size={18} />
+            )}
           </button>
         </div>
 
@@ -197,7 +214,9 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
             onClick={handleSave}
             disabled={loading}
           >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin inline" /> : null}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
+            ) : null}
             Save
           </button>
         </div>

@@ -71,7 +71,7 @@ export const updateCase = createAsyncThunk(
       const token = localStorage.getItem("token"); // get token from localStorage
 
       const response = await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
+        `http://localhost:3000/api/cases/${caseData.id}`,
         caseData,
         {
           headers: {

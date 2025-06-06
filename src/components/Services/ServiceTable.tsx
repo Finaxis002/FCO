@@ -71,7 +71,10 @@ function lightenColor(hex: string, percent: number) {
 function darkenColor(hex: string, percent: number) {
   hex = hex.replace(/^#/, "");
   if (hex.length === 3) {
-    hex = hex.split("").map((x) => x + x).join("");
+    hex = hex
+      .split("")
+      .map((x) => x + x)
+      .join("");
   }
   const num = parseInt(hex, 16);
   let r = (num >> 16) * (1 - percent);
@@ -295,7 +298,10 @@ export default function ServiceTable({
                                       tag.color || "#e5e7eb",
                                       0.7
                                     ), // 0.7 = 70% lighter
-                                     color: darkenColor(tag.color || "#a1a1aa", 0.7), // 40% darker than original
+                                    color: darkenColor(
+                                      tag.color || "#a1a1aa",
+                                      0.7
+                                    ), // 40% darker than original
                                     border: "1px solid #e5e7eb",
                                   }}
                                 >
@@ -314,13 +320,17 @@ export default function ServiceTable({
                       )}
 
                       {/* Add pencil icon for editing */}
-                      <button
-                        onClick={() => handleEditTags(service)}
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                        title="Edit tags"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      {(currentUser?.role === "super-admin" ||
+                        currentUser?.role === "user") && (
+                        <button
+                          onClick={() => handleEditTags(service)}
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="Edit tags"
+                          type="button"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

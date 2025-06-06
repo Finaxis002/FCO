@@ -260,6 +260,57 @@ export default function ServicesPage() {
     setAllServices(sortedServices);
   }, [allCases]);
 
+
+  useEffect(() => {
+  if (!currentUser || !Array.isArray(allCases)) return;
+
+  // Only include cases where the current user is assigned
+  const assignedCases = allCases.filter((c: any) =>
+    c.assignedUsers?.some((user: any) => {
+      if (typeof user === "string") {
+        return user === currentUser.userId || user === currentUser.name;
+      } else {
+        return (
+          user._id === currentUser.userId ||
+          user.userId === currentUser.userId ||
+          user.name === currentUser.name
+        );
+      }
+    })
+  );
+
+  const servicesWithEditTime: any[] = [];
+
+  assignedCases.forEach((parentCase: any) => {
+    if (!Array.isArray(parentCase.services)) return;
+
+    const lastEdited = parentCase.lastEditedService || {};
+
+    parentCase.services.forEach((service: any) => {
+      if (!service.id) return;
+
+      servicesWithEditTime.push({
+        ...service,
+        status: service.status === "New-Case" ? "To be Started" : service.status,
+        parentCase,
+        editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+      });
+    });
+  });
+
+  const limitedServices = servicesWithEditTime.slice(0, 1000);
+  const getTimeSafe = (date: any) => {
+    const t = new Date(date).getTime();
+    return isNaN(t) ? 0 : t;
+  };
+
+  const sortedServices = limitedServices.sort((a, b) => {
+    return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
+  });
+
+  setAllServices(sortedServices);
+}, [allCases, currentUser]);
+
   return (
     <>
       <PageHeader

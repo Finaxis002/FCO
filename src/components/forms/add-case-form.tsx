@@ -65,6 +65,9 @@ const caseFormSchema = z.object({
       z.object({
         name: z.string(),
         selected: z.boolean(),
+        status: z.string().optional(),
+        remarks: z.string().optional(),
+        completionPercentage: z.number().optional(),
       })
     )
     .refine((value) => value.some((service) => service.selected), {
@@ -159,7 +162,7 @@ export default function AddCaseForm() {
   //   const fetchServices = async () => {
   //     try {
   //       const res = await axios.get(
-  //         "https://tumbledrybe.sharda.co.in/api/services"
+  //         "http://localhost:3000/api/services"
   //       );
   //       setGlobalServices(res.data);
 
@@ -189,9 +192,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/services"
-        );
+        const res = await axios.get("http://localhost:3000/api/services");
         setGlobalServices(res.data);
 
         // Only reset services if not editing
@@ -238,72 +239,85 @@ export default function AddCaseForm() {
   }, [dispatch]);
 
   useEffect(() => {
-   const fetchCase = async () => {
-  if (!isEditing) return;
+    const fetchCase = async () => {
+      if (!isEditing) return;
 
-  setLoadingEdit(true);
-  try {
-    const [caseRes, serviceRes] = await Promise.all([
-      axios.get(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}`),
-      axios.get(`https://tumbledrybe.sharda.co.in/api/services`)
-    ]);
+      setLoadingEdit(true);
+      try {
+        const [caseRes, serviceRes] = await Promise.all([
+          axios.get(`http://localhost:3000/api/cases/${caseId}`),
+          axios.get(`http://localhost:3000/api/services`),
+        ]);
 
-    const caseData = caseRes.data;
-    const liveServices = serviceRes.data;
+        const caseData = caseRes.data;
+        const liveServices = serviceRes.data;
 
-    // Keep only unique services (avoid duplicates)
-    const uniqueServiceNames = new Set<string>();
-    const finalServiceList: { name: string; selected: boolean }[] = [];
+        // Keep only unique services (avoid duplicates)
+        const uniqueServiceNames = new Set<string>();
+        const finalServiceList: {
+          name: string;
+          selected: boolean;
+          status?: string;
+          remarks?: string;
+          completionPercentage?: number;
+        }[] = [];
 
-    // First, add all selected services from case (even if deleted in DB)
-    for (const s of caseData.services || []) {
-      if (!uniqueServiceNames.has(s.name)) {
-        finalServiceList.push({
-          name: s.name,
-          selected: true
+        // First, add all selected services from case (even if deleted in DB)
+        for (const s of caseData.services || []) {
+          if (!uniqueServiceNames.has(s.name)) {
+            finalServiceList.push({
+              name: s.name,
+              selected: true,
+              status: s.status || "To-be-Started",
+              remarks: s.remarks || "",
+              completionPercentage: s.completionPercentage || 0,
+            });
+
+            uniqueServiceNames.add(s.name);
+          }
+        }
+
+        // Then, add new (unselected) services from live DB
+        for (const s of liveServices || []) {
+          if (!uniqueServiceNames.has(s.name)) {
+            finalServiceList.push({
+              name: s.name,
+             selected: false, 
+              status: s.status || "To-be-Started",
+              remarks: s.remarks || "",
+              completionPercentage: s.completionPercentage || 0,
+            });
+
+            uniqueServiceNames.add(s.name);
+          }
+        }
+
+        const assignedUserIds =
+          caseData.assignedUsers?.map((u: any) =>
+            typeof u === "string" ? u : u._id
+          ) || [];
+
+        form.reset({
+          srNo: caseData.srNo,
+          ownerName: caseData.ownerName,
+          clientName: caseData.clientName,
+          unitName: caseData.unitName,
+          franchiseAddress: caseData.franchiseAddress,
+          stateHead: Array.isArray(caseData.stateHead)
+            ? caseData.stateHead.join(", ")
+            : caseData.stateHead || "",
+          authorizedPerson: caseData.authorizedPerson,
+          assignedUsers: assignedUserIds,
+          reasonForStatus: caseData.reasonForStatus,
+          services: finalServiceList,
+          status: caseData.status || "New-Case",
         });
-        uniqueServiceNames.add(s.name);
+      } catch (err) {
+        console.error("Failed to load case:", err);
+      } finally {
+        setLoadingEdit(false);
       }
-    }
-
-    // Then, add new (unselected) services from live DB
-    for (const s of liveServices || []) {
-      if (!uniqueServiceNames.has(s.name)) {
-        finalServiceList.push({
-          name: s.name,
-          selected: false
-        });
-        uniqueServiceNames.add(s.name);
-      }
-    }
-
-    const assignedUserIds =
-      caseData.assignedUsers?.map((u: any) =>
-        typeof u === "string" ? u : u._id
-      ) || [];
-
-    form.reset({
-      srNo: caseData.srNo,
-      ownerName: caseData.ownerName,
-      clientName: caseData.clientName,
-      unitName: caseData.unitName,
-      franchiseAddress: caseData.franchiseAddress,
-      stateHead: Array.isArray(caseData.stateHead)
-        ? caseData.stateHead.join(", ")
-        : caseData.stateHead || "",
-      authorizedPerson: caseData.authorizedPerson,
-      assignedUsers: assignedUserIds,
-      reasonForStatus: caseData.reasonForStatus,
-      services: finalServiceList,
-      status: caseData.status || "New-Case"
-    });
-  } catch (err) {
-    console.error("Failed to load case:", err);
-  } finally {
-    setLoadingEdit(false);
-  }
-};
-
+    };
 
     fetchCase();
   }, [caseId, isEditing, form]);
@@ -311,9 +325,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/owners"
-        );
+        const res = await axios.get("http://localhost:3000/api/owners");
         setOwnerOptions(
           res.data.map((o: any) => ({
             label: o.name,
@@ -331,9 +343,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/clients"
-        );
+        const res = await axios.get("http://localhost:3000/api/clients");
         setClientOptions(
           res.data.map((c: any) => ({
             label: c.name,
@@ -355,12 +365,9 @@ export default function AddCaseForm() {
   // Create Owner if not exists
   const createOwner = async (name: string) => {
     try {
-      const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/owners",
-        {
-          name,
-        }
-      );
+      const res = await axios.post("http://localhost:3000/api/owners", {
+        name,
+      });
       const newOption = { label: name, value: name }; // Create proper option object
       setOwnerOptions((prev) => [...prev, newOption]); // Add the complete option
       return name; // Return the name for consistency
@@ -378,12 +385,9 @@ export default function AddCaseForm() {
   const createClient = async (name: string) => {
     console.log("Attempting to create client:", name);
     try {
-      const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/clients",
-        {
-          name,
-        }
-      );
+      const res = await axios.post("http://localhost:3000/api/clients", {
+        name,
+      });
       console.log("Client creation response:", res.data);
       const newOption = { label: name, value: name };
       setClientOptions((prev) => [...prev, newOption]);
@@ -439,13 +443,13 @@ export default function AddCaseForm() {
       const newCaseServices = data.services
         .filter((s) => s.selected)
         .map((s, index) => ({
-          _id: `service-${index}-${Date.now()}`, // Add _id property as required by Service interface
-          serviceId: `service-${index}-${Date.now()}`,
+          _id: `service-${index}-${Date.now()}`,
           id: `service-${index}-${Date.now()}`,
+          serviceId: `service-${index}-${Date.now()}`,
           name: s.name,
-          status: "New-Case" as ServiceStatus,
-          remarks: "",
-          completionPercentage: 0,
+          status: (s.status || "To-be-Started") as ServiceStatus, // <-- Cast here
+          remarks: s.remarks || "",
+          completionPercentage: s.completionPercentage ?? 0,
         }));
 
       // Step 1: Add authorizedPerson and stateHead to assignedUsers

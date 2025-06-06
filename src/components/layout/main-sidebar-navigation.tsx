@@ -30,7 +30,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/", icon: Home },
   { id: "cases", label: "Cases", href: "/cases", icon: FolderKanban },
-   { id: "services", label: "Services", href: "/services", icon: Server }, // Added Services
+   { id: "services", label: "Services", href: "/services", icon: Server , role: ["Admin", "User"], }, // Added Services
   { id: "users", label: "Users", href: "/users", icon: Users, role: ["Admin"] },
 ];
 
@@ -50,16 +50,24 @@ export default function MainSidebarNavigation({
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
 
   // Filter nav items based on createUserRights permission
-  const filteredNavItems = NAV_ITEMS.filter((item) => {
-    if (item.id === "users") {
-      return (
-        isAdmin ||
-        permissions?.createUserRights === true ||
-        permissions?.userRolesAndResponsibility === true
-      ); // Only show 'Users' if permission granted
-    }
-    return true;
-  });
+const filteredNavItems = NAV_ITEMS.filter((item) => {
+  // Role-based check
+  if (item.role && !item.role.includes(userRole || "")) {
+    return false;
+  }
+
+  // Specific logic for 'users' item
+  if (item.id === "users") {
+    return (
+      isAdmin ||
+      permissions?.createUserRights === true ||
+      permissions?.userRolesAndResponsibility === true
+    );
+  }
+
+  return true;
+});
+
 
   const location = useLocation();
   const pathname = location.pathname;
