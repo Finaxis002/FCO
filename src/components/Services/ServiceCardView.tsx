@@ -19,9 +19,19 @@ import { useToast } from "@/hooks/use-toast";
 import { SERVICE_STATUS } from "@/lib/statusConfig";
 import Remarks from "./Remarks";
 import axios from "axios";
-import { Eye, Trash, Edit, PercentSquare, Users, User, CalendarDays, Tag as TagIcon } from "lucide-react";
+import {
+  Eye,
+  Trash,
+  Edit,
+  PercentSquare,
+  Users,
+  User,
+  CalendarDays,
+  Tag as TagIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import ServiceTagsModal from "../cases/ServiceTagsModal";
 
 type Tag = {
   _id: string;
@@ -30,10 +40,14 @@ type Tag = {
 };
 
 const statusStyles: Record<string, string> = {
-  "To be Started": "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900",
-  "Detail Required": "bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900",
-  "In-Progress": "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900",
-  Completed: "bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900",
+  "To be Started":
+    "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900",
+  "Detail Required":
+    "bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900",
+  "In-Progress":
+    "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900",
+  Completed:
+    "bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900",
 };
 
 interface ServiceCardViewProps {
@@ -48,6 +62,45 @@ interface ServiceCardViewProps {
   onRemarkRead?: (serviceId: string, userId: string) => void;
 }
 
+// Add this helper at the top of your file
+function lightenColor(hex: string, percent: number) {
+  // Remove '#' if present
+  hex = hex.replace(/^#/, "");
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map((x) => x + x)
+      .join("");
+  }
+  const num = parseInt(hex, 16);
+  let r = (num >> 16) + Math.round((255 - (num >> 16)) * percent);
+  let g =
+    ((num >> 8) & 0x00ff) + Math.round((255 - ((num >> 8) & 0x00ff)) * percent);
+  let b = (num & 0x0000ff) + Math.round((255 - (num & 0x0000ff)) * percent);
+  r = Math.min(255, r);
+  g = Math.min(255, g);
+  b = Math.min(255, b);
+  return `rgb(${r},${g},${b})`;
+}
+
+function darkenColor(hex: string, percent: number) {
+  hex = hex.replace(/^#/, "");
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map((x) => x + x)
+      .join("");
+  }
+  const num = parseInt(hex, 16);
+  let r = (num >> 16) * (1 - percent);
+  let g = ((num >> 8) & 0x00ff) * (1 - percent);
+  let b = (num & 0x0000ff) * (1 - percent);
+  r = Math.max(0, Math.round(r));
+  g = Math.max(0, Math.round(g));
+  b = Math.max(0, Math.round(b));
+  return `rgb(${r},${g},${b})`;
+}
+
 export default function ServiceCardView({
   services,
   onDelete,
@@ -59,15 +112,26 @@ export default function ServiceCardView({
   showTags,
   onRemarkRead,
 }: ServiceCardViewProps) {
-  const [updatingServices, setUpdatingServices] = useState<Record<string, boolean>>({});
+  const [updatingServices, setUpdatingServices] = useState<
+    Record<string, boolean>
+  >({});
   const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [selectedServiceForTags, setSelectedServiceForTags] = useState<
+    string | null
+  >(null);
+  const [existingTags, setExistingTags] = useState<Tag[]>([]);
+  const [serviceTags, setServiceTags] = useState<Record<string, Tag[]>>({});
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await axios.get("https://tumbledrybe.sharda.co.in/api/tags");
+        const response = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/tags"
+        );
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
           acc[tag._id] = tag;
@@ -104,6 +168,19 @@ export default function ServiceCardView({
     }
   };
 
+  const handleEditTags = (service: any) => {
+    const tags: Tag[] = (service.tags || [])
+      .map((tagId: string) => tagsMap[tagId])
+      .filter((tag: Tag) => !!tag)
+      .map((tag: { color: any }) => ({
+        ...tag,
+        color: tag.color ?? "",
+      }));
+    setExistingTags(tags);
+    setSelectedServiceForTags(service._id);
+    setTagModalOpen(true);
+  };
+
   if (!services.length) {
     return (
       <Card>
@@ -127,29 +204,39 @@ export default function ServiceCardView({
         const validTags = Array.isArray(service.tags)
           ? service.tags
               .map((tagId: string) => tagsMap[tagId])
-              .filter((tag: { name: any; }) => tag && tag.name)
+              .filter((tag: { name: any }) => tag && tag.name)
           : [];
 
         return (
-          <Card key={service._id || idx} className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <Card
+            key={service._id || idx}
+            className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300"
+          >
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors flex items-center gap-2">
                   {service.name}
                   {/* Optionally, you can add a badge for "last edited" or similar */}
                   {service.isLastEdited && (
-                    <span className="bg-blue-600 text-white text-xs px-1.5 rounded-full" title="Recently Edited">
+                    <span
+                      className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
+                      title="Recently Edited"
+                    >
                       Last Edited
                     </span>
                   )}
                 </CardTitle>
                 <Select
                   value={service.status}
-                  onValueChange={(value) => handleStatusChange(service.id, value)}
+                  onValueChange={(value) =>
+                    handleStatusChange(service.id, value)
+                  }
                   disabled={updatingServices[service.id]}
                 >
                   <SelectTrigger
-                    className={`w-[150px] rounded-md ${statusStyles[service.status] || ""}`}
+                    className={`w-[150px] rounded-md ${
+                      statusStyles[service.status] || ""
+                    }`}
                   >
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -158,7 +245,9 @@ export default function ServiceCardView({
                       <SelectItem
                         key={key}
                         value={status}
-                        className={`flex items-center rounded-md px-2 py-1 ${statusStyles[status] || ""}`}
+                        className={`flex items-center rounded-md px-2 py-1 ${
+                          statusStyles[status] || ""
+                        }`}
                       >
                         {status}
                       </SelectItem>
@@ -180,7 +269,9 @@ export default function ServiceCardView({
                 <span>
                   Last Update:{" "}
                   {service.parentCase?.lastUpdate
-                    ? new Date(service.parentCase.lastUpdate).toLocaleDateString("en-US", {
+                    ? new Date(
+                        service.parentCase.lastUpdate
+                      ).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
@@ -192,8 +283,11 @@ export default function ServiceCardView({
                 <PercentSquare className="h-4 w-4 shrink-0" />
                 <span>
                   Progress:{" "}
-                  {typeof service.parentCase?.overallCompletionPercentage === "number"
-                    ? `${service.parentCase.overallCompletionPercentage.toFixed(2)}%`
+                  {typeof service.parentCase?.overallCompletionPercentage ===
+                  "number"
+                    ? `${service.parentCase.overallCompletionPercentage.toFixed(
+                        2
+                      )}%`
                     : "N/A"}
                 </span>
               </div>
@@ -230,24 +324,46 @@ export default function ServiceCardView({
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <TagIcon className="h-4 w-4 shrink-0" />
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 items-center">
                   {validTags.length > 0 ? (
-                    validTags.map((tag: { _id: React.Key | null | undefined; name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }) => (
+                    validTags.map((tag: Tag) => (
                       <Badge
                         key={tag._id}
                         variant="outline"
                         className="text-xs"
+                        style={{
+                          backgroundColor: lightenColor(
+                            tag.color || "#e5e7eb",
+                            0.7
+                          ),
+                          color: darkenColor(tag.color || "#a1a1aa", 0.7),
+                          border: "1px solid #e5e7eb",
+                        }}
                       >
                         {tag.name}
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-muted-foreground text-sm">No tags</span>
+                    <span className="text-muted-foreground text-sm">
+                      No tags
+                    </span>
                   )}
+                  {/* Pencil icon for editing tags */}
+                  <button
+                    onClick={() => handleEditTags(service)}
+                    className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                    title="Edit tags"
+                    type="button"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
+
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-1">Remarks</h4>
+                <h4 className="text-xs font-medium text-muted-foreground mb-1">
+                  Remarks
+                </h4>
                 <div className="flex items-center">
                   <Remarks
                     caseId={service.parentCase?._id}
@@ -265,7 +381,9 @@ export default function ServiceCardView({
                   variant="outline"
                   size="sm"
                   aria-label="View Case"
-                  onClick={() => navigate(`/cases/${service.parentCase?._id}?from=services`)}
+                  onClick={() =>
+                    navigate(`/cases/${service.parentCase?._id}?from=services`)
+                  }
                 >
                   <Eye className="h-4 w-4 mr-1.5" />
                   View Case
@@ -274,7 +392,12 @@ export default function ServiceCardView({
                   variant="outline"
                   size="icon"
                   aria-label="Edit Service"
-                  onClick={() => toast({ title: "Edit Service", description: "Edit functionality not implemented." })}
+                  onClick={() =>
+                    toast({
+                      title: "Edit Service",
+                      description: "Edit functionality not implemented.",
+                    })
+                  }
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -289,6 +412,33 @@ export default function ServiceCardView({
                 </Button>
               </div>
             </CardFooter>
+            {selectedServiceForTags && (
+              <ServiceTagsModal
+                caseId={
+                  services.find((s) => s._id === selectedServiceForTags)
+                    ?.parentCase?._id || ""
+                }
+                open={tagModalOpen}
+                onClose={() => setTagModalOpen(false)}
+                // caseId={caseId}
+                serviceId={selectedServiceForTags}
+                existingTags={existingTags.map((tag) => ({
+                  ...tag,
+                  color: tag.color ?? "",
+                }))}
+                onTagsUpdated={(updatedTags) => {
+                  // Update tags for the service in your local state
+                  setTagModalOpen(false);
+                  setSelectedServiceForTags(null);
+                  setExistingTags([]);
+                  setServiceTags((prev) => ({
+                    ...prev,
+                    [selectedServiceForTags]: updatedTags,
+                  }));
+                }}
+                currentUser={currentUser}
+              />
+            )}
           </Card>
         );
       })}
