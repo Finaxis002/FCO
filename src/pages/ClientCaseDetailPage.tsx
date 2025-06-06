@@ -16,7 +16,6 @@ import {
   Building2,
   MessageSquare,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import CaseChat from "@/components/cases/case-chat"; // Import CaseChat
