@@ -292,7 +292,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   // console.log("isAdmin", isAdmin);
   // console.log("canEdit", canEdit);
 
-console.log("userRole", userRole)
+  console.log("userRole", userRole);
 
   return (
     <div>
@@ -352,7 +352,7 @@ console.log("userRole", userRole)
                   <h4 className="font-semibold text-md break-words">
                     {service.name}
                     {unreadRemarkCount > 0 && userRole && (
-                      <span className="inline-flex items-center justify-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                      <span className="inline-flex items-center bg-blue-500 text-white p-1 px-2 text-xs border rounded-full ">
                         {unreadRemarkCount} unread remark
                         {unreadRemarkCount > 1 ? "s" : ""}
                       </span>
@@ -372,8 +372,9 @@ console.log("userRole", userRole)
                           }}
                         >
                           {tag.name}
-                          
-                          {(currentUser?.role === "Admin" || currentUser?.role === "User") && (
+
+                          {(currentUser?.role === "Admin" ||
+                            currentUser?.role === "User") && (
                             <button
                               type="button"
                               disabled={isRemoving === tag._id}
