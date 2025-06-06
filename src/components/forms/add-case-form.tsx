@@ -162,7 +162,7 @@ export default function AddCaseForm() {
   //   const fetchServices = async () => {
   //     try {
   //       const res = await axios.get(
-  //         "http://localhost:3000/api/services"
+  //         "https://tumbledrybe.sharda.co.in/api/services"
   //       );
   //       setGlobalServices(res.data);
 
@@ -192,7 +192,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/services");
+        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/services");
         setGlobalServices(res.data);
 
         // Only reset services if not editing
@@ -245,8 +245,8 @@ export default function AddCaseForm() {
       setLoadingEdit(true);
       try {
         const [caseRes, serviceRes] = await Promise.all([
-          axios.get(`http://localhost:3000/api/cases/${caseId}`),
-          axios.get(`http://localhost:3000/api/services`),
+          axios.get(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}`),
+          axios.get(`https://tumbledrybe.sharda.co.in/api/services`),
         ]);
 
         const caseData = caseRes.data;
@@ -325,7 +325,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/owners");
+        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/owners");
         setOwnerOptions(
           res.data.map((o: any) => ({
             label: o.name,
@@ -343,7 +343,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/clients");
+        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/clients");
         setClientOptions(
           res.data.map((c: any) => ({
             label: c.name,
@@ -365,7 +365,7 @@ export default function AddCaseForm() {
   // Create Owner if not exists
   const createOwner = async (name: string) => {
     try {
-      const res = await axios.post("http://localhost:3000/api/owners", {
+      const res = await axios.post("https://tumbledrybe.sharda.co.in/api/owners", {
         name,
       });
       const newOption = { label: name, value: name }; // Create proper option object
@@ -385,7 +385,7 @@ export default function AddCaseForm() {
   const createClient = async (name: string) => {
     console.log("Attempting to create client:", name);
     try {
-      const res = await axios.post("http://localhost:3000/api/clients", {
+      const res = await axios.post("https://tumbledrybe.sharda.co.in/api/clients", {
         name,
       });
       console.log("Client creation response:", res.data);
