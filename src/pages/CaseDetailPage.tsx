@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, Link as RouterLink } from "react-router-dom";
+import { useParams, Link as RouterLink, useNavigate } from "react-router-dom";
 import { APP_NAME } from "@/lib/constants";
 import type { Case, User } from "@/types/franchise";
 import PageHeader from "@/components/ui/page-header";
@@ -55,6 +55,8 @@ export default function CaseDetailPage({
   const [allRemarks, setAllRemarks] = useState<
     Array<{ serviceId: string; readBy: string[] }>
   >([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAllRemarks = async () => {
@@ -206,18 +208,6 @@ export default function CaseDetailPage({
       }
     }
   }, [dispatch]);
-
-  // useEffect(() => {
-  //   const urlParams = new URLSearchParams(window.location.search);
-  //   const serviceId = urlParams.get("serviceId");
-
-  //   if (serviceId) {
-  //     setHighlightServiceId(serviceId); // ✅ sets the actual value
-  //     urlParams.delete("serviceId");
-  //     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-  //     window.history.replaceState({}, "", newUrl);
-  //   }
-  // }, []);
 
   useEffect(() => {
     if (caseData && caseData.unitName) {
@@ -377,6 +367,13 @@ export default function CaseDetailPage({
             </RouterLink>
           </Button>
         )}
+        <Button
+          variant="default"
+          className="ml-2"
+          onClick={() => navigate(`/cases/${caseId}/edit`)}
+        >
+          Edit Case
+        </Button>
       </PageHeader>
 
       <div className="grid gap-6 md:grid-cols-3">

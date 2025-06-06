@@ -92,7 +92,8 @@ export type UserRole =
   | "Manager"
   | "User"
   | "Authorized Person"
-  | "State Head";
+  | "State Head"
+  | "Super Admin";
 
 export interface User {
   _id?: string; // MongoDB ID

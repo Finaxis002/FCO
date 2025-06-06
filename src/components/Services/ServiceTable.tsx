@@ -320,8 +320,8 @@ export default function ServiceTable({
                       )}
 
                       {/* Add pencil icon for editing */}
-                      {(currentUser?.role === "super-admin" ||
-                        currentUser?.role === "user") && (
+                      {(currentUser?.role === "Admin" || currentUser?.role === "User") && (
+                         
                         <button
                           onClick={() => handleEditTags(service)}
                           className="text-muted-foreground hover:text-primary transition-colors"

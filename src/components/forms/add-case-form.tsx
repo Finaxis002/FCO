@@ -158,36 +158,6 @@ export default function AddCaseForm() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  // useEffect(() => {
-  //   const fetchServices = async () => {
-  //     try {
-  //       const res = await axios.get(
-  //         "https://tumbledrybe.sharda.co.in/api/services"
-  //       );
-  //       setGlobalServices(res.data);
-
-  //       // Only reset services if not editing
-  //       if (!isEditing) {
-  //         form.reset({
-  //           ...form.getValues(),
-  //           services: res.data.map((service: any) => ({
-  //             name: service.name,
-  //             selected: false,
-  //           })),
-  //         });
-  //       }
-  //     } catch (e) {
-  //       console.error("Failed to fetch services", e);
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to load services",
-  //         variant: "destructive",
-  //       });
-  //     }
-  //   };
-
-  //   fetchServices();
-  // }, []);
 
   useEffect(() => {
     const fetchServices = async () => {

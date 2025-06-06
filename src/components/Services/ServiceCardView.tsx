@@ -28,6 +28,7 @@ import {
   User,
   CalendarDays,
   Tag as TagIcon,
+  Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -365,15 +366,17 @@ export default function ServiceCardView({
                         No tags
                       </span>
                     )}
-                    {/* Pencil icon for editing tags */}
-                    <button
-                      onClick={() => handleEditTags(service)}
-                      className="ml-1 text-muted-foreground hover:text-primary transition-colors"
-                      title="Edit tags"
-                      type="button"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
+                    {(currentUser?.role === "Admin" ||
+                      currentUser?.role === "User") && (
+                      <button
+                        onClick={() => handleEditTags(service)}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="Edit tags"
+                        type="button"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

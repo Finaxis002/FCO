@@ -260,28 +260,40 @@ export default function ServicesPage() {
     setAllServices(sortedServices);
   }, [allCases]);
 
+  
+  console.log("currentUser", currentUser)
+
 
   useEffect(() => {
   if (!currentUser || !Array.isArray(allCases)) return;
 
-  // Only include cases where the current user is assigned
-  const assignedCases = allCases.filter((c: any) =>
-    c.assignedUsers?.some((user: any) => {
-      if (typeof user === "string") {
-        return user === currentUser.userId || user === currentUser.name;
-      } else {
-        return (
-          user._id === currentUser.userId ||
-          user.userId === currentUser.userId ||
-          user.name === currentUser.name
-        );
-      }
-    })
-  );
+  // Show all cases for Admin and Super Admin, assigned only for others
+// Show all cases for Admin and Super Admin, assigned only for others
+   const userRole = localStorage.getItem("userRole");
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+  console.log("isAdmin", isAdmin)
+
+  const visibleCases = isAdmin
+    ? allCases
+    : allCases.filter((c: any) =>
+        c.assignedUsers?.some((user: any) => {
+          if (typeof user === "string") {
+            return user === currentUser.userId || user === currentUser.name;
+          } else {
+            return (
+              user._id === currentUser.userId ||
+              user.userId === currentUser.userId ||
+              user.name === currentUser.name
+            );
+          }
+        })
+      );
+
 
   const servicesWithEditTime: any[] = [];
 
-  assignedCases.forEach((parentCase: any) => {
+  visibleCases.forEach((parentCase: any) => {
     if (!Array.isArray(parentCase.services)) return;
 
     const lastEdited = parentCase.lastEditedService || {};

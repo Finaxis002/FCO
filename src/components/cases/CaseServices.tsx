@@ -292,6 +292,8 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   // console.log("isAdmin", isAdmin);
   // console.log("canEdit", canEdit);
 
+console.log("userRole", userRole)
+
   return (
     <div>
       {/* Overall Progress Bar */}
@@ -371,7 +373,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                         >
                           {tag.name}
                           
-                          {(currentUser?.role === "super-admin" || currentUser?.role === "user") && (
+                          {(currentUser?.role === "Admin" || currentUser?.role === "User") && (
                             <button
                               type="button"
                               disabled={isRemoving === tag._id}
@@ -452,8 +454,8 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                   serviceName={service.name}
                   onRemarkRead={onRemarkRead}
                 />
-                {(currentUser?.role === "super-admin" ||
-                  currentUser?.role === "user") &&
+                {(currentUser?.role === "Admin" ||
+                  currentUser?.role === "User") &&
                   showTags && (
                     <button
                       className="ml-0 xs:ml-2 mt-1 xs:mt-0 p-1.5 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
