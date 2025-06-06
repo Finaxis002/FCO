@@ -326,7 +326,7 @@ export default function MainHeader() {
               autoComplete="off"
               id="global-search-input"
             />
-            <div className="absolute inset-y-0 right-3 flex items-center gap-2">
+            <div className="absolute inset-y-0 right-10 flex items-center gap-2">
               {highlightRefs.length > 0 && (
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {currentIndex === 0 ? 1 : currentIndex}/{highlightRefs.length}
