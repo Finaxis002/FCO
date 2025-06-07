@@ -39,13 +39,17 @@ export default function App() {
         );
         const subscription = await swRegistration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs", // Replace with your VAPID public key
+          applicationServerKey:
+            "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs", // Replace with your VAPID public key
         });
 
         // Send subscription to backend
-        const response = await fetch("/api/save-subscription", {
+        const response = await fetch("/api/notifications/save-subscription", {
           method: "POST",
-          body: JSON.stringify(subscription),
+          body: JSON.stringify({
+            userId: "USER_ID", // Make sure this matches the user ID in the database
+            subscription,
+          }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -66,7 +70,7 @@ export default function App() {
     //   return;
     // }
 
-     if (location.pathname !== "/login") {
+    if (location.pathname !== "/login") {
       subscribeToPushNotifications();
     }
 
