@@ -21,62 +21,7 @@ const Login = () => {
     setRecaptchaToken(token || "");
   };
 
-  // const handleLogin = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setError("");
-
-  //   try {
-  //     const res = await axios.post(
-  //       "https://tumbledrybe.sharda.co.in/api/auth/login",
-  //       {
-  //         userId,
-  //         password,
-  //         isAdminLogin,
-  //         recaptchaToken,
-  //       }
-  //     );
-
-  //     const { token, role, user } = res.data;
-
-  //     let fullUser = user;
-
-  //     // If not admin, fetch full user details
-  //     if (role !== "Admin") {
-  //       try {
-  //         const userRes = await axios.get(
-  //           `https://tumbledrybe.sharda.co.in/api/users/${user._id}`,
-  //           {
-  //             headers: {
-  //               Authorization: `Bearer ${token}`,
-  //             },
-  //           }
-  //         );
-  //         fullUser = userRes.data;
-  //       } catch (fetchErr) {
-  //         console.error("Failed to fetch full user data:", fetchErr);
-  //       }
-  //     }
-
-  //     // Save token, role, and full user data to localStorage
-  //     localStorage.setItem("token", token);
-  //     localStorage.setItem("userRole", role);
-  //     localStorage.setItem("user", JSON.stringify(fullUser));
-
-  //     navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
-  //   } catch (err: any) {
-  //     if (err.response?.status === 429) {
-  //       setError(
-  //         err.response.data.message ||
-  //           "Too many attempts. Please try again later."
-  //       );
-  //     } else {
-  //       setError(err.response?.data?.message || "Login failed");
-  //     }
-  //   }
-  // };
-
-
-   const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -117,13 +62,6 @@ const Login = () => {
       localStorage.setItem("userRole", role);
       localStorage.setItem("user", JSON.stringify(fullUser));
 
-      // Register service worker and subscribe for notifications after login
-      await subscribeToPushNotifications(fullUser._id); // Use the user ID to subscribe
-
-      // Send test notification after successful login and subscription
-      await sendTestNotification(fullUser._id);
-
-      // Redirect based on user role
       navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
     } catch (err: any) {
       if (err.response?.status === 429) {
@@ -134,59 +72,6 @@ const Login = () => {
       } else {
         setError(err.response?.data?.message || "Login failed");
       }
-    }
-  };
-
-  const subscribeToPushNotifications = async (userId: string) => {
-    const swRegistration = await navigator.serviceWorker.register("/service-worker.js"); // Register the service worker
-
-    const subscription = await swRegistration.pushManager.subscribe({
-      userVisibleOnly: true, // Ensures the notification is visible to the user
-      applicationServerKey: "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs"
-    });
-
-    // Send the subscription to the backend
-    const response = await axios.post("https://tumbledrybe.sharda.co.in/api/pushnotifications/save-subscription", {
-      userId,
-      subscription,
-    });
-
-    if (response.status === 200) {
-      console.log("User subscribed to push notifications.");
-    } else {
-      console.error("Failed to subscribe to push notifications.");
-    }
-  };
-
-
-    const sendTestNotification = async (userId: string) => {
-    const payload = {
-      title: "Welcome",
-      body: "You have successfully logged in, and push notifications are enabled!",
-      icon: "/default-icon.png", // Your icon here
-    };
-
-    const response = await axios.post("https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification", {
-      userId,
-      payload,
-    });
-
-    if (response.status === 200) {
-      console.log("Test notification sent.");
-    } else {
-      console.error("Failed to send test notification.");
-    }
-  };
-
-
-   const handleSendTestNotification = async () => {
-    // Call the sendTestNotification function when the button is clicked
-    const userStr = localStorage.getItem("user");
-    const userId = userStr ? JSON.parse(userStr)._id : undefined;  // Parse and get _id
-    if (userId) {
-      await sendTestNotification(userId);  // Send a test notification
-    } else {
-      console.error("User ID not found for sending test notification.");
     }
   };
 
@@ -450,15 +335,6 @@ const Login = () => {
           </form>
         </div>
       </div>
-
-       <div className="mt-5 text-center">
-            <button
-              onClick={handleSendTestNotification}
-              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Send Test Notification
-            </button>
-          </div>
     </div>
   );
 };
