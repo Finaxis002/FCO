@@ -84,6 +84,15 @@ export default function CasesPage() {
     Array<{ caseId: string; readBy: string[] }>
   >([]);
 
+  const [allRemarks, setAllRemarks] = useState<
+    Array<{
+      caseId: string;
+      serviceId: string;
+      userId: string;
+      readBy: string[];
+    }>
+  >([]);
+
   const [activeFilter, setActiveFilter] =
     useState<DashboardFilterStatus>("Total");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -150,6 +159,8 @@ export default function CasesPage() {
           }
         );
         const remarks = remarksRes.data;
+
+        setAllRemarks(remarks);
 
         // Count unread remarks per caseId
         const unreadRemarkCounts: Record<string, number> = {};
@@ -369,90 +380,93 @@ export default function CasesPage() {
     }
   }, [currentUser, allCases]);
 
-const pageActions = (
-  <div className="flex flex-wrap items-center gap-2">
-    <TooltipProvider>
-      {/* Only show Card View icon on mobile, both icons on desktop */}
-      <div className="block sm:hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="secondary"
-              size="icon"
-              aria-label="Card View"
-              disabled
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Card View</TooltipContent>
-        </Tooltip>
-      </div>
-      <div className="hidden sm:flex">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={viewMode === "table" ? "secondary" : "outline"}
-              size="icon"
-              onClick={() => setViewMode("table")}
-              aria-label="Table View"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Table View</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={viewMode === "card" ? "secondary" : "outline"}
-              size="icon"
-              onClick={() => setViewMode("card")}
-              aria-label="Card View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Card View</TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+  const pageActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <TooltipProvider>
+        {/* Only show Card View icon on mobile, both icons on desktop */}
+        <div className="block sm:hidden">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                aria-label="Card View"
+                disabled
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Card View</TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="hidden sm:flex">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={viewMode === "table" ? "secondary" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("table")}
+                aria-label="Table View"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Table View</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={viewMode === "card" ? "secondary" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("card")}
+                aria-label="Card View"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Card View</TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
 
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          <FilterIcon className="mr-2 h-4 w-4" /> {currentFilterLabel}
-          <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline">
+            <FilterIcon className="mr-2 h-4 w-4" /> {currentFilterLabel}
+            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="max-w-[95vw] right-0 left-auto"
+        >
+          <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {FILTER_OPTIONS.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              onSelect={() => handleFilterChange(option.value)}
+              className={cn(
+                activeFilter === option.value &&
+                  "bg-accent text-accent-foreground"
+              )}
+            >
+              {option.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {canSeeAddButton && (
+        <Button asChild>
+          <RouterLink to="/cases/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            <span className="hidden xs:inline">Add New Case</span>
+            <span className="inline xs:hidden">Add</span>
+          </RouterLink>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-w-[95vw] right-0 left-auto">
-        <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {FILTER_OPTIONS.map((option) => (
-          <DropdownMenuItem
-            key={option.value}
-            onSelect={() => handleFilterChange(option.value)}
-            className={cn(
-              activeFilter === option.value &&
-                "bg-accent text-accent-foreground"
-            )}
-          >
-            {option.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-    {canSeeAddButton && (
-      <Button asChild>
-        <RouterLink to="/cases/new">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          <span className="hidden xs:inline">Add New Case</span>
-          <span className="inline xs:hidden">Add</span>
-        </RouterLink>
-      </Button>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 
   if (
     loading ||
@@ -500,43 +514,49 @@ const pageActions = (
       >
         {pageActions}
       </PageHeader>
-     
+
       {filteredCases.length === 0 ? (
-  <div className="text-center p-6 sm:p-10 text-gray-500 text-sm sm:text-base">
-    No cases found for this filter.
-  </div>
-) : (
-  // On mobile, always show CardView. On desktop, allow switching.
-  <div>
-    <div className="block sm:hidden">
-      <CaseCardView
-        cases={filteredCases}
-        onDelete={handleDelete}
-        unreadRemarks={unreadRemarks}
-        unreadChats={unreadChats}
-        activeCaseId={caseId}
-      />
-    </div>
-    <div className="hidden sm:block">
-      {viewMode === "table" ? (
-        <CaseTable
-          cases={filteredCases}
-          onDelete={handleDelete}
-          unreadRemarks={unreadRemarks}
-          unreadChats={unreadChats}
-        />
+        <div className="text-center p-6 sm:p-10 text-gray-500 text-sm sm:text-base">
+          No cases found for this filter.
+        </div>
       ) : (
-        <CaseCardView
-          cases={filteredCases}
-          onDelete={handleDelete}
-          unreadRemarks={unreadRemarks}
-          unreadChats={unreadChats}
-          activeCaseId={caseId}
-        />
+        // On mobile, always show CardView. On desktop, allow switching.
+        <div>
+          <div className="block sm:hidden">
+            <CaseCardView
+              cases={filteredCases}
+              onDelete={handleDelete}
+              unreadRemarks={unreadRemarks}
+              unreadChats={unreadChats}
+              activeCaseId={caseId}
+            />
+          </div>
+          <div className="hidden sm:block">
+            {viewMode === "table" ? (
+              <CaseTable
+                cases={filteredCases}
+                onDelete={handleDelete}
+                unreadRemarks={unreadRemarks}
+                unreadChats={unreadChats}
+                allRemarks={allRemarks.map((r) => ({
+                  ...r,
+                  _id:
+                    (r as any)._id ?? `${r.caseId}-${r.serviceId}-${r.userId}`,
+                }))}
+                currentUser={currentUser}
+              />
+            ) : (
+              <CaseCardView
+                cases={filteredCases}
+                onDelete={handleDelete}
+                unreadRemarks={unreadRemarks}
+                unreadChats={unreadChats}
+                activeCaseId={caseId}
+              />
+            )}
+          </div>
+        </div>
       )}
-    </div>
-  </div>
-)}
     </>
   );
 }

@@ -21,20 +21,53 @@ import AllRemarksPage from "./pages/AllRemarksPage";
 import ServicesPage from "./pages/ServicesPage";
 import { useAppName } from "@/contenxt/AppNameContext"; // <-- Import this
 
-
 // Simplified PlaceholderPage for debugging
 
 export default function App() {
   const location = useLocation();
-   const { appName } = useAppName(); // <-- Use context value
-
+  const { appName } = useAppName(); // <-- Use context value
 
   useEffect(() => {
     const path = location.pathname;
 
-    if (path === "/login") {
-      document.title = `Login | ${appName}`;
-      return;
+    const subscribeToPushNotifications = async () => {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+        const swRegistration = await navigator.serviceWorker.register(
+          "/service-worker.js"
+        );
+        const subscription = await swRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs", // Replace with your VAPID public key
+        });
+
+        // Send subscription to backend
+        const response = await fetch("/api/save-subscription", {
+          method: "POST",
+          body: JSON.stringify(subscription),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          console.log("Subscription saved.");
+        } else {
+          console.error("Failed to save subscription.");
+        }
+      } else {
+        console.error("Notification permission denied.");
+      }
+    };
+
+    // if (path === "/login") {
+    //   document.title = `Login | ${appName}`;
+    //   return;
+    // }
+
+     if (location.pathname !== "/login") {
+      subscribeToPushNotifications();
     }
 
     let pageTitleSegment = "Dashboard"; // Default title segment
@@ -52,9 +85,10 @@ export default function App() {
       return;
     } else if (path.startsWith("/cases")) {
       pageTitleSegment = "Cases";
-    }else if (path.startsWith("/services")) { // <-- Add this block
-  pageTitleSegment = "Services";
-     } else if (path.startsWith("/owners")) {
+    } else if (path.startsWith("/services")) {
+      // <-- Add this block
+      pageTitleSegment = "Services";
+    } else if (path.startsWith("/owners")) {
       pageTitleSegment = "Owners";
     } else if (path.startsWith("/users/") && path.endsWith("/permissions")) {
       // UserPermissionsPage will set its own title

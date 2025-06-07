@@ -2,12 +2,13 @@ import UserList from "@/components/user-management/user-list";
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getAllUsers } from "@/features/userSlice";
-import { useDispatch } from "react-redux";
-import type { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
 import { Button } from "@/components/ui/button";
 import { List, LayoutGrid } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import UserCardView from "@/components/user-management/UserCardView";
+import { fetchPermissions } from "@/features/permissionsSlice";
 
 export default function UsersPage() {
   const location = useLocation();
@@ -16,7 +17,16 @@ export default function UsersPage() {
 
   const dispatch = useDispatch<AppDispatch>();
 
+  const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")!) : null;
+  const userRole = localStorage.getItem("userRole");
+
+  const permission = useSelector((state: RootState)=> state.permissions.permissions);
+  const loading = useSelector((state: RootState) => state.permissions.loading)
+
   useEffect(() => {
+    if (user?._id) {
+      dispatch(fetchPermissions(user._id));
+    }
     dispatch(getAllUsers());
   }, [dispatch, location.pathname]);
 
@@ -25,6 +35,12 @@ export default function UsersPage() {
       setRefreshKey((prev) => prev + 1);
     }
   }, [location.pathname]);
+
+  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+  const canView =
+    isAdmin ||
+    (permission?.userRolesAndResponsibility && permission?.createUserRights);
+
 
   const pageActions = (
     <div className="flex flex-wrap items-center gap-2">
@@ -61,6 +77,19 @@ export default function UsersPage() {
       </TooltipProvider>
     </div>
   );
+
+   if (loading) {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
+
+  if (!canView) {
+    return (
+      <div className="p-8 text-center text-red-600 font-semibold">
+        You do not have permission to view this page.
+      </div>
+    );
+  }
+
 
   return (
     <>

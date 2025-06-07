@@ -57,6 +57,18 @@ interface CaseCardViewProps {
   onDelete: (caseId: string) => void; // function called when delete happens
   unreadRemarks?: Record<string, number>; // caseId -> unread count
   unreadChats?: Record<string, number>; // caseId -> unread count
+  allRemarks: {
+    caseId: string;
+    serviceId: string;
+    userId: string;
+    readBy: string[];
+    _id: string;
+  }[];
+  currentUser: {
+    id?: string;
+    _id?: string;
+    userId?: string;
+  };
 }
 
 export default function CaseCardView({
@@ -64,6 +76,8 @@ export default function CaseCardView({
   onDelete,
   unreadRemarks,
   unreadChats,
+  allRemarks,
+  currentUser,
 }: CaseCardViewProps) {
   const { toast } = useToast();
   const [displayCases, setDisplayCases] = useState<Case[]>(cases);
@@ -316,6 +330,8 @@ export default function CaseCardView({
     }
   }, [cases]);
 
+  console.log("current user", currentUser);
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -343,8 +359,29 @@ export default function CaseCardView({
                   caseData.status ||
                   "New-Case";
 
-                const unreadRemarkCount =
-                  unreadRemarks?.[caseData.id ?? ""] || 0;
+                // const unreadRemarkCount =
+                //   unreadRemarks?.[caseData.id ?? ""] || 0;
+                const getUnreadRemarkCount = (caseData: Case): number => {
+                  if (!currentUser || !caseData?.id) return 0;
+
+                  const userId = currentUser._id || currentUser.userId;
+
+                  // Collect all valid service IDs from the case
+                  const existingServiceIds = new Set(
+                    caseData.services?.map((s) => s.serviceId) ?? []
+                  );
+
+                  return allRemarks.filter(
+                    (remark) =>
+                      remark.caseId === caseData.id &&
+                      typeof userId === "string" && !remark.readBy.includes(userId) && // not read by user
+                      remark.userId !== userId && // not created by user
+                      existingServiceIds.has(remark.serviceId) // service still exists
+                  ).length;
+                };
+
+                const unreadRemarkCount = getUnreadRemarkCount(caseData);
+
                 const unreadChatCount = unreadChats?.[caseData.id ?? ""] || 0;
 
                 // console.log("unreadRemarkCount:", unreadRemarkCount);
@@ -354,7 +391,7 @@ export default function CaseCardView({
                     key={caseData.id}
                     data-testid={`case-row-${caseData.id}`}
                   >
-                    <TableCell className="font-medium flex items-center gap-2">
+                    <TableCell className="font-medium flex items-center... gap-2">
                       {caseData.srNo}
                       {unreadRemarkCount > 0 && (
                         <span

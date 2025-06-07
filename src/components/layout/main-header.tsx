@@ -273,7 +273,7 @@ export default function MainHeader() {
   }, []);
 
   return (
-    <header className="sticky sm:relative top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background sm:border-b-transparent  sm:bg-transparent  px-2 sm:px-6 print:hidden">
+    <header className="sticky mt-[5vh] sm:relative top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background sm:border-b-transparent  sm:bg-transparent  px-2 sm:px-6 print:hidden">
       {/* Mobile sidebar trigger */}
       <Sheet>
         <SheetTrigger asChild>
