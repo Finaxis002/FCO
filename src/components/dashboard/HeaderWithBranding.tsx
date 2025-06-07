@@ -12,7 +12,7 @@ interface HeaderWithBrandingProps {
 function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
   const userRole = localStorage.getItem("userRole");
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-[#f5f7fa] to-[#e4e8f0] px-4 py-6 md:px-10 md:py-6 shadow-md border-b border-white/20">
+    <div className="relative overflow-hidden bg-gradient-to-br from-[#fcfcfc] to-[#e4e8f0] px-4 py-6 md:px-10 md:py-6 shadow-md border-b border-white/20">
       {/* Decorative elements */}
       <div className="absolute -top-12 -right-12 w-40 h-40 md:w-52 md:h-52 rounded-full bg-white/30 pointer-events-none"></div>
       <div className="absolute -bottom-8 right-24 w-32 h-32 md:w-40 md:h-40 rounded-full bg-white/20 pointer-events-none"></div>
@@ -33,7 +33,7 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
             </h1>
             <p className="mt-1 flex items-center gap-2 text-base text-[#4a5568] font-medium">
               <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-              FCA - Franchise Compliance Automation
+              FCA - Franchise Compliance Automation.
             </p>
           </div>
         </div>
