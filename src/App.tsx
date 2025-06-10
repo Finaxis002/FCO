@@ -27,113 +27,109 @@ import { AppDispatch, RootState } from "@/store";
 // Simplified PlaceholderPage for debugging
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<{
-    _id?: string;
-    name: string;
-    role?: string;
-    userId?: string;
-    permissions?: {
-      canCreate?: boolean;
-      canEdit?: boolean;
-      canDelete?: boolean;
-      canViewReports?: boolean;
-      canAssignTasks?: boolean;
-      allCaseAccess?: boolean;
-      viewRights?: boolean;
-      createCaseRights?: boolean;
-      createUserRights?: boolean;
-      userRolesAndResponsibility?: boolean;
-      remarksAndChat?: boolean;
-      canShare?: boolean;
-    };
-  } | null>(null);
+  // const [currentUser, setCurrentUser] = useState<{
+  //   _id?: string;
+  //   name: string;
+  //   role?: string;
+  //   userId?: string;
+  //   permissions?: {
+  //     canCreate?: boolean;
+  //     canEdit?: boolean;
+  //     canDelete?: boolean;
+  //     canViewReports?: boolean;
+  //     canAssignTasks?: boolean;
+  //     allCaseAccess?: boolean;
+  //     viewRights?: boolean;
+  //     createCaseRights?: boolean;
+  //     createUserRights?: boolean;
+  //     userRolesAndResponsibility?: boolean;
+  //     remarksAndChat?: boolean;
+  //     canShare?: boolean;
+  //   };
+  // } | null>(null);
   const location = useLocation();
   const { appName } = useAppName(); // <-- Use context value
   const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setCurrentUser({
-          _id: parsedUser._id, // <-- include this
-          name: parsedUser.name,
-          role: parsedUser.role,
-          userId: parsedUser._id || parsedUser.userId,
-        });
+// useEffect(() => {
+//   const userData = localStorage.getItem("user");
+//   if (userData) {
+//     try {
+//       const parsedUser = JSON.parse(userData);
+//       setCurrentUser({
+//         _id: parsedUser._id,
+//         name: parsedUser.name,
+//         role: parsedUser.role,
+//         userId: parsedUser._id || parsedUser.userId,
+//       });
 
-        // Skip fetching permissions if Super Admin
-        if (
-          parsedUser.name !== "Super Admin" &&
-          (parsedUser._id || parsedUser.userId)
-        ) {
-          dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
-        }
-      } catch (e) {
-        console.error("Error parsing user data", e);
-      }
-    }
-  }, [dispatch]);
+//       if (parsedUser.name !== "Super Admin" && (parsedUser._id || parsedUser.userId)) {
+//         dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
+//       }
+//     } catch (e) {
+//       console.error("Error parsing user data", e);
+//     }
+//   }
+// }, [dispatch]);
 
-  console.log("current user", currentUser);
+
 
   useEffect(() => {
     const path = location.pathname;
-
     
+//  if (!currentUser) return; // Skip if currentUser is null
 
-    const subscribeToPushNotifications = async () => {
-      // Use the currentUser from auth context
+//     const subscribeToPushNotifications = async () => {
+//       // Use the currentUser from auth context
      
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        console.log("Notification permission granted.");
-        const swRegistration = await navigator.serviceWorker.register(
-          "/service-worker.js"
-        );
-        const subscription = await swRegistration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey:
-            "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs",
-        });
+//       const permission = await Notification.requestPermission();
+//       if (permission === "granted") {
+//         console.log("Notification permission granted.");
+//         const swRegistration = await navigator.serviceWorker.register(
+//           "/service-worker.js"
+//         );
+//         const subscription = await swRegistration.pushManager.subscribe({
+//           userVisibleOnly: true,
+//           applicationServerKey:
+//             "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs",
+//         });
 
-        try {
-          const response = await fetch(
-            "https://tumbledrybe.sharda.co.in/api/pushnotifications/save-subscription",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                userId: currentUser?.userId, // Use the actual user ID
-                subscription,
-              }),
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          );
+//         try {
+//           const response = await fetch(
+//             "http://localhost:3000/api/pushnotifications/save-subscription",
+//             {
+//               method: "POST",
+//               body: JSON.stringify({
+//                 userId: currentUser?.userId, // Use the actual user ID
+//                 subscription,
+//               }),
+//               headers: {
+//                 "Content-Type": "application/json",
+//               },
+//             }
+//           );
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to save subscription");
-          }
-          console.log("Subscription saved.");
-        } catch (error) {
-          console.error("Failed to save subscription:", error);
-        }
-      } else {
-        console.error("Notification permission denied.");
-      }
-    };
+//           if (!response.ok) {
+//             const errorData = await response.json();
+//             throw new Error(errorData.message || "Failed to save subscription");
+//           }
+//           console.log("Subscription saved.");
+//         } catch (error) {
+//           console.error("Failed to save subscription:", error);
+//         }
+//       } else {
+//         console.error("Notification permission denied.");
+//       }
+//     };
 
     if (path === "/login") {
       document.title = `Login | ${appName}`;
       return;
     }
 
-    if (location.pathname !== "/login") {
-      subscribeToPushNotifications();
-    }
+    // if (location.pathname !== "/login") {
+    //   subscribeToPushNotifications();
+    // }
 
     let pageTitleSegment = "Dashboard"; // Default title segment
 
@@ -171,7 +167,9 @@ export default function App() {
     }
 
     document.title = `${pageTitleSegment} | ${appName}`;
-  }, [location.pathname, currentUser]);
+  }, [location.pathname]);
+
+
 
   return (
     <Routes>
