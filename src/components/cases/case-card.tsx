@@ -1,5 +1,5 @@
 import type { Case } from "@/types/franchise";
-import { Link as RouterLink , useNavigate} from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Select,
   SelectTrigger,
@@ -85,26 +85,26 @@ export default function CaseCard({
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // Extract current user ID from localStorage
-    const currentUserStr = localStorage.getItem("user");
-   const currentUserId = localStorage.getItem("user")
+  // Extract current user ID from localStorage
+  const currentUserStr = localStorage.getItem("user");
+  const currentUserId = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user")!)._id
     : null;
 
-   const markChatsRead = async () => {
+  const markChatsRead = async () => {
     if (!caseData.id || !currentUserId) return;
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     try {
       await axios.put(
         `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseData.id}`,
-         { userId: currentUserId },  // Send the ObjectId here
+        { userId: currentUserId }, // Send the ObjectId here
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log(`Marked chats as read for case ${caseData.id}`);
     } catch (error) {
-      console.error('Error marking chats read:', error);
+      console.error("Error marking chats read:", error);
     }
   };
 
@@ -206,7 +206,7 @@ export default function CaseCard({
     }
   };
 
-   const handleViewClick = async (e: React.MouseEvent) => {
+  const handleViewClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     await markChatsRead();
     navigate(`/cases/${caseData.id}`);
@@ -251,7 +251,7 @@ export default function CaseCard({
               )}
           </CardTitle>
 
-          {isAdmin || permissions?.edit ? (
+          {permissions?.edit ? (
             <Select
               value={currentStatus}
               onValueChange={handleStatusChange}
@@ -347,7 +347,7 @@ export default function CaseCard({
             size="sm"
             asChild
             aria-label="View Case Details"
-             onClick={handleViewClick}
+            onClick={handleViewClick}
           >
             <RouterLink to={`/cases/${caseData.id}`}>
               <Eye className="h-4 w-4 mr-1.5" />
@@ -366,7 +366,7 @@ export default function CaseCard({
           </Button>
 
           {/* Edit button */}
-          {isAdmin || permissions?.edit ? (
+          {permissions?.edit ? (
             <Button
               variant="outline"
               size="icon"
@@ -380,7 +380,7 @@ export default function CaseCard({
           ) : null}
 
           {/* Delete button */}
-          {isAdmin || permissions?.delete ? (
+          {permissions?.delete ? (
             <Button
               variant="outline"
               size="icon"

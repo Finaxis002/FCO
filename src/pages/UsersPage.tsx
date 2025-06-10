@@ -38,8 +38,8 @@ export default function UsersPage() {
 
   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
   const canView =
-    isAdmin ||
-    (permission?.userRolesAndResponsibility && permission?.createUserRights);
+    
+    (isAdmin || permission?.userRolesAndResponsibility || permission?.createUserRights);
 
 
   const pageActions = (

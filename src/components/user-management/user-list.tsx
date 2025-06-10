@@ -329,10 +329,9 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  {(userRole === "Admin" ||
-                    permissions?.userRolesAndResponsibility) && (
-                    <TableHead className="text-right pr-6">Actions</TableHead>
-                  )}
+                {(currentUser?.name === "Super Admin" || permissions?.userRolesAndResponsibility) && (
+      <TableHead className="text-right pr-6">Actions</TableHead>
+    )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -364,8 +363,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
                         {user.role}
                       </Badge>
                     </TableCell>
-                    {(userRole === "Admin" ||
-                      permissions?.userRolesAndResponsibility) && (
+                    {(currentUser?.name === "Super Admin" || permissions?.userRolesAndResponsibility) && (
                       <TableCell className="text-right flex justify-end gap-4 flex-wrap">
                         <Button
                           variant="ghost"

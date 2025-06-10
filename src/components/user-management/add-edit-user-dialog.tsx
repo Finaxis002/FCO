@@ -113,25 +113,31 @@ export default function AddEditUserDialog({
     }
   }, [user, form, isOpen, rolesLoaded]); // ✅ added rolesLoaded as dependency
 
- function onSubmit(data: UserFormValues) {
-  const matchedRole = allRoles.find((r) => r.name === data.role);
-  const rolePermissions = matchedRole?.permissions || {};
+  function onSubmit(data: UserFormValues) {
+    const matchedRole = allRoles.find((r) => r.name === data.role);
+    const rolePermissions = matchedRole?.permissions || {};
 
-  onSave(
-    {
-      ...data,
-      role: data.role as UserRole,
-      permissions: rolePermissions,
-    },
-    isEditing
-  );
-}
+    onSave(
+      {
+        ...data,
+        role: data.role as UserRole,
+        permissions: rolePermissions,
+      },
+      isEditing
+    );
+  }
 
   // console.log("roles", roles);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-     <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[480px] p-4 sm:p-6">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      modal={true}
+    >
+      <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[480px] p-4 sm:p-6 modal no-search">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit User" : "Add New User"}</DialogTitle>
           <DialogDescription>

@@ -8,7 +8,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Home, Users, FolderKanban, Settings , Server } from "lucide-react"; // Added Users2
+import { Home, Users, FolderKanban, Settings, Server } from "lucide-react"; // Added Users2
 import { useSelector } from "react-redux";
 import { RootState } from "@/store"; // Adjust import path for your RootState
 
@@ -30,7 +30,13 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/", icon: Home },
   { id: "cases", label: "Cases", href: "/cases", icon: FolderKanban },
-   { id: "services", label: "Services", href: "/services", icon: Server , role: ["Admin", "User"], }, // Added Services
+  {
+    id: "services",
+    label: "Services",
+    href: "/services",
+    icon: Server,
+    role: ["Admin", "User"],
+  }, // Added Services
   { id: "users", label: "Users", href: "/users", icon: Users, role: ["Admin"] },
 ];
 
@@ -44,30 +50,52 @@ export default function MainSidebarNavigation({
   const permissions = useSelector(
     (state: RootState) => state.permissions.permissions
   );
-    // console.log("is mobile open", isMobile);
+  // console.log("is mobile open", isMobile);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+  useEffect(() => {
+    // Try to read userId directly
+    let uId = localStorage.getItem("userId");
+    let role = localStorage.getItem("userRole");
+
+    // Fallback: extract from user object if not present
+    if (!uId || !role) {
+      const userRaw = localStorage.getItem("user");
+      if (userRaw) {
+        try {
+          const parsed = JSON.parse(userRaw);
+          if (!uId) uId = parsed.userId;
+          if (!role) role = parsed.role;
+        } catch (e) {}
+      }
+    }
+
+    setUserRole(role);
+    setUserId(uId);
+  }, []);
+
+  // console.log("userId : ", userId);
+
+  const canSeeUsers = () => {
+    // Super Admin case (userId is 'admin')
+    if (userId === "admin") return true;
+    // All others: Only if permission granted
+    if (
+      permissions?.createUserRights ||
+      permissions?.userRolesAndResponsibility
+    )
+      return true;
+    return false;
+  };
 
   // Filter nav items based on createUserRights permission
-const filteredNavItems = NAV_ITEMS.filter((item) => {
-  // Role-based check
-  if (item.role && !item.role.includes(userRole || "")) {
-    return false;
-  }
 
-  // Specific logic for 'users' item
-  if (item.id === "users") {
-    return (
-      isAdmin ||
-      permissions?.createUserRights === true ||
-      permissions?.userRolesAndResponsibility === true
-    );
-  }
-
-  return true;
-});
-
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.id === "users") return canSeeUsers();
+    if (item.role && !item.role.includes(userRole || "")) return false;
+    return true;
+  });
 
   const location = useLocation();
   const pathname = location.pathname;

@@ -16,6 +16,7 @@ import ComplianceStatusOverview from "@/components/dashboard/compliance-status-o
 import { Briefcase, Users, Clock, Loader } from "lucide-react"; // Removed Activity, BarChart3 for now
 import HeaderWithBranding from "@/components/dashboard/HeaderWithBranding";
 import useRoleWatcher from "@/components/dashboard/useRoleWatcher";
+import TestNotificationButton from "@/components/TestNotificationButton";
 
 interface CaseStats {
   totalCases: number;
@@ -223,6 +224,7 @@ export default function DashboardPage() {
   return (
     <>
      <div className="flex flex-col gap-4 ">
+      <TestNotificationButton />
        <HeaderWithBranding currentUser={{ name: currentUser.name }} />
 
       <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
@@ -260,8 +262,8 @@ export default function DashboardPage() {
       </div>
      </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+     <div className="flex flex-wrap gap-8">
+        <div className="w-full lg:w-[calc(66.666%-20px)]">
           <RecentActivity
             recentCases={filteredCases
               .filter(
@@ -276,7 +278,7 @@ export default function DashboardPage() {
             loading={loading}
           />
         </div>
-        <div>
+        <div className="w-full lg:w-[calc(33.333%-20px)]">
           <ComplianceStatusOverview
             totalCases={filteredCases.length}
             newCaseCount={

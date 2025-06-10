@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/app-layout";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ProtectedRoute from "@/components/routes/ProtectedRoute";
@@ -14,23 +15,77 @@ import OwnersPage from "./pages/OwnersPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
 import { APP_NAME } from "@/lib/constants";
-import React, { useEffect } from "react";
 import EditCasePage from "./pages/EditCasePage";
 import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
 import AllRemarksPage from "./pages/AllRemarksPage";
 import ServicesPage from "./pages/ServicesPage";
 import { useAppName } from "@/contenxt/AppNameContext"; // <-- Import this
+import { fetchPermissions } from "@/features/permissionsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 
 // Simplified PlaceholderPage for debugging
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState<{
+    _id?: string;
+    name: string;
+    role?: string;
+    userId?: string;
+    permissions?: {
+      canCreate?: boolean;
+      canEdit?: boolean;
+      canDelete?: boolean;
+      canViewReports?: boolean;
+      canAssignTasks?: boolean;
+      allCaseAccess?: boolean;
+      viewRights?: boolean;
+      createCaseRights?: boolean;
+      createUserRights?: boolean;
+      userRolesAndResponsibility?: boolean;
+      remarksAndChat?: boolean;
+      canShare?: boolean;
+    };
+  } | null>(null);
   const location = useLocation();
   const { appName } = useAppName(); // <-- Use context value
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser({
+          _id: parsedUser._id, // <-- include this
+          name: parsedUser.name,
+          role: parsedUser.role,
+          userId: parsedUser._id || parsedUser.userId,
+        });
+
+        // Skip fetching permissions if Super Admin
+        if (
+          parsedUser.name !== "Super Admin" &&
+          (parsedUser._id || parsedUser.userId)
+        ) {
+          dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
+        }
+      } catch (e) {
+        console.error("Error parsing user data", e);
+      }
+    }
+  }, [dispatch]);
+
+  console.log("current user", currentUser);
 
   useEffect(() => {
     const path = location.pathname;
 
+    
+
     const subscribeToPushNotifications = async () => {
+      // Use the currentUser from auth context
+     
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         console.log("Notification permission granted.");
@@ -40,35 +95,41 @@ export default function App() {
         const subscription = await swRegistration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey:
-            "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs", // Replace with your VAPID public key
+            "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs",
         });
 
-        // Send subscription to backend
-        const response = await fetch("/api/notifications/save-subscription", {
-          method: "POST",
-          body: JSON.stringify({
-            userId: "USER_ID", // Make sure this matches the user ID in the database
-            subscription,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        try {
+          const response = await fetch(
+            "https://tumbledrybe.sharda.co.in/api/pushnotifications/save-subscription",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                userId: currentUser?.userId, // Use the actual user ID
+                subscription,
+              }),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-        if (response.ok) {
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to save subscription");
+          }
           console.log("Subscription saved.");
-        } else {
-          console.error("Failed to save subscription.");
+        } catch (error) {
+          console.error("Failed to save subscription:", error);
         }
       } else {
         console.error("Notification permission denied.");
       }
     };
 
-    // if (path === "/login") {
-    //   document.title = `Login | ${appName}`;
-    //   return;
-    // }
+    if (path === "/login") {
+      document.title = `Login | ${appName}`;
+      return;
+    }
 
     if (location.pathname !== "/login") {
       subscribeToPushNotifications();
@@ -110,7 +171,7 @@ export default function App() {
     }
 
     document.title = `${pageTitleSegment} | ${appName}`;
-  }, [location.pathname]);
+  }, [location.pathname, currentUser]);
 
   return (
     <Routes>

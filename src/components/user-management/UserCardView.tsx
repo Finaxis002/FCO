@@ -49,6 +49,12 @@ interface UserCardViewProps {
   refreshKey?: any;
 }
 
+interface UserType {
+  name: string;
+  role?: string;
+  userId?: string;
+}
+
 const BASE_URL = "https://tumbledrybe.sharda.co.in/api/users";
 
 const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
@@ -61,16 +67,18 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
   const [permissions, setPermissions] = useState<any>({});
   const [isAddEditUserDialogOpen, setIsAddEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [permissionsLoading, setPermissionsLoading] = useState(false);
+    const [permissionsError, setPermissionsError] = useState<string | null>(null);
 
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState("");
 const [showPassword, setShowPassword] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
 
   const userRole = localStorage.getItem("userRole") || "User";
-
-  const toast = useToast();
+  const { toast } = useToast();
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -98,6 +106,47 @@ const [showPassword, setShowPassword] = useState(false);
     setIsAddEditUserDialogOpen(true);
   };
 
+    const fetchPermissions = async (userId: string) => {
+    setPermissionsLoading(true);
+    setPermissionsError(null);
+    try {
+      const response = await fetch(
+        `https://tumbledrybe.sharda.co.in/api/users/${userId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch permissions");
+      const data = await response.json();
+
+      // Extract permissions from the user object:
+      setPermissions(data.permissions || {}); // <-- important!
+    } catch (err: any) {
+      setPermissionsError(err.message || "Error fetching permissions");
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
+   useEffect(() => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          const userId = parsedUser._id || parsedUser.userId;
+  
+          setCurrentUser({
+            name: parsedUser.name,
+            role: parsedUser.role,
+            userId,
+          });
+  
+          if (parsedUser.name !== "Super Admin" && userId) {
+            fetchPermissions(userId);
+          }
+        } catch (e) {
+          console.error("Error parsing user data", e);
+        }
+      }
+    }, []);
+
   // Dummy handlers for edit, delete, reset password
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -119,7 +168,7 @@ const [showPassword, setShowPassword] = useState(false);
     setShowResetDialog(false);
     if (selectedUser) {
       // Example: await api.resetPassword(selectedUser._id);
-      toast.toast({
+      toast({
         title: "Password reset",
         description: `Password reset for ${selectedUser.name}`,
       });
@@ -133,7 +182,7 @@ const [showPassword, setShowPassword] = useState(false);
     if (selectedUser) {
       // Example: await api.deleteUser(selectedUser._id);
       setUsers(users.filter((u) => u._id !== selectedUser._id));
-      toast.toast({
+      toast({
         title: "User deleted",
         description: `${selectedUser.name} has been deleted.`,
       });
@@ -155,6 +204,70 @@ const [showPassword, setShowPassword] = useState(false);
       </div>
     );
   }
+
+
+  const handleSaveUser = async (
+    userData: Partial<User>,
+    isEditing: boolean
+  ) => {
+    try {
+      const payload = {
+        ...userData,
+        permissions: userData.permissions || {}, // Make sure permissions are sent
+      };
+
+      if (isEditing && editingUser) {
+        const userId = editingUser._id;
+        const response = await fetch(`${BASE_URL}/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to update user");
+        const data = await response.json();
+
+        // Check for role change and if updated user is current logged-in user
+        if (data.roleChanged && data.updatedUser._id === currentUser?.userId) {
+          toast({
+            title: "Role Changed",
+            description:
+              "Your role has been changed. You will be logged out now.",
+            variant: "destructive",
+          });
+
+          // Clear user session & redirect to login page
+          localStorage.removeItem("user");
+          localStorage.removeItem("userRole");
+          // Any other session/token cleanup logic here
+
+          // Redirect (using react-router-dom or window.location)
+          window.location.href = "/login"; // or your login route
+          return; // stop further processing
+        }
+      } else {
+        const response = await fetch(BASE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to add user");
+        // Show success toast on user creation
+        toast({
+          title: "User Added",
+          description: `${userData.name} added successfully.`,
+          variant: "default",
+        });
+      }
+      // Close the dialog after successful save
+      setIsAddEditUserDialogOpen(false);
+      setEditingUser(null);
+
+      // Optionally reload the user list
+      fetchUsers();
+    } catch (err) {
+      // Error handling
+    }
+  };
 
   return (
     <>
@@ -206,8 +319,7 @@ const [showPassword, setShowPassword] = useState(false);
             </div>
           </CardContent>
 
-          {(userRole === "Admin" ||
-            permissions?.userRolesAndResponsibility) && (
+         {(currentUser?.name === "Super Admin" || permissions?.userRolesAndResponsibility) && (
             <CardFooter className="flex flex-wrap gap-2 justify-end p-3 sm:p-4">
               <Button
                 variant="ghost"
@@ -263,11 +375,7 @@ const [showPassword, setShowPassword] = useState(false);
             setIsAddEditUserDialogOpen(false);
             setEditingUser(null);
           }}
-          onSave={() => {
-            setIsAddEditUserDialogOpen(false);
-            setEditingUser(null);
-            fetchUsers();
-          }}
+         onSave={handleSaveUser}
         />
       )}
 
@@ -275,10 +383,7 @@ const [showPassword, setShowPassword] = useState(false);
         <AddEditUserDialog
           user={
             editingUser
-              ? {
-                  ...editingUser,
-                  id: editingUser.id ?? editingUser._id ?? "",
-                }
+              ? { ...editingUser, id: editingUser.id ?? editingUser._id ?? "" }
               : editingUser
           }
           isOpen={isAddEditUserDialogOpen}
@@ -286,11 +391,7 @@ const [showPassword, setShowPassword] = useState(false);
             setIsAddEditUserDialogOpen(false);
             setEditingUser(null);
           }}
-          onSave={() => {
-            setIsAddEditUserDialogOpen(false);
-            setEditingUser(null);
-            fetchUsers(); // Optionally refresh users after save
-          }}
+          onSave={handleSaveUser}
         />
       )}
 

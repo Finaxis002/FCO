@@ -70,6 +70,11 @@ export default function ServicesPage() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
+  const { permissions } = useSelector((state: RootState) => state.permissions);
+
+  const hasAllCaseAccess =
+  currentUser?.name === "Super Admin" || permissions?.allCaseAccess === true;
+
   const uniqueServiceNames = Array.from(
     new Set(allServices.map((s) => s.name).filter(Boolean))
   );
@@ -127,9 +132,6 @@ export default function ServicesPage() {
   }, [dispatch]);
 
   // Remove the function at the bottom:
-  function getPaginatedServices(arg0: { limit: number; offset: number }): any {
-    throw new Error("Function not implemented.");
-  }
 
   useEffect(() => {
     if (allCases.length === 0) {
@@ -261,20 +263,76 @@ export default function ServicesPage() {
   }, [allCases]);
 
   
-  console.log("currentUser", currentUser)
+  // console.log("currentUser", currentUser)
 
 
-  useEffect(() => {
+//   useEffect(() => {
+//   if (!currentUser || !Array.isArray(allCases)) return;
+
+//   // Show all cases for Admin and Super Admin, assigned only for others
+// // Show all cases for Admin and Super Admin, assigned only for others
+//    const userRole = localStorage.getItem("userRole");
+//   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+
+//   console.log("isAdmin", isAdmin)
+
+//   const visibleCases = isAdmin
+//     ? allCases
+//     : allCases.filter((c: any) =>
+//         c.assignedUsers?.some((user: any) => {
+//           if (typeof user === "string") {
+//             return user === currentUser.userId || user === currentUser.name;
+//           } else {
+//             return (
+//               user._id === currentUser.userId ||
+//               user.userId === currentUser.userId ||
+//               user.name === currentUser.name
+//             );
+//           }
+//         })
+//       );
+
+
+//   const servicesWithEditTime: any[] = [];
+
+//   visibleCases.forEach((parentCase: any) => {
+//     if (!Array.isArray(parentCase.services)) return;
+
+//     const lastEdited = parentCase.lastEditedService || {};
+
+//     parentCase.services.forEach((service: any) => {
+//       if (!service.id) return;
+
+//       servicesWithEditTime.push({
+//         ...service,
+//         status: service.status === "New-Case" ? "To be Started" : service.status,
+//         parentCase,
+//         editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+//       });
+//     });
+//   });
+
+//   const limitedServices = servicesWithEditTime.slice(0, 1000);
+//   const getTimeSafe = (date: any) => {
+//     const t = new Date(date).getTime();
+//     return isNaN(t) ? 0 : t;
+//   };
+
+//   const sortedServices = limitedServices.sort((a, b) => {
+//     return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
+//   });
+
+//   setAllServices(sortedServices);
+// }, [allCases, currentUser]);
+
+useEffect(() => {
   if (!currentUser || !Array.isArray(allCases)) return;
 
-  // Show all cases for Admin and Super Admin, assigned only for others
-// Show all cases for Admin and Super Admin, assigned only for others
-   const userRole = localStorage.getItem("userRole");
-  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+  const hasAllCaseAccess =
+    currentUser?.name === "Super Admin" || permissions?.allCaseAccess === true;
 
-  console.log("isAdmin", isAdmin)
-
-  const visibleCases = isAdmin
+  // Pick relevant cases
+  const visibleCases = hasAllCaseAccess
     ? allCases
     : allCases.filter((c: any) =>
         c.assignedUsers?.some((user: any) => {
@@ -290,7 +348,7 @@ export default function ServicesPage() {
         })
       );
 
-
+  // Flatten services from the selected cases
   const servicesWithEditTime: any[] = [];
 
   visibleCases.forEach((parentCase: any) => {
@@ -310,6 +368,7 @@ export default function ServicesPage() {
     });
   });
 
+  // Limit, sort, and set state
   const limitedServices = servicesWithEditTime.slice(0, 1000);
   const getTimeSafe = (date: any) => {
     const t = new Date(date).getTime();
@@ -320,8 +379,11 @@ export default function ServicesPage() {
     return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
   });
 
+
+
   setAllServices(sortedServices);
-}, [allCases, currentUser]);
+}, [allCases, currentUser, permissions]);
+
 
   return (
     <>

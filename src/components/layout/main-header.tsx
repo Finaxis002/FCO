@@ -70,15 +70,75 @@ export default function MainHeader() {
   const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // useEffect(() => {
+  //   document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
+  //     const parent = mark.parentNode;
+  //     if (!parent) return;
+  //     parent.replaceChild(
+  //       document.createTextNode(mark.textContent || ""),
+  //       mark
+  //     );
+  //     parent.normalize();
+  //   });
+
+  //   if (!searchTerm) {
+  //     setHighlightRefs([]);
+  //     setCurrentIndex(0);
+  //     return;
+  //   }
+
+  //   const escapedTerm = searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+  //   const regex = new RegExp(`(${escapedTerm})`, "gi");
+
+  //   const foundMarks: HTMLElement[] = [];
+
+  //   const walk = (node: Node) => {
+  //     if (
+  //       node.nodeType === 3 &&
+  //       node.parentNode &&
+  //       node.parentNode.nodeName !== "SCRIPT" &&
+  //       node.parentNode.nodeName !== "STYLE"
+  //     ) {
+  //       const text = node.nodeValue;
+  //       if (text && regex.test(text)) {
+  //         const span = document.createElement("span");
+  //         span.innerHTML = text.replace(
+  //           regex,
+  //           `<mark data-highlight style="background: yellow;">$1</mark>`
+  //         );
+  //         const fragment = document.createDocumentFragment();
+  //         while (span.firstChild) {
+  //           const child = span.firstChild;
+  //           if ((child as HTMLElement).tagName === "MARK")
+  //             foundMarks.push(child as HTMLElement);
+  //           fragment.appendChild(child);
+  //         }
+  //         node.parentNode.replaceChild(fragment, node);
+  //       }
+  //     } else if (node.nodeType === 1) {
+  //       for (let i = 0; i < node.childNodes.length; i++) {
+  //         walk(node.childNodes[i]);
+  //       }
+  //     }
+  //   };
+
+  //   walk(document.body);
+
+  //   setHighlightRefs(foundMarks);
+  //   setCurrentIndex(0);
+  // }, [searchTerm]);
+
   useEffect(() => {
+    // First, clear all previously highlighted text
     document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
       const parent = mark.parentNode;
-      if (!parent) return;
-      parent.replaceChild(
-        document.createTextNode(mark.textContent || ""),
-        mark
-      );
-      parent.normalize();
+      if (parent) {
+        parent.replaceChild(
+          document.createTextNode(mark.textContent || ""),
+          mark
+        );
+        parent.normalize();
+      }
     });
 
     if (!searchTerm) {
@@ -92,37 +152,71 @@ export default function MainHeader() {
 
     const foundMarks: HTMLElement[] = [];
 
-    const walk = (node: Node) => {
-      if (
-        node.nodeType === 3 &&
-        node.parentNode &&
-        node.parentNode.nodeName !== "SCRIPT" &&
-        node.parentNode.nodeName !== "STYLE"
-      ) {
-        const text = node.nodeValue;
-        if (text && regex.test(text)) {
-          const span = document.createElement("span");
-          span.innerHTML = text.replace(
-            regex,
-            `<mark data-highlight style="background: yellow;">$1</mark>`
-          );
-          const fragment = document.createDocumentFragment();
-          while (span.firstChild) {
-            const child = span.firstChild;
-            if ((child as HTMLElement).tagName === "MARK")
-              foundMarks.push(child as HTMLElement);
-            fragment.appendChild(child);
-          }
-          node.parentNode.replaceChild(fragment, node);
-        }
-      } else if (node.nodeType === 1) {
-        for (let i = 0; i < node.childNodes.length; i++) {
-          walk(node.childNodes[i]);
-        }
-      }
-    };
+    // Common modal/dialog selectors to exclude (including dynamically added modals)
+    const MODAL_SELECTORS = [
+      ".modal.no-search", // for common modals
+      ".dialog", // for dialog-based popups
+      '[role="dialog"]', // for ARIA-defined dialog elements
+      ".MuiModal-root", // Material UI modals
+      ".ReactModal__Overlay", // React modal overlays
+      ".chakra-modal", // Chakra UI modals
+      ".ant-modal", // Ant Design modals
+    ].join(",");
 
-    walk(document.body);
+  const walk = (node: Node) => {
+  // Skip if node is inside a modal/dialog
+  if (
+    node.nodeType === 1 &&
+    (node as Element).closest(MODAL_SELECTORS) // Check if any ancestor is a modal/dialog
+  ) {
+    return;
+  }
+
+  // Skip hidden elements (those with `display: none`, `visibility: hidden`, `opacity: 0`)
+  if (
+    node.nodeType === 1 &&
+    node instanceof HTMLElement && // Add this type check
+    node.offsetParent === null
+  ) {
+    return;
+  }
+
+  // Only process text nodes that are not inside script/style tags and not already highlighted
+  if (
+    node.nodeType === 3 && // Text node
+    node.parentNode &&
+    node.parentNode.nodeName !== "SCRIPT" &&
+    node.parentNode.nodeName !== "STYLE" &&
+    node.parentNode.nodeName !== "MARK" // Skip already highlighted text
+  ) {
+    const text = node.nodeValue;
+    if (text && regex.test(text)) {
+      const span = document.createElement("span");
+      span.innerHTML = text.replace(
+        regex,
+        `<mark data-highlight style="background: yellow;">$1</mark>`
+      );
+      const fragment = document.createDocumentFragment();
+      while (span.firstChild) {
+        const child = span.firstChild;
+        if ((child as HTMLElement).tagName === "MARK") {
+          foundMarks.push(child as HTMLElement);
+        }
+        fragment.appendChild(child);
+      }
+      node.parentNode.replaceChild(fragment, node);
+    }
+  } else if (node.nodeType === 1) {
+    for (let i = 0; i < node.childNodes.length; i++) {
+      walk(node.childNodes[i]);
+    }
+  }
+};
+
+
+    // Start walking from the main content area (excluding modals)
+    const mainContent = document.querySelector("main") || document.body;
+    walk(mainContent);
 
     setHighlightRefs(foundMarks);
     setCurrentIndex(0);
@@ -166,7 +260,7 @@ export default function MainHeader() {
 
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
-      if ((e.ctrlKey && e.key.toLowerCase() === "k") || e.key === "/") {
+      if (e.ctrlKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         const input = document.getElementById(
           "global-search-input"
@@ -273,7 +367,7 @@ export default function MainHeader() {
   }, []);
 
   return (
-    <header className="sticky mt-[5vh] sm:relative top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background sm:border-b-transparent  sm:bg-transparent  px-2 sm:px-6 print:hidden">
+    <header className="sticky sm:relative top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background sm:border-b-transparent  sm:bg-transparent  px-2 sm:px-6 print:hidden">
       {/* Mobile sidebar trigger */}
       <Sheet>
         <SheetTrigger asChild>

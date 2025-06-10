@@ -110,40 +110,40 @@ export default function RecentActivity({
   const isLoading = loading || remarksLoading;
 
   return (
-    
- // ...existing code...
-<Card className="h-full">
-  <CardHeader>
-    <CardTitle className="flex items-center">
-      <Activity className="mr-2 h-5 w-5 text-primary" />
-      Recent Activity
-    </CardTitle>
-    <CardDescription>
-      Latest case updates and remarks from your team.
-    </CardDescription>
-  </CardHeader>
-  <CardContent className="flex flex-col h-[calc(100%-72px)]">
-    {isLoading ? (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-6 bg-gray-200 rounded animate-pulse" />
-        ))}
-      </div>
-    ) : combinedActivities.length > 0 ? (
-      <ScrollArea className="flex-grow pr-0 md:pr-4">
-        <ul className="space-y-4">
-          {combinedActivities.slice(0, 3).map((activity) => (
-            <li
-              key={`${activity.type}-${activity.id}-${activity.date}`}
-              className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-            >
-              {/* Vertical indicator - different colors for cases vs remarks */}
-              <div
-                className={`
+    // ...existing code...
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Activity className="mr-2 h-5 w-5 text-primary" />
+          Recent Activity
+        </CardTitle>
+        <CardDescription>
+          Latest case updates and remarks from your team.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col h-[calc(100%-72px)]">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-6 bg-gray-200 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : combinedActivities.length > 0 ? (
+          <ScrollArea className="flex-grow pr-0 md:pr-4">
+            <ul className="space-y-4">
+              {combinedActivities.slice(0, 3).map((activity) => (
+                <li
+                  key={`${activity.type}-${activity.id}-${activity.date}`}
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  {/* Vertical indicator - different colors for cases vs remarks */}
+                  <div
+                    className={`
                   w-2 h-8 sm:h-12 rounded-full
                   ${
                     activity.type === "case"
-                      ? activity.status === "Completed" || activity.status === "Approved"
+                      ? activity.status === "Completed" ||
+                        activity.status === "Approved"
                         ? "bg-green-500"
                         : activity.status === "Pending"
                         ? "bg-yellow-500"
@@ -155,70 +155,71 @@ export default function RecentActivity({
                       : "bg-purple-500"
                   }
                 `}
-              ></div>
+                  ></div>
 
-              <div className="flex flex-col flex-grow min-w-0">
-                <p className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                  {activity.title}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-800 truncate">
-                  {activity.type === "case" ? "Status" : "Remark added"}:{" "}
-                  <span
-                    className={`font-medium ${
-                      activity.type === "case"
-                        ? activity.status === "Completed" || activity.status === "Approved"
-                          ? "text-green-600"
-                          : activity.status === "Pending"
-                          ? "text-yellow-600"
-                          : activity.status === "In-Progress"
-                          ? "text-blue-600"
-                          : activity.status === "Rejected"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                        : "text-purple-600"
-                    }`}
-                  >
-                    {activity.status}
-                  </span>{" "}
-                  &mdash; Updated {getRelativeTime(activity.date)}
-                </p>
-
-                {activity.content && (
-                  <div className="mt-1">
-                    <p
-                      className={`text-xs sm:text-sm ${
-                        activity.type === "remark"
-                          ? "text-purple-700 bg-purple-50 p-2 rounded"
-                          : "text-muted-foreground"
-                      } truncate`}
-                    >
-                      {activity.type === "remark" ? "💬 " : "📝 "}
-                      {activity.content}
+                  <div className="flex flex-col flex-grow min-w-0">
+                    <p className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                      {activity.title}
                     </p>
-                  </div>
-                )}
-              </div>
+                    <p className="text-xs sm:text-sm text-gray-800 truncate">
+                      {activity.type === "case" ? "Status" : "Remark added"}:{" "}
+                      <span
+                        className={`font-medium ${
+                          activity.type === "case"
+                            ? activity.status === "Completed" ||
+                              activity.status === "Approved"
+                              ? "text-green-600"
+                              : activity.status === "Pending"
+                              ? "text-yellow-600"
+                              : activity.status === "In-Progress"
+                              ? "text-blue-600"
+                              : activity.status === "Rejected"
+                              ? "text-red-600"
+                              : "text-gray-600"
+                            : "text-purple-600"
+                        }`}
+                      >
+                        {activity.status}
+                      </span>{" "}
+                      &mdash; Updated {getRelativeTime(activity.date)}
+                    </p>
 
-              <RouterLink
-                to={`/cases/${activity.id}`}
-                className="text-xs sm:text-sm font-medium text-primary hover:underline whitespace-nowrap mt-2 sm:mt-0"
-              >
-                View Details →
-              </RouterLink>
-            </li>
-          ))}
-        </ul>
-      </ScrollArea>
-    ) : (
-      <div className="flex-grow flex flex-col items-center justify-center text-center py-8">
-        <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-        <p className="text-muted-foreground">
-          No recent activity to display.
-        </p>
-      </div>
-    )}
-  </CardContent>
-</Card>
-// ...existing code...
+                    {activity.content && (
+                      <div className="mt-1">
+                        <p
+                          className={`text-xs sm:text-sm ${
+                            activity.type === "remark"
+                              ? "text-purple-700 bg-purple-50 p-2 rounded"
+                              : "text-muted-foreground"
+                          } truncate`}
+                        >
+                          {activity.type === "remark" ? "💬 " : "📝 "}
+                          {activity.content}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <RouterLink
+                    to={`/cases/${activity.id}`}
+                    className="text-xs sm:text-sm font-medium text-primary hover:underline whitespace-nowrap mt-2 sm:mt-0"
+                  >
+                    View Details →
+                  </RouterLink>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+        ) : (
+          <div className="flex-grow flex flex-col items-center justify-center text-center py-8">
+            <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">
+              No recent activity to display.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+    // ...existing code...
   );
 }

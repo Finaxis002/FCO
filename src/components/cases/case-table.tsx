@@ -330,7 +330,7 @@ export default function CaseCardView({
     }
   }, [cases]);
 
-  console.log("current user", currentUser);
+  // console.log("current user", currentUser);
 
   return (
     <Card>
@@ -484,7 +484,7 @@ export default function CaseCardView({
                     <TableCell className="text-right">
                       <div className="flex flex-wrap gap-2 justify-end">
                         {/* View */}
-                        {(isAdmin || permissions?.viewRights) && (
+                        {( permissions?.viewRights) && (
                           <RouterLink
                             to={`/cases/${
                               ((caseData as any)._id ?? caseData.id) as string
@@ -506,7 +506,7 @@ export default function CaseCardView({
                         </button>
 
                         {/* Edit */}
-                        {(isAdmin || permissions?.edit) && (
+                        {( permissions?.edit) && (
                           <RouterLink
                             to={`/cases/${caseData.id}/edit`}
                             className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-medium text-xs transition"
@@ -516,7 +516,7 @@ export default function CaseCardView({
                         )}
 
                         {/* Delete */}
-                        {(isAdmin || permissions?.delete) && (
+                        {( permissions?.delete) && (
                           <button
                             onClick={() => onDelete && onDelete(caseData.id!)}
                             className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-medium text-xs transition"

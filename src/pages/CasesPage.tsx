@@ -309,23 +309,61 @@ export default function CasesPage() {
     // If super admin, show all cases but apply activeFilter
     let casesToDisplay = allCases;
 
-    if (currentUser.name === "Super Admin") {
-      // Super Admin should be able to see all cases, but apply the activeFilter
+    // if (currentUser.name === "Super Admin") {
+    //   // Super Admin should be able to see all cases, but apply the activeFilter
+    //   if (activeFilter && activeFilter !== "Total") {
+    //     if (activeFilter === "Completed") {
+    //       casesToDisplay = casesToDisplay.filter(
+    //         (c) =>
+    //           c.status?.toLowerCase() === "completed" ||
+    //           c.status?.toLowerCase() === "approved"
+    //       );
+    //     } else {
+    //       casesToDisplay = casesToDisplay.filter(
+    //         (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
+    //       );
+    //     }
+    //   }
+    // } else if (!permissions?.allCaseAccess) {
+    //   // Non-admin users have restricted access
+    //   casesToDisplay = allCases.filter((c) =>
+    //     c.assignedUsers?.some((user) => {
+    //       if (typeof user === "string") {
+    //         return user === currentUser.userId || user === currentUser.name;
+    //       } else {
+    //         return (
+    //           user._id === currentUser.userId ||
+    //           user.userId === currentUser.userId ||
+    //           user.name === currentUser.name
+    //         );
+    //       }
+    //     })
+    //   );
+    // }
+
+    const hasAllCaseAccess =
+      currentUser?.name === "Super Admin" ||
+      permissions?.allCaseAccess === true;
+
+    if (hasAllCaseAccess) {
+      // User can see all cases, just filter by active status if set
       if (activeFilter && activeFilter !== "Total") {
         if (activeFilter === "Completed") {
-          casesToDisplay = casesToDisplay.filter(
+          casesToDisplay = allCases.filter(
             (c) =>
               c.status?.toLowerCase() === "completed" ||
               c.status?.toLowerCase() === "approved"
           );
         } else {
-          casesToDisplay = casesToDisplay.filter(
+          casesToDisplay = allCases.filter(
             (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
           );
         }
+      } else {
+        casesToDisplay = allCases;
       }
-    } else if (!permissions?.allCaseAccess) {
-      // Non-admin users have restricted access
+    } else {
+      // Show only cases assigned to current user
       casesToDisplay = allCases.filter((c) =>
         c.assignedUsers?.some((user) => {
           if (typeof user === "string") {
@@ -339,7 +377,24 @@ export default function CasesPage() {
           }
         })
       );
+
+      // Further filter by status if needed
+      if (activeFilter && activeFilter !== "Total") {
+        if (activeFilter === "Completed") {
+          casesToDisplay = casesToDisplay.filter(
+            (c) =>
+              c.status?.toLowerCase() === "completed" ||
+              c.status?.toLowerCase() === "approved"
+          );
+        } else {
+          casesToDisplay = casesToDisplay.filter(
+            (c) => c.status?.toLowerCase() === activeFilter.toLowerCase()
+          );
+        }
+      }
     }
+
+    // console.log(" hasAllCaseAccess : ", hasAllCaseAccess);
 
     // Apply the filter if set (in case the user is not Super Admin)
     if (activeFilter && activeFilter !== "Total") {
