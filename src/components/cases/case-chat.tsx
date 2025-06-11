@@ -195,45 +195,6 @@ export default function CaseChat({
     scrollToBottom();
   }, [messages]);
 
-  // const handleSendMessage = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const messageContent = newMessage.trim();
-  //   if (!messageContent || isSending || !isConnected) return;
-
-  //   try {
-  //     setIsSending(true);
-
-  //     // Optimistic update
-  //     const tempMessage: ChatMessage = {
-  //       id: `temp-${Date.now()}`,
-  //       caseId,
-  //       senderId: currentUser.userId!,
-  //       senderName: currentUser.name,
-  //       message: messageContent,
-  //       timestamp: new Date().toISOString(),
-  //       status: "sending",
-  //     };
-
-  //     setMessages((prev) => [...prev, tempMessage]);
-  //     setNewMessage("");
-
-  //     // Send via socket
-  //     socket.emit("sendMessage", {
-  //       caseId,
-  //       message: messageContent,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error sending message:", error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to send message",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsSending(false);
-  //   }
-  // };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const messageContent = newMessage.trim();
@@ -267,7 +228,6 @@ export default function CaseChat({
       const userIdToSend = userObj?._id;
       console.log("Sending userId (ObjectId) in mark-read:", userIdToSend);
 
-
       if (!userIdToSend) {
         throw new Error("User _id not found in localStorage");
       }
@@ -285,6 +245,33 @@ export default function CaseChat({
           },
         }
       );
+
+      const caseResponse = await axios.get(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+      );
+      const caseName = caseResponse.data.unitName; // Adjust this based on your API response
+      console.log("caseResponse : ", caseResponse)
+
+      // Send push notification to all assigned users within the case
+      for (const user of assignedUsers) {
+        const userId = userIdToSend;
+        console.log(`Sending notification to userId: ${userId}`);
+
+        // Send a push notification API request
+        await fetch(
+          "`https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: userId, // Use assigned user's ID
+              message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+            }),
+          }
+        );
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
