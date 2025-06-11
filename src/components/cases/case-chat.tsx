@@ -259,7 +259,7 @@ export default function CaseChat({
 
         // Send a push notification API request
         await fetch(
-          "`https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+          "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
           {
             method: "POST",
             headers: {
