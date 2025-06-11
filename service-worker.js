@@ -9,7 +9,7 @@ self.addEventListener("install", (event) => {
         "/index.html",
         "/style.css",
         "/app.js", // Add other static assets like JS and CSS files you need
-        "../FCO/src/assets../FCO/src/assets/favicon.png"
+        "../FCO/src/assets/favicon.png"
       ]);
     })
   );
