@@ -163,55 +163,56 @@ export default function MainHeader() {
       ".ant-modal", // Ant Design modals
     ].join(",");
 
-    const walk = (node: Node) => {
-      // Skip if node is inside a modal/dialog
-      if (
-        node.nodeType === 1 &&
-        (node as Element).closest(MODAL_SELECTORS) // Check if any ancestor is a modal/dialog
-      ) {
-        return;
-      }
+  const walk = (node: Node) => {
+  // Skip if node is inside a modal/dialog
+  if (
+    node.nodeType === 1 &&
+    (node as Element).closest(MODAL_SELECTORS) // Check if any ancestor is a modal/dialog
+  ) {
+    return;
+  }
 
-      // Skip hidden elements (those with `display: none`, `visibility: hidden`, `opacity: 0`)
-      if (
-        node.nodeType === 1 &&
-        node instanceof HTMLElement && // Add this type check
-        node.offsetParent === null
-      ) {
-        return;
-      }
+  // Skip hidden elements (those with `display: none`, `visibility: hidden`, `opacity: 0`)
+  if (
+    node.nodeType === 1 &&
+    node instanceof HTMLElement && // Add this type check
+    node.offsetParent === null
+  ) {
+    return;
+  }
 
-      // Only process text nodes that are not inside script/style tags and not already highlighted
-      if (
-        node.nodeType === 3 && // Text node
-        node.parentNode &&
-        node.parentNode.nodeName !== "SCRIPT" &&
-        node.parentNode.nodeName !== "STYLE" &&
-        node.parentNode.nodeName !== "MARK" // Skip already highlighted text
-      ) {
-        const text = node.nodeValue;
-        if (text && regex.test(text)) {
-          const span = document.createElement("span");
-          span.innerHTML = text.replace(
-            regex,
-            `<mark data-highlight style="background: yellow;">$1</mark>`
-          );
-          const fragment = document.createDocumentFragment();
-          while (span.firstChild) {
-            const child = span.firstChild;
-            if ((child as HTMLElement).tagName === "MARK") {
-              foundMarks.push(child as HTMLElement);
-            }
-            fragment.appendChild(child);
-          }
-          node.parentNode.replaceChild(fragment, node);
+  // Only process text nodes that are not inside script/style tags and not already highlighted
+  if (
+    node.nodeType === 3 && // Text node
+    node.parentNode &&
+    node.parentNode.nodeName !== "SCRIPT" &&
+    node.parentNode.nodeName !== "STYLE" &&
+    node.parentNode.nodeName !== "MARK" // Skip already highlighted text
+  ) {
+    const text = node.nodeValue;
+    if (text && regex.test(text)) {
+      const span = document.createElement("span");
+      span.innerHTML = text.replace(
+        regex,
+        `<mark data-highlight style="background: yellow;">$1</mark>`
+      );
+      const fragment = document.createDocumentFragment();
+      while (span.firstChild) {
+        const child = span.firstChild;
+        if ((child as HTMLElement).tagName === "MARK") {
+          foundMarks.push(child as HTMLElement);
         }
-      } else if (node.nodeType === 1) {
-        for (let i = 0; i < node.childNodes.length; i++) {
-          walk(node.childNodes[i]);
-        }
+        fragment.appendChild(child);
       }
-    };
+      node.parentNode.replaceChild(fragment, node);
+    }
+  } else if (node.nodeType === 1) {
+    for (let i = 0; i < node.childNodes.length; i++) {
+      walk(node.childNodes[i]);
+    }
+  }
+};
+
 
     // Start walking from the main content area (excluding modals)
     const mainContent = document.querySelector("main") || document.body;
@@ -344,38 +345,46 @@ export default function MainHeader() {
 
   const navigate = useNavigate();
 
-const handleLogout = async () => {
-  try {
-    // Fetch user data from localStorage, ensuring it's not null
-    const userStr = localStorage.getItem("user");
-    if (!userStr) {
-      throw new Error("User not found in localStorage");
-    }
-
-    // Parse the user object and get the userId
-    const userObj = JSON.parse(userStr);
-    const userId = userObj._id;
-
-    // Remove user data and token from localStorage
+  const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     localStorage.removeItem("user");
-
-    // Make a request to remove the subscription from the backend
-    await fetch("http://localhost:3000/api/pushnotifications/remove-subscription", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId }),
-    });
-
-    // Navigate to login page
     navigate("/login");
-  } catch (error) {
-    console.error("Error during logout:", error);
-  }
-};
+  };
+
+
+//   const handleLogout = async () => {
+//   try {
+//     // Fetch user data from localStorage, ensuring it's not null
+//     const userStr = localStorage.getItem("user");
+//     if (!userStr) {
+//       throw new Error("User not found in localStorage");
+//     }
+
+//     // Parse the user object and get the userId
+//     const userObj = JSON.parse(userStr);
+//     const userId = userObj._id;
+
+//     // Remove user data and token from localStorage
+//     localStorage.removeItem("token");
+//     localStorage.removeItem("userRole");
+//     localStorage.removeItem("user");
+
+//     // Make a request to remove the subscription from the backend
+//     await fetch("http://localhost:3000/api/pushnotifications/remove-subscription", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({ userId }),
+//     });
+
+//     // Navigate to login page
+//     navigate("/login");
+//   } catch (error) {
+//     console.error("Error during logout:", error);
+//   }
+// };
 
 
   const userStr = localStorage.getItem("user");
