@@ -51,19 +51,19 @@ export default function App() {
   const { appName } = useAppName(); // <-- Use context value
   const dispatch = useDispatch<AppDispatch>();
 
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("/service-worker.js", { scope: "/" })
-      .then((registration) => {
-        console.log(
-          "Service Worker registered with scope:",
-          registration.scope
-        );
-      })
-      .catch((error) => {
-        console.error("Service Worker registration failed:", error);
-      });
-  }
+  // if ("serviceWorker" in navigator) {
+  //   navigator.serviceWorker
+  //     .register("/service-worker.js", { scope: "/" })
+  //     .then((registration) => {
+  //       console.log(
+  //         "Service Worker registered with scope:",
+  //         registration.scope
+  //       );
+  //     })
+  //     .catch((error) => {
+  //       console.error("Service Worker registration failed:", error);
+  //     });
+  // }
 
   useEffect(() => {
     const path = location.pathname;
