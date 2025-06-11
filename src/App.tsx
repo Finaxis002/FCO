@@ -65,9 +65,19 @@ export default function App() {
   //     });
   // }
 
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        // Ensure the service worker is ready before subscribing to push notifications
+        console.log("Service Worker ready");
+      })
+      .catch((error) => {
+        console.error("Service Worker is not ready", error);
+      });
+  }
+
   useEffect(() => {
     const path = location.pathname;
-
 
     if (path === "/login") {
       document.title = `Login | ${appName}`;
