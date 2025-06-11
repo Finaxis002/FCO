@@ -12,6 +12,7 @@ function TestNotificationButton() {
     if (storedUser) {
       const user = JSON.parse(storedUser); // Parse the user object
       setUserId(user._id);  // Set userId from the user object in localStorage
+      console.log("userId : ", user._id)
     } else {
       setStatus("User not logged in.");
     }
