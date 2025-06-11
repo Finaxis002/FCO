@@ -172,7 +172,7 @@ export default function ServiceRemarks({
               },
               body: JSON.stringify({
                 userId: userId, // Send notification to assigned user's ID
-                message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark} . This notification is for ${user.name}`, // Custom message
+                message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`, // Custom message
               }),
             }
           );
