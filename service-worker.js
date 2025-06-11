@@ -22,7 +22,7 @@ self.addEventListener("fetch", (event) => {
 // service-worker.js
 self.addEventListener("push", (event) => {
   const data = event.data.json();
-  const icon = data.icon || "/favicon.png"; // Use the path to your favicon.png from the public folder
+  const icon = data.icon || "https://tumbledry.sharda.co.in/favicon.png"; // Use the path to your favicon.png from the public folder
 
   event.waitUntil(
     self.registration.showNotification(data.title, {
