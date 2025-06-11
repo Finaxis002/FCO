@@ -1,5 +1,5 @@
-// import "/favicon"
-// import icon as "/favicon"
+// import "/favicon.png"
+// import icon as "./assets/favicon"
 
 
 self.addEventListener("install", (event) => {
@@ -10,7 +10,7 @@ self.addEventListener("install", (event) => {
         "/index.html",
         "/style.css",
         "/app.js", // Add other static assets like JS and CSS files you need
-        "/favicon"
+        "/favicon.png"
       ]);
     })
   );
@@ -27,13 +27,13 @@ self.addEventListener("fetch", (event) => {
 // service-worker.js
 self.addEventListener("push", (event) => {
   const data = event.data.json();
-  const icon = data.icon || "/favicon"; // Use the path to your favicon.png from the public folder
+  const icon = data.icon || "/favicon.png"; // Use the path to your favicon.png from the public folder
   console.log("Using icon:", icon);
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: icon,
-       badge: "/favicon" // Optional: add a badge image
+       badge: "/favicon.png" // Optional: add a badge image
     })
   );
 });
