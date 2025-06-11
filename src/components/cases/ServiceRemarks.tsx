@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Loader2, MessageSquarePlus } from "lucide-react";
-import { permission } from "process";
+import axios from "axios";
 
 type Remark = {
   _id: string;
@@ -41,6 +41,13 @@ interface ServiceRemarksProps {
   serviceName: string;
   onRemarkRead?: (serviceId: string, userId: string) => void;
 }
+
+interface CurrentUser {
+  userId: string;
+  name: string;
+  // Add any other properties that `currentUser` should have
+}
+
 
 export default function ServiceRemarks({
   caseId,
@@ -94,6 +101,10 @@ export default function ServiceRemarks({
     }
   }, [isDialogOpen]);
 
+  const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
+
+  // console.log("current user:" , currentUser)
+
   const handleAddRemark = async () => {
     if (!currentUser || !newRemarkText.trim()) return;
 
@@ -101,7 +112,7 @@ export default function ServiceRemarks({
     const payload = {
       caseId,
       serviceId,
-      userId: currentUser.id,
+      userId: currentUser.id, 
       userName: currentUser.name,
       remark: newRemarkText.trim(),
     };
@@ -131,6 +142,74 @@ export default function ServiceRemarks({
       setIsAddDialogOpen(false);
       // Close the "View All Remarks" dialog after posting
       setIsDialogOpen(false);
+
+      // Send push notification to all assigned users except the sender
+      const caseResponse = await axios.get(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+      );
+      const caseName = caseResponse.data.unitName; // Adjust this based on your API response
+      console.log("caseResponse : ", caseResponse);
+
+      // Send push notification to all assigned users except the sender
+      for (const user of caseResponse.data.assignedUsers) {
+        // Skip the sender from notifications
+        if (user.userId === currentUser.id) {
+          continue;
+        }
+
+        const userId = user.id; // Correctly access the userId
+
+        console.log(`Sending notification to userId: ${userId}`);
+
+        // Send a push notification API request
+        try {
+          await fetch(
+            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId: userId, // Send notification to assigned user's ID
+                message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark} . This notification is for ${user.name}`, // Custom message
+              }),
+            }
+          );
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            // Narrow down the error type here
+            if (
+              error.message.includes("404") ||
+              error.message.includes("410")
+            ) {
+              console.log(
+                `User ${userId} not subscribed or subscription expired, skipping notification.`
+              );
+            } else {
+              console.error(`Error sending notification to ${userId}:`, error);
+            }
+          } else {
+            console.error("Unknown error:", error);
+          }
+        }
+      } // Send notification to Super Admin (hardcoded)
+      console.log(
+        `Sending notification to Super Admin with userId: ${SUPER_ADMIN_ID}`
+      );
+      await fetch(
+        "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: SUPER_ADMIN_ID, // Send notification to Super Admin
+            message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}". `, // Custom message with added details
+          }),
+        }
+      );
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
     } finally {

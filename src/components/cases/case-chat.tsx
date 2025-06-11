@@ -368,7 +368,7 @@ export default function CaseChat({
         `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
       );
       const caseName = caseResponse.data.unitName; // Adjust this based on your API response
-      console.log("caseResponse : ", caseResponse);
+      // console.log("caseResponse : ", caseResponse);
 
       // Send push notification to all assigned users except the sender
       for (const user of caseResponse.data.assignedUsers) {
@@ -379,9 +379,9 @@ export default function CaseChat({
 
         const userId = user._id; // Correctly access the userId
 
-        console.log("userId : ", userId);
+        // console.log("userId : ", userId);
 
-        console.log(`Sending notification to userId: ${userId}`);
+        // console.log(`Sending notification to userId: ${userId}`);
 
         // Send a push notification API request
         try {
