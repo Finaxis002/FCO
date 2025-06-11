@@ -1,4 +1,4 @@
-// import "https://tumbledry.sharda.co.in/favicon.png"
+// import "../FCO/src/assets/favicon.png"
 
 
 self.addEventListener("install", (event) => {
@@ -9,7 +9,7 @@ self.addEventListener("install", (event) => {
         "/index.html",
         "/style.css",
         "/app.js", // Add other static assets like JS and CSS files you need
-        "https://tumbledry.sharda.co.in/favicon.png"
+        "../FCO/src/assets../FCO/src/assets/favicon.png"
       ]);
     })
   );
@@ -26,13 +26,13 @@ self.addEventListener("fetch", (event) => {
 // service-worker.js
 self.addEventListener("push", (event) => {
   const data = event.data.json();
-  const icon = data.icon || "https://tumbledry.sharda.co.in/favicon.png"; // Use the path to your favicon.png from the public folder
+  const icon = data.icon || "../FCO/src/assets/favicon.png"; // Use the path to your favicon.png from the public folder
   console.log("Using icon:", icon);
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: icon,
-       badge: "https://tumbledry.sharda.co.in/favicon.png" // Optional: add a badge image
+       badge: "../FCO/src/assets/favicon.png" // Optional: add a badge image
     })
   );
 });
