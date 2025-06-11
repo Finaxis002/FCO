@@ -51,76 +51,23 @@ export default function App() {
   const { appName } = useAppName(); // <-- Use context value
   const dispatch = useDispatch<AppDispatch>();
 
-// useEffect(() => {
-//   const userData = localStorage.getItem("user");
-//   if (userData) {
-//     try {
-//       const parsedUser = JSON.parse(userData);
-//       setCurrentUser({
-//         _id: parsedUser._id,
-//         name: parsedUser.name,
-//         role: parsedUser.role,
-//         userId: parsedUser._id || parsedUser.userId,
-//       });
-
-//       if (parsedUser.name !== "Super Admin" && (parsedUser._id || parsedUser.userId)) {
-//         dispatch(fetchPermissions(parsedUser._id || parsedUser.userId));
-//       }
-//     } catch (e) {
-//       console.error("Error parsing user data", e);
-//     }
-//   }
-// }, [dispatch]);
-
-
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/service-worker.js", { scope: "/" })
+      .then((registration) => {
+        console.log(
+          "Service Worker registered with scope:",
+          registration.scope
+        );
+      })
+      .catch((error) => {
+        console.error("Service Worker registration failed:", error);
+      });
+  }
 
   useEffect(() => {
     const path = location.pathname;
-    
-//  if (!currentUser) return; // Skip if currentUser is null
 
-//     const subscribeToPushNotifications = async () => {
-//       // Use the currentUser from auth context
-     
-//       const permission = await Notification.requestPermission();
-//       if (permission === "granted") {
-//         console.log("Notification permission granted.");
-//         const swRegistration = await navigator.serviceWorker.register(
-//           "/service-worker.js"
-//         );
-//         const subscription = await swRegistration.pushManager.subscribe({
-//           userVisibleOnly: true,
-//           applicationServerKey:
-//             "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs",
-//         });
-
-//         try {
-//           const response = await fetch(
-//             "http://localhost:3000/api/pushnotifications/save-subscription",
-//             {
-//               method: "POST",
-//               body: JSON.stringify({
-//                 userId: currentUser?.userId, // Use the actual user ID
-//                 subscription,
-//               }),
-//               headers: {
-//                 "Content-Type": "application/json",
-//               },
-//             }
-//           );
-
-//           if (!response.ok) {
-//             const errorData = await response.json();
-//             throw new Error(errorData.message || "Failed to save subscription");
-//           }
-//           console.log("Subscription saved.");
-//         } catch (error) {
-//           console.error("Failed to save subscription:", error);
-//         }
-//       } else {
-//         console.error("Notification permission denied.");
-//       }
-//     };
 
     if (path === "/login") {
       document.title = `Login | ${appName}`;
@@ -168,8 +115,6 @@ export default function App() {
 
     document.title = `${pageTitleSegment} | ${appName}`;
   }, [location.pathname]);
-
-
 
   return (
     <Routes>

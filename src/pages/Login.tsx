@@ -6,7 +6,6 @@ import ReCAPTCHA from "react-google-recaptcha";
 
 const RECAPTCHA_SITE_KEY = "6LfwLlMrAAAAAIFtLSnFxwGP_xfkeDU7xuz69sLa";
 
-
 const Login = () => {
   const navigate = useNavigate();
 
@@ -21,9 +20,11 @@ const Login = () => {
     setRecaptchaToken(token || "");
   };
 
-
   // Function to subscribe the user for push notifications
-  const subscribeToPushNotifications = async (userId: string, token: string) => {
+  const subscribeToPushNotifications = async (
+    userId: string,
+    token: string
+  ) => {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       console.log("Notification permission granted.");
@@ -81,6 +82,12 @@ const Login = () => {
 
       const { token, role, user } = res.data;
 
+      // Check if trying to login as admin but user is not an admin
+      if (isAdminLogin && role !== "Admin") {
+        setError("Only administrators can login through this portal");
+        return;
+      }
+
       let fullUser = user;
 
       // If not admin, fetch full user details
@@ -105,7 +112,7 @@ const Login = () => {
       localStorage.setItem("userRole", role);
       localStorage.setItem("user", JSON.stringify(fullUser));
 
-       // Call the subscribeToPushNotifications function after login
+      // Call the subscribeToPushNotifications function after login
       subscribeToPushNotifications(fullUser._id, token);
 
       navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
