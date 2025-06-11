@@ -195,6 +195,124 @@ export default function CaseChat({
     scrollToBottom();
   }, [messages]);
 
+  // const handleSendMessage = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const messageContent = newMessage.trim();
+  //   if (!messageContent || isSending || !isConnected) return;
+
+  //   try {
+  //     setIsSending(true);
+
+  //     const tempMessage: ChatMessage = {
+  //       id: `temp-${Date.now()}`,
+  //       caseId,
+  //       senderId: currentUser.userId!, // can keep for optimistic UI
+  //       senderName: currentUser.name,
+  //       message: messageContent,
+  //       timestamp: new Date().toISOString(),
+  //       status: "sending",
+  //     };
+
+  //     setMessages((prev) => [...prev, tempMessage]);
+  //     setNewMessage("");
+
+  //     // Send via socket
+  //     socket.emit("sendMessage", {
+  //       caseId,
+  //       message: messageContent,
+  //     });
+
+  //     // Get user _id from localStorage
+  //     const userStr = localStorage.getItem("user");
+  //     const userObj = userStr ? JSON.parse(userStr) : null;
+  //     const userIdToSend = userObj?._id;
+  //     console.log("Sending userId (ObjectId) in mark-read:", userIdToSend);
+
+  //     if (!userIdToSend) {
+  //       throw new Error("User _id not found in localStorage");
+  //     }
+
+  //     const token = localStorage.getItem("token");
+
+  //     await axios.put(
+  //       `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
+  //       {
+  //         userId: userIdToSend, // send _id from localStorage user object
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     const caseResponse = await axios.get(
+  //       `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+  //     );
+  //     const caseName = caseResponse.data.unitName; // Adjust this based on your API response
+  //     console.log("caseResponse : ", caseResponse)
+
+  //     // Send push notification to all assigned users within the case
+  //     // for (const user of assignedUsers) {
+  //     //   const userId = userIdToSend;
+  //     //   console.log(`Sending notification to userId: ${userId}`);
+
+  //     //   // Send a push notification API request
+  //     //   await fetch(
+  //     //     "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+  //     //     {
+  //     //       method: "POST",
+  //     //       headers: {
+  //     //         "Content-Type": "application/json",
+  //     //       },
+  //     //       body: JSON.stringify({
+  //     //         userId: userId, // Use assigned user's ID
+  //     //         message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+  //     //       }),
+  //     //     }
+  //     //   );
+  //     // }
+
+  //      // Send push notification to all assigned users except the sender
+  //   for (const user of caseResponse.data.assignedUsers) {
+  //     // Skip the sender from notifications
+  //     if (user.userId === currentUser.userId) {
+  //       continue;
+  //     }
+
+  //     const userId = user.id; // UserId for the assigned user
+
+  //     console.log(`Sending notification to userId: ${userId}`);
+
+  //     // Send a push notification API request
+  //     await fetch(
+  //       "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           userId: userId, // Send notification to assigned user's ID
+  //           message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+  //         }),
+  //       }
+  //     );
+  //   }
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to send message",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsSending(false);
+  //   }
+  // };
+
+  const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const messageContent = newMessage.trim();
@@ -206,7 +324,7 @@ export default function CaseChat({
       const tempMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         caseId,
-        senderId: currentUser.userId!, // can keep for optimistic UI
+        senderId: currentUser.userId!, // sender's userId
         senderName: currentUser.name,
         message: messageContent,
         timestamp: new Date().toISOString(),
@@ -250,28 +368,72 @@ export default function CaseChat({
         `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
       );
       const caseName = caseResponse.data.unitName; // Adjust this based on your API response
-      console.log("caseResponse : ", caseResponse)
+      console.log("caseResponse : ", caseResponse);
 
-      // Send push notification to all assigned users within the case
-      for (const user of assignedUsers) {
-        const userId = userIdToSend;
+      // Send push notification to all assigned users except the sender
+      for (const user of caseResponse.data.assignedUsers) {
+        // Skip the sender from notifications
+        if (user.userId === currentUser.userId) {
+          continue;
+        }
+
+        const userId = user._id; // Correctly access the userId
+
+        console.log("userId : ", userId);
+
         console.log(`Sending notification to userId: ${userId}`);
 
         // Send a push notification API request
-        await fetch(
-          "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId: userId, // Use assigned user's ID
-              message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
-            }),
+        try {
+          await fetch(
+            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId: userId, // Send notification to assigned user's ID
+                message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+              }),
+            }
+          );
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            // Narrow down the error type here
+            if (
+              error.message.includes("404") ||
+              error.message.includes("410")
+            ) {
+              console.log(
+                `User ${userId} not subscribed or subscription expired, skipping notification.`
+              );
+            } else {
+              console.error(`Error sending notification to ${userId}:`, error);
+            }
+          } else {
+            console.error("Unknown error:", error);
           }
-        );
+        }
       }
+
+      // Send notification to Super Admin (hardcoded)
+      console.log(
+        `Sending notification to Super Admin with userId: ${SUPER_ADMIN_ID}`
+      );
+      await fetch(
+        "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: SUPER_ADMIN_ID, // Send notification to Super Admin
+            message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+          }),
+        }
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       toast({

@@ -362,7 +362,7 @@ const handleLogout = async () => {
     localStorage.removeItem("user");
 
     // Make a request to remove the subscription from the backend
-    await fetch("https://tumbledrybe.sharda.co.in/api/pushnotifications/remove-subscription", {
+    await fetch("http://localhost:3000/api/pushnotifications/remove-subscription", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
