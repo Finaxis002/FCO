@@ -1,14 +1,30 @@
-import { error } from "node:console";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function TestNotificationButton() {
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState(''); // To track and display status
   const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [userId, setUserId] = useState<string | null>(null); // Dynamic userId state
+
+  // Set the userId dynamically based on the logged-in user (localStorage or context)
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user'); // Get the entire user object
+    if (storedUser) {
+      const user = JSON.parse(storedUser); // Parse the user object
+      setUserId(user._id);  // Set userId from the user object in localStorage
+    } else {
+      setStatus("User not logged in.");
+    }
+  }, []);
 
   const sendTestNotification = async () => {
     if (!message.trim()) {
       setStatus('Please enter a message');
+      return;
+    }
+
+    if (!userId) {
+      setStatus('User ID is missing!');
       return;
     }
 
@@ -22,7 +38,7 @@ function TestNotificationButton() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          userId: "6847c6e8ad5b050175eb51c9", // Replace with actual user ID
+          userId: userId, // Use dynamic userId
           message: message // Using the state variable
         }),
       });
@@ -55,7 +71,8 @@ function TestNotificationButton() {
       />
       <button 
         onClick={sendTestNotification}
-        disabled={isLoading || !message.trim()}
+        className="border border-2 border-green-300 bg-green-800 text-white"
+        disabled={isLoading || !message.trim() || !userId}
         style={{ padding: '8px 16px', marginBottom: '10px' }}
       >
         {isLoading ? 'Sending...' : 'Send Test Notification'}
