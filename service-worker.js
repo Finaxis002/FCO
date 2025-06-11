@@ -1,17 +1,17 @@
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open('static-v1').then((cache) => {
+    caches.open("static-v1").then((cache) => {
       return cache.addAll([
-        '/',
-        '/index.html',
-        '/style.css',
-        '/app.js', // Add other static assets like JS and CSS files you need
+        "/",
+        "/index.html",
+        "/style.css",
+        "/app.js", // Add other static assets like JS and CSS files you need
       ]);
     })
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       return cachedResponse || fetch(event.request);
@@ -20,15 +20,14 @@ self.addEventListener('fetch', (event) => {
 });
 
 // service-worker.js
-self.addEventListener('push', (event) => {
+self.addEventListener("push", (event) => {
   const data = event.data.json();
-   const icon = data.icon || '/favicon.png'; // Use the path to your favicon.png from the public folder
+  const icon = data.icon || "/favicon.png"; // Use the path to your favicon.png from the public folder
 
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon || '/favicon.png',
+      icon: icon,
     })
   );
 });
-
