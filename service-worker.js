@@ -1,16 +1,17 @@
-const CACHE_NAME = 'static-v2';  // Changed version to force update
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/src/assets/favicon.png'  // This must match your actual file path
-];
+// import "/favicon"
+// import icon as "/favicon"
+
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+    caches.open("static-v1").then((cache) => {
+      return cache.addAll([
+        "/",
+        "/index.html",
+        "/style.css",
+        "/app.js", // Add other static assets like JS and CSS files you need
+        "/favicon"
+      ]);
     })
   );
 });
@@ -23,35 +24,16 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// service-worker.js
 self.addEventListener("push", (event) => {
-  const data = event.data?.json() || {
-    title: "New Notification",
-    body: "You have updates!"
-  };
-  
-  // Use absolute URL for production
-  const iconUrl = new URL('/src/assets/favicon.png', self.location.origin).href;
-  
-  console.log("Notification icon URL:", iconUrl);
-  
+  const data = event.data.json();
+  const icon = data.icon || "/favicon"; // Use the path to your favicon.png from the public folder
+  console.log("Using icon:", icon);
   event.waitUntil(
-    // First verify the icon exists
-    fetch(iconUrl, { mode: 'no-cors', cache: 'force-cache' })
-      .then(() => {
-        return self.registration.showNotification(data.title, {
-          body: data.body,
-          icon: iconUrl,
-          badge: iconUrl,
-          vibrate: [200, 100, 200]
-        });
-      })
-      .catch(err => {
-        console.error("Failed to load icon:", err);
-        // Fallback without icon
-        return self.registration.showNotification(data.title, {
-          body: data.body,
-          vibrate: [200, 100, 200]
-        });
-      })
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: icon,
+       badge: "/favicon" // Optional: add a badge image
+    })
   );
 });
