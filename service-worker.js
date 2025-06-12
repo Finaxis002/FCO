@@ -27,8 +27,7 @@ self.addEventListener("fetch", (event) => {
 // service-worker.js
 self.addEventListener("push", (event) => {
   const data = event.data.json();
-  const icon = "https://fonts.gstatic.com/s/i/materialicons/notifications/v8/24px.svg";
-
+  const icon = '/favicon.png' // Use the path to your favicon.png from the public folder
   console.log("Using icon:", icon);
   event.waitUntil(
     self.registration.showNotification(data.title, {
