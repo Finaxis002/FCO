@@ -159,7 +159,7 @@ export default function ServiceRemarks({
 
         const userId = user.id; // Correctly access the userId
 
-        console.log(`Sending notification to userId: ${userId}`);
+        // console.log(`Sending notification to userId: ${userId}`);
 
         // Send a push notification API request
         try {

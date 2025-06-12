@@ -106,7 +106,7 @@ export default function AddCaseForm() {
   const { toast } = useToast();
   const dispatch = useDispatch<AppDispatch>();
   const { users } = useAppSelector((state) => state.users);
-  console.log("Loaded users:", users);
+  // console.log("Loaded users:", users);
   const FORM_STORAGE_KEY = "add_case_form_data";
 
   const form = useForm<CaseFormValues>({
@@ -158,11 +158,12 @@ export default function AddCaseForm() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/services");
+        const res = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/services"
+        );
         setGlobalServices(res.data);
 
         // Only reset services if not editing
@@ -252,7 +253,7 @@ export default function AddCaseForm() {
           if (!uniqueServiceNames.has(s.name)) {
             finalServiceList.push({
               name: s.name,
-             selected: false, 
+              selected: false,
               status: s.status || "To-be-Started",
               remarks: s.remarks || "",
               completionPercentage: s.completionPercentage || 0,
@@ -295,7 +296,9 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/owners");
+        const res = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/owners"
+        );
         setOwnerOptions(
           res.data.map((o: any) => ({
             label: o.name,
@@ -313,7 +316,9 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get("https://tumbledrybe.sharda.co.in/api/clients");
+        const res = await axios.get(
+          "https://tumbledrybe.sharda.co.in/api/clients"
+        );
         setClientOptions(
           res.data.map((c: any) => ({
             label: c.name,
@@ -335,9 +340,12 @@ export default function AddCaseForm() {
   // Create Owner if not exists
   const createOwner = async (name: string) => {
     try {
-      const res = await axios.post("https://tumbledrybe.sharda.co.in/api/owners", {
-        name,
-      });
+      const res = await axios.post(
+        "https://tumbledrybe.sharda.co.in/api/owners",
+        {
+          name,
+        }
+      );
       const newOption = { label: name, value: name }; // Create proper option object
       setOwnerOptions((prev) => [...prev, newOption]); // Add the complete option
       return name; // Return the name for consistency
@@ -355,9 +363,12 @@ export default function AddCaseForm() {
   const createClient = async (name: string) => {
     console.log("Attempting to create client:", name);
     try {
-      const res = await axios.post("https://tumbledrybe.sharda.co.in/api/clients", {
-        name,
-      });
+      const res = await axios.post(
+        "https://tumbledrybe.sharda.co.in/api/clients",
+        {
+          name,
+        }
+      );
       console.log("Client creation response:", res.data);
       const newOption = { label: name, value: name };
       setClientOptions((prev) => [...prev, newOption]);
@@ -483,6 +494,63 @@ export default function AddCaseForm() {
         );
 
         if (updateCase.fulfilled.match(result)) {
+          // --- Get current user ---
+          const userStr = localStorage.getItem("user");
+          const userObj = userStr ? JSON.parse(userStr) : {};
+
+          // --- Prepare assigned users ---
+          const assignedUsers = casePayload.assignedUsers || [];
+
+          // --- Notify all assigned users except the actor ---
+          for (const user of assignedUsers) {
+            if (user.userId === userObj._id) continue;
+            try {
+              await fetch(
+                "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    userId: user._id,
+                    message: isEditing
+                      ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
+                      : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
+                    icon: "https://tumbledry.sharda.co.in/favicon.png",
+                  }),
+                }
+              );
+            } catch (notifyErr) {
+              console.error(
+                `Error sending notification to ${user._id}:`,
+                notifyErr
+              );
+            }
+          }
+
+          // --- Optionally, notify Super Admin ---
+          const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
+          try {
+            await fetch(
+              "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: SUPER_ADMIN_ID,
+                  message: isEditing
+                    ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
+                    : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
+                  icon: "https://tumbledry.sharda.co.in/favicon.png",
+                }),
+              }
+            );
+          } catch (superAdminErr) {
+            console.error(
+              "Error sending notification to Super Admin:",
+              superAdminErr
+            );
+          }
+
           toast({
             title: "Case Updated!",
             description: "Changes saved successfully.",

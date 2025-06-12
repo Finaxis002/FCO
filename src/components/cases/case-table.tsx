@@ -113,6 +113,7 @@ export default function CaseCardView({
   const markChatsRead = async (caseId: string) => {
     if (!caseId || !currentUserId) return;
     const token = localStorage.getItem("token");
+
     try {
       await axios.put(
         `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
@@ -149,6 +150,8 @@ export default function CaseCardView({
   }, [cases]);
 
   const allowedStatuses = ["New-Case", "In-Progress", "Completed", "Rejected"];
+
+  const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
 
   const handleStatusChange = async (caseId: string, newStatus: string) => {
     // Check if userRole is "Viewer" - block change
@@ -208,6 +211,11 @@ export default function CaseCardView({
 
       const token = localStorage.getItem("token");
 
+      const userStr = localStorage.getItem("user");
+      const userObj = userStr ? JSON.parse(userStr) : {};
+
+      // console.log("userobject", userObj);
+
       const response = await axios.put(
         `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
         payload,
@@ -233,6 +241,64 @@ export default function CaseCardView({
             : c
         )
       );
+
+      // ========== NEW: Fetch case details to get assigned users and unit name ==========
+      const caseRes = await axios.get(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const { assignedUsers, unitName } = caseRes.data;
+
+      // ========== NEW: Send notifications ==========
+      for (const user of assignedUsers) {
+        // Skip if you want to exclude the user who performed the change
+        if (user.userId === userObj._id) continue;
+
+        try {
+          await fetch(
+            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user._id, // or user.userId, whichever is correct for your system
+                message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+                icon: "https://tumbledry.sharda.co.in/favicon.png", // if you want to attach an icon
+              }),
+            }
+          );
+        } catch (notifyErr) {
+          console.error(
+            `Error sending notification to ${user._id}:`,
+            notifyErr
+          );
+        }
+      }
+
+      // ========== Optionally: Notify Super Admin ==========
+      try {
+        await fetch(
+          "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: SUPER_ADMIN_ID,
+              message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+              icon: "https://tumbledry.sharda.co.in/favicon.png",
+            }),
+          }
+        );
+      } catch (superAdminErr) {
+        console.error(
+          "Error sending notification to Super Admin:",
+          superAdminErr
+        );
+      }
 
       toast({
         title: "Status Updated",
@@ -374,7 +440,8 @@ export default function CaseCardView({
                   return allRemarks.filter(
                     (remark) =>
                       remark.caseId === caseData.id &&
-                      typeof userId === "string" && !remark.readBy.includes(userId) && // not read by user
+                      typeof userId === "string" &&
+                      !remark.readBy.includes(userId) && // not read by user
                       remark.userId !== userId && // not created by user
                       existingServiceIds.has(remark.serviceId) // service still exists
                   ).length;
@@ -484,7 +551,7 @@ export default function CaseCardView({
                     <TableCell className="text-right">
                       <div className="flex flex-wrap gap-2 justify-end">
                         {/* View */}
-                        {( permissions?.viewRights) && (
+                        {permissions?.viewRights && (
                           <RouterLink
                             to={`/cases/${
                               ((caseData as any)._id ?? caseData.id) as string
@@ -506,7 +573,7 @@ export default function CaseCardView({
                         </button>
 
                         {/* Edit */}
-                        {( permissions?.edit) && (
+                        {permissions?.edit && (
                           <RouterLink
                             to={`/cases/${caseData.id}/edit`}
                             className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-medium text-xs transition"
@@ -516,7 +583,7 @@ export default function CaseCardView({
                         )}
 
                         {/* Delete */}
-                        {( permissions?.delete) && (
+                        {permissions?.delete && (
                           <button
                             onClick={() => onDelete && onDelete(caseData.id!)}
                             className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-medium text-xs transition"

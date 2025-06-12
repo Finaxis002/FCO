@@ -170,6 +170,9 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   }, [highlightServiceId]);
 
   const handleStatusChange = (serviceId: string, newStatus: string) => {
+    const userStr = localStorage.getItem("user");
+    const userObj = userStr ? JSON.parse(userStr) : {};
+
     setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
     const updatedServices = localServices.map((service) =>
@@ -217,13 +220,82 @@ const CaseServices: React.FC<CaseServicesProps> = ({
     // Rest of your dispatch code remains the same...
     dispatch(updateCase(updatePayload))
       .unwrap()
-      .then(() => {
+      .then(async () => {
         toast({
           title: "Success",
           description: "Service status updated successfully.",
         });
         if (onUpdate) onUpdate();
+
+        // --- Fetch assigned users ---
+        let assignedUsers = [];
+        let unitName = caseName || "";
+        try {
+          const caseRes = await axios.get(
+            `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
+          );
+          assignedUsers = caseRes.data.assignedUsers || [];
+          unitName = caseRes.data.unitName || caseName || "";
+        } catch (err) {
+          // fallback: skip notification if fetching fails
+          console.warn("Could not fetch assigned users for notification.", err);
+        }
+
+        // --- Prepare notification ---
+        for (const user of assignedUsers) {
+          if (user.userId === userObj._id) continue;
+          try {
+            await fetch(
+              "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: user._id,
+                  message: `Service "${
+                    localServices.find((s) => s.id === serviceId)?.name
+                  }" in case "${unitName}" was updated to "${newStatus}" by ${
+                    userObj.name
+                  }.`,
+                  icon: "https://tumbledry.sharda.co.in/favicon.png",
+                }),
+              }
+            );
+          } catch (notifyErr) {
+            console.error(
+              `Error sending notification to ${user._id}:`,
+              notifyErr
+            );
+          }
+        }
+
+        // --- Super Admin Notification ---
+        const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
+        try {
+          await fetch(
+            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: SUPER_ADMIN_ID,
+                message: `Service "${
+                  localServices.find((s) => s.id === serviceId)?.name
+                }" in case "${unitName}" was updated to "${newStatus}" by ${
+                  userObj.name
+                }.`,
+                icon: "https://tumbledry.sharda.co.in/favicon.png",
+              }),
+            }
+          );
+        } catch (superAdminErr) {
+          console.error(
+            "Error sending notification to Super Admin:",
+            superAdminErr
+          );
+        }
       })
+
       .catch(() => {
         toast({
           title: "Error",

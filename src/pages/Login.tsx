@@ -20,7 +20,62 @@ const Login = () => {
     setRecaptchaToken(token || "");
   };
 
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        // Ensure the service worker is ready before subscribing to push notifications
+        console.log("Service Worker ready");
+      })
+      .catch((error) => {
+        console.error("Service Worker is not ready", error);
+      });
+  }
+
   // Function to subscribe the user for push notifications
+  // const subscribeToPushNotifications = async (
+  //   userId: string,
+  //   token: string
+  // ) => {
+  //   const permission = await Notification.requestPermission();
+  //   if (permission === "granted") {
+  //     console.log("Notification permission granted.");
+  //     const swRegistration = await navigator.serviceWorker.register(
+  //       "/service-worker.js"
+  //     );
+  //     const subscription = await swRegistration.pushManager.subscribe({
+  //       userVisibleOnly: true,
+  //       applicationServerKey:
+  //         "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs",
+  //     });
+
+  //     try {
+  //       const response = await fetch(
+  //         "https://tumbledrybe.sharda.co.in/api/pushnotifications/save-subscription",
+  //         {
+  //           method: "POST",
+  //           body: JSON.stringify({
+  //             userId, // Use the actual user ID
+  //             subscription,
+  //           }),
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
+
+  //       if (!response.ok) {
+  //         const errorData = await response.json();
+  //         throw new Error(errorData.message || "Failed to save subscription");
+  //       }
+  //       console.log("Subscription saved.");
+  //     } catch (error) {
+  //       console.error("Failed to save subscription:", error);
+  //     }
+  //   } else {
+  //     console.error("Notification permission denied.");
+  //   }
+  // };
+
   const subscribeToPushNotifications = async (
     userId: string,
     token: string
@@ -28,9 +83,13 @@ const Login = () => {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       console.log("Notification permission granted.");
-      const swRegistration = await navigator.serviceWorker.register(
-        "/service-worker.js"
-      );
+      // 1. Register service worker if not already registered
+      await navigator.serviceWorker.register("/service-worker.js");
+
+      // 2. Wait for the SW to be ready and controlling the page
+      const swRegistration = await navigator.serviceWorker.ready;
+
+      // 3. NOW safe to subscribe for push!
       const subscription = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey:
@@ -43,7 +102,7 @@ const Login = () => {
           {
             method: "POST",
             body: JSON.stringify({
-              userId, // Use the actual user ID
+              userId,
               subscription,
             }),
             headers: {
@@ -51,7 +110,6 @@ const Login = () => {
             },
           }
         );
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "Failed to save subscription");

@@ -152,6 +152,8 @@ export default function CaseCard({
     }
   };
 
+  const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
+
   const handleStatusChange = async (newStatus: string) => {
     // Prevent invalid change (optional)
     if (
@@ -172,22 +174,72 @@ export default function CaseCard({
 
     try {
       const payload: any = { status: newStatus };
+      if (newStatus === "In-Progress") payload.overallStatus = "In-Progress";
 
-      if (newStatus === "In-Progress") {
-        payload.overallStatus = "In-Progress";
-      }
-
-      const token = localStorage.getItem("token"); // Retrieve JWT token from storage
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      const userObj = userStr ? JSON.parse(userStr) : {};
 
       await axios.put(
         `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
         payload,
         {
-          headers: {
-            Authorization: `Bearer ${token}`, // Add Authorization header here
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      const caseRes = await axios.get(
+        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const { assignedUsers, unitName } = caseRes.data;
+
+      // Send notification to all assigned users except the actor
+      for (const user of assignedUsers) {
+        if (user.userId === userObj._id) continue; // adjust field as needed
+        try {
+          await fetch(
+            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user._id,
+                message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+                icon: "https://tumbledry.sharda.co.in/favicon.png",
+              }),
+            }
+          );
+        } catch (notifyErr) {
+          console.error(
+            `Error sending notification to ${user._id}:`,
+            notifyErr
+          );
+        }
+      }
+
+      // Notify Super Admin
+      try {
+        await fetch(
+          "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: SUPER_ADMIN_ID,
+              message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+              icon: "https://tumbledry.sharda.co.in/favicon.png",
+            }),
+          }
+        );
+      } catch (superAdminErr) {
+        console.error(
+          "Error sending notification to Super Admin:",
+          superAdminErr
+        );
+      }
 
       toast({
         title: "Status Updated",
@@ -199,7 +251,6 @@ export default function CaseCard({
         description: "Failed to update case status. Please try again.",
         variant: "destructive",
       });
-      // Revert UI status on failure
       setCurrentStatus(caseData.status || "New-Case");
     } finally {
       setUpdating(false);

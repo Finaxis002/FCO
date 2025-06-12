@@ -116,7 +116,7 @@ export default function CaseChat({
     });
 
     socket.on("connect", () => {
-      console.log("🟢 Connected to socket server");
+      // console.log("🟢 Connected to socket server");
       setIsConnected(true);
 
       const userId = currentUser.userId || currentUser.id;
@@ -124,7 +124,7 @@ export default function CaseChat({
 
       if (userId && username) {
         socket.emit("register", userId, username);
-        console.log("Registering user:", userId, username);
+        // console.log("Registering user:", userId, username);
       } else {
         console.error("❌ Missing userId or username during registration");
       }
@@ -132,11 +132,11 @@ export default function CaseChat({
 
     // ✅ ADD THIS: handle 'registered' and join case room
     socket.on("registered", () => {
-      console.log("✅ Registered on socket server");
+      // console.log("✅ Registered on socket server");
 
       // 👇 Join the case room immediately after registering
       socket.emit("joinCase", { caseId });
-      console.log("📥 Joining case:", caseId);
+      // console.log("📥 Joining case:", caseId);
     });
 
     socket.on("disconnect", () => {
