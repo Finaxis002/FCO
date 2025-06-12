@@ -145,7 +145,7 @@ export default function ServicesPage() {
 
   useEffect(() => {
     if (allCases?.length) {
-      console.log("Loaded cases", allCases);
+      // console.log("Loaded cases", allCases);
     }
   }, [allCases]);
 
@@ -173,6 +173,8 @@ export default function ServicesPage() {
     }
   };
 
+  const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
+
   const handleStatusChange = async (serviceId: string, newStatus: string) => {
     // Find the service and its parent case
     const service = allServices.find((s) => s.id === serviceId);
@@ -197,6 +199,52 @@ export default function ServicesPage() {
     );
     // Optionally, refresh cases after update
     dispatch(getCases());
+
+     // --- PUSH NOTIFICATION LOGIC BELOW ---
+  try {
+    const userStr = localStorage.getItem("user");
+    const userObj = userStr ? JSON.parse(userStr) : {};
+    const caseName = parentCase.unitName || parentCase.name || "Case";
+    const assignedUsers = parentCase.assignedUsers || [];
+
+    // Send notification to all assigned users except the one making the change
+    for (const user of assignedUsers) {
+      const userId = typeof user === "string" ? user : user._id;
+      console.log("userid :", userId)
+  if (!userId) continue; // skip if undefined/null
+      if (userId === userObj._id) continue; // Skip self
+      try {
+        await fetch("https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId,
+            message: `Service "${service.name}" in case "${caseName}" status updated to "${newStatus}" by ${userObj.name}.`,
+            icon: "https://tumbledry.sharda.co.in/favicon.png", // Optional icon
+          }),
+        });
+      } catch (err) {
+        console.error(`Error sending notification to user ${userId}:`, err);
+      }
+    }
+
+    // Optionally: Notify Super Admin
+    try {
+      await fetch("https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: SUPER_ADMIN_ID,
+          message: `Service "${service.name}" in case "${caseName}" status updated to "${newStatus}" by ${userObj.name}.`,
+          icon: "https://tumbledry.sharda.co.in/favicon.png",
+        }),
+      });
+    } catch (err) {
+      console.error("Error sending notification to Super Admin:", err);
+    }
+  } catch (err) {
+    console.error("Error in notification logic:", err);
+  }
   };
 
   // useEffect(() => {
