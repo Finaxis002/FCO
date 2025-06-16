@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useAuth } from "../contenxt/AuthContext";
 
 const RECAPTCHA_SITE_KEY = "6LfwLlMrAAAAAIFtLSnFxwGP_xfkeDU7xuz69sLa";
 
@@ -136,8 +135,7 @@ const Login = () => {
           password,
           isAdminLogin,
           recaptchaToken,
-        },
-         { withCredentials: true }
+        }
       );
 
       const { token, role, user } = res.data;
@@ -171,14 +169,6 @@ const Login = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("user", JSON.stringify(fullUser));
-      // Set token as cookie (expires in 7 days, for example)
-      // Example - set cookies for token and role
-      document.cookie = `token=${token}; path=/; max-age=${
-        60 * 60 * 24 * 7
-      }; SameSite=Lax`;
-      document.cookie = `userRole=${role}; path=/; max-age=${
-        60 * 60 * 24 * 7
-      }; SameSite=Lax`;
 
       // Call the subscribeToPushNotifications function after login
       subscribeToPushNotifications(fullUser._id, token);
