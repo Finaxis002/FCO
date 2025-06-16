@@ -71,8 +71,6 @@ export default function MainHeader() {
   const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { logout } = useAuth(); 
-
   // useEffect(() => {
   //   document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
   //     const parent = mark.parentNode;
@@ -349,7 +347,8 @@ export default function MainHeader() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
     localStorage.removeItem("user");
     navigate("/login");
   };

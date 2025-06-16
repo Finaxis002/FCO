@@ -7,16 +7,17 @@ import { Toaster } from "@/components/ui/toaster"; // Ensure Toaster is included
 import { Provider } from "react-redux"; // ✅ Import Provider
 import { store } from "./store";
 import { AppNameProvider } from "./contenxt/AppNameContext";
-import { AuthProvider } from "./contenxt/AuthContext";
+import { AuthProvider } from "./contenxt/AuthProvider";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
       <AppNameProvider>
         <BrowserRouter>
-          <AuthProvider>
+          <AuthProvider>    {/* <-- Wrap App here */}
             <App />
           </AuthProvider>
+        
           <Toaster />
         </BrowserRouter>
       </AppNameProvider>

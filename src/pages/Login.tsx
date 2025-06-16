@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useAuth } from "@/contenxt/AuthContext";
+import { useAuth } from "../contenxt/AuthContext";
 
 const RECAPTCHA_SITE_KEY = "6LfwLlMrAAAAAIFtLSnFxwGP_xfkeDU7xuz69sLa";
 
@@ -16,8 +16,6 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState("");
-
-  const { login } = useAuth();
 
   const handleCaptchaChange = (token: string | null) => {
     setRecaptchaToken(token || "");
@@ -142,8 +140,6 @@ const Login = () => {
       );
 
       const { token, role, user } = res.data;
-
-      login(user, token);
 
       // Check if trying to login as admin but user is not an admin
       if (isAdminLogin && role !== "Admin") {
