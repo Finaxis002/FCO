@@ -36,6 +36,9 @@ interface CaseServicesProps {
     readBy: string[]; // ✅ fixed from read: boolean
   }>;
   showTags?: boolean;
+  showShareButton?: boolean;
+  onShareRemarkLink?: (serviceId: string) => void;
+  highlightRemarkId?: string; // Add this!
 }
 
 const statusStyles: Record<string, string> = {
@@ -61,6 +64,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   highlightServiceId,
   allRemarks = [],
   showTags, // <-- Add this line
+  highlightRemarkId, // <-- ADD THIS LINE!
 }) => {
   // const [showAll, setShowAll] = useState(false);
   const [showAll, setShowAll] = useState(() => !!highlightServiceId);
@@ -521,6 +525,11 @@ const CaseServices: React.FC<CaseServicesProps> = ({
               {/* Service Remarks Section */}
               <div className="flex xs:flex-row xs:items-center gap-2 mt-2">
                 <ServiceRemarks
+                  highlightRemarkId={
+                    highlightServiceId === service.id
+                      ? highlightRemarkId
+                      : undefined
+                  }
                   caseId={caseId}
                   serviceId={service.id}
                   currentUser={currentUser}

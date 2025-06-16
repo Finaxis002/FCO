@@ -15,8 +15,9 @@ import {
   FileText,
   Building2,
   MessageSquare,
+  Share2,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import CaseChat from "@/components/cases/case-chat"; // Import CaseChat
@@ -354,6 +355,18 @@ export default function CaseDetailPage({
 
   const userRole = localStorage.getItem("userRole");
 
+  // Show share button only if not on client page (easy string check)
+  const isClientPage = location.pathname.startsWith("/client/");
+  // Share handler
+  const handleShareRemarkLink = (serviceId: string) => {
+    // Link opens the client page at the relevant service's remarks
+    const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}`;
+    navigator.clipboard.writeText(link);
+    // Show toast (implement with your own toast system)
+    // toast({ title: "Link Copied!", description: "Remark link copied to clipboard." });
+    alert("Link copied to clipboard:\n" + link);
+  };
+
   return (
     <>
       <PageHeader
@@ -431,6 +444,8 @@ export default function CaseDetailPage({
                   allRemarks={allRemarks}
                   onRemarkRead={handleRemarkRead} // ✅ new
                   showTags={true}
+                  showShareButton={!isClientPage} // <-- ADD THIS PROP
+                  onShareRemarkLink={handleShareRemarkLink} // <-- ADD THIS PROP
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

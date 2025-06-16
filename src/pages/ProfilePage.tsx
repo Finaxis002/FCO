@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
 import AccessPermissions from "@/components/AccessPermissions";
+import ResetPasswordModal from "@/components/adminpassowrdreset/ResetPasswordModal";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -48,6 +49,8 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     currentUser?.avatarUrl || null
   );
+
+  const [showResetModal, setShowResetModal] = useState(false);
 
   useEffect(() => {
     document.title = `My Profile | ${APP_NAME}`;
@@ -83,10 +86,10 @@ export default function ProfilePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Header */}
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 ">
           {/* Left Sidebar - Profile Summary */}
-          <div className="w-full lg:w-1/3 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="w-full lg:w-1/3 space-y-6 flex flex-col items-center justify-center">
+            <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex flex-col items-center">
                 <div className="relative mb-4">
                   <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
@@ -116,13 +119,26 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+
+            {userRole === "Admin" && (
+              <>
+                <Button onClick={() => setShowResetModal(true)}>
+                  <Lock className="mr-2" /> Reset Password
+                </Button>
+                {showResetModal && (
+                  <ResetPasswordModal
+                    adminId={currentUser.adminId}
+                    onClose={() => setShowResetModal(false)}
+                  />
+                )}
+              </>
+            )}
           </div>
 
           {/* Main Content */}
           <div className="flex-1 space-y-6">
             {/* Permissions Section */}
-          <AccessPermissions currentUser={currentUser} />
-
+            <AccessPermissions currentUser={currentUser} />
           </div>
         </div>
       </div>

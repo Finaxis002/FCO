@@ -20,6 +20,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Loader2, MessageSquarePlus } from "lucide-react";
 import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
+
+
+import { Share2 } from "lucide-react";
 
 type Remark = {
   _id: string;
@@ -40,6 +44,7 @@ interface ServiceRemarksProps {
   } | null;
   serviceName: string;
   onRemarkRead?: (serviceId: string, userId: string) => void;
+    highlightRemarkId?: string;
 }
 
 interface CurrentUser {
@@ -48,13 +53,13 @@ interface CurrentUser {
   // Add any other properties that `currentUser` should have
 }
 
-
 export default function ServiceRemarks({
   caseId,
   serviceId,
   currentUser,
   serviceName,
   onRemarkRead,
+   highlightRemarkId
 }: ServiceRemarksProps) {
   const [remarks, setRemarks] = useState<Remark[]>([]);
   const [newRemarkText, setNewRemarkText] = useState("");
@@ -64,6 +69,9 @@ export default function ServiceRemarks({
   const [isAddingRemark, setIsAddingRemark] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
+
+  const { toast } = useToast();
+
 
   const fetchRemarks = async () => {
     setLoading(true);
@@ -112,7 +120,7 @@ export default function ServiceRemarks({
     const payload = {
       caseId,
       serviceId,
-      userId: currentUser.id, 
+      userId: currentUser.id,
       userName: currentUser.name,
       remark: newRemarkText.trim(),
     };
@@ -233,19 +241,34 @@ export default function ServiceRemarks({
       .toUpperCase();
   };
 
-  const remark = useSelector(
-    (state: RootState) => state.permissions.permissions?.remarks
-  );
-  const isSuperAdmin = currentUser?.name === "Super Admin";
-  // if (!isSuperAdmin && !remark) {
-  //   return (
-  //     <Card className="p-6">
-  //       <p className="text-center text-red-600 font-semibold">
-  //         You do not have permission to access the Remark.
-  //       </p>
-  //     </Card>
-  //   );
-  // }
+useEffect(() => {
+  if (
+    highlightRemarkId && 
+    remarks.some(r => r._id === highlightRemarkId)
+  ) {
+    setIsDialogOpen(true); // open dialog if ID is in the list
+    // Optionally: scroll or focus to the remark
+    setTimeout(() => {
+      const remarkElem = document.getElementById(`remark-${highlightRemarkId}`);
+      if (remarkElem) {
+        remarkElem.scrollIntoView({ behavior: "smooth", block: "center" });
+        remarkElem.classList.add("ring-2", "ring-blue-500");
+        setTimeout(() => {
+          remarkElem.classList.remove("ring-2", "ring-blue-500");
+        }, 2000);
+      }
+    }, 400); // Wait for dialog/remarks to render
+  }
+}, [remarks, highlightRemarkId]);
+
+useEffect(() => {
+  // If highlightRemarkId exists, open the dialog automatically
+  if (highlightRemarkId) {
+    setIsDialogOpen(true);
+  }
+}, [highlightRemarkId]);
+
+
 
   const markAsRead = async (remarkId: string) => {
     try {
@@ -284,6 +307,10 @@ export default function ServiceRemarks({
   // Combined check including Super Admin
   const canAddRemark =
     hasRemarkPermission || currentUser?.name === "Super Admin";
+
+  const isClientPage =
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/client/");
 
   const token = localStorage.getItem("token");
   return (
@@ -369,9 +396,10 @@ export default function ServiceRemarks({
           <ScrollArea className="flex-1 pr-4 h-[20vh] overflow-auto">
             <div className="space-y-6 py-2">
               {remarks.map((remark) => {
-                const isOwnRemark = remark.userId === currentUser?.id;
+                
                 return (
                   <div
+                    id={`remark-${remark._id}`}
                     key={remark._id}
                     className={`flex gap-3 rounded-md p-3 ${
                       remark.readBy &&
@@ -400,6 +428,21 @@ export default function ServiceRemarks({
                               New
                             </span>
                           )}
+
+                        {!isClientPage && (
+                          <button
+                            title="Copy client share link"
+                            onClick={() => {
+                              const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
+                              navigator.clipboard.writeText(link);
+                              // Replace alert with your toast if you wish
+                             toast({ title: "Link Copied!", description: "Remark link copied to clipboard." });
+                            }}
+                            className="ml-2 p-1.5 rounded-full hover:bg-blue-100 text-blue-600 transition"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       <p className="text-sm mt-1 whitespace-pre-wrap">
                         {remark.remark}
