@@ -33,7 +33,7 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
             </h1>
             <p className="mt-1 flex items-center gap-2 text-base text-[#4a5568] font-medium">
               <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-              FCA - Franchise Compliance Automation.(test)
+              FCA - Franchise Compliance Automation.(test....)
             </p>
           </div>
         </div>
