@@ -34,6 +34,7 @@ import { APP_NAME } from "@/lib/constants";
 import React from "react";
 import type { AppNotification } from "@/types/franchise";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contenxt/AuthContext";
 
 function getRelativeTimeShort(dateString: string) {
   const date = new Date(dateString);
@@ -69,6 +70,8 @@ export default function MainHeader() {
   const [searchTerm, setSearchTerm] = useState("");
   const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const { logout } = useAuth(); 
 
   // useEffect(() => {
   //   document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
@@ -346,8 +349,7 @@ export default function MainHeader() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
+    logout();
     localStorage.removeItem("user");
     navigate("/login");
   };
