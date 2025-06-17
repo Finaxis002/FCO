@@ -157,7 +157,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
 
       if (isEditing && editingUser) {
         const userId = editingUser._id;
-        const response = await axiosInstance.put(`/${userId}`, payload);
+        const response = await axiosInstance.put(`users/${userId}`, payload);
         const data = response.data;
 
         // Check for role change and if updated user is current logged-in user

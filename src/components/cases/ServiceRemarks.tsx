@@ -149,7 +149,7 @@ export default function ServiceRemarks({
       // Send push notification to all assigned users except the sender
       const caseResponse = await axiosInstance.get(`/cases/${caseId}`);
       const caseName = caseResponse.data.unitName; // Adjust this based on your API response
-      console.log("caseResponse : ", caseResponse);
+      // console.log("caseResponse : ", caseResponse);
 
       // Send push notification to all assigned users except the sender
       for (const user of caseResponse.data.assignedUsers) {
@@ -283,7 +283,7 @@ export default function ServiceRemarks({
 
   const token = localStorage.getItem("token");
 
-  console.log("case Name : ", caseName);
+  // console.log("case Name : ", caseName);
 
   function getRemarkPreview(remarkText: string, wordCount = 5): string {
     const words = remarkText.split(" ");
@@ -407,25 +407,41 @@ export default function ServiceRemarks({
                           )}
 
                         {!isClientPage && (
+                          // <button
+                          //   title="Copy client share link"
+
+                          //   onClick={() => {
+                          //     const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
+                          //     const preview = getRemarkPreview(
+                          //       remark.remark,
+                          //       5
+                          //     );
+                          //     const message = `${preview} added by ${remark.userName} in ${caseName}\n\nRead more: ${link}`;
+                          //     navigator.clipboard.writeText(message);
+                          //     toast({
+                          //       title: "Copied!",
+                          //       description:
+                          //         "Preview with link copied to clipboard.",
+                          //     });
+                          //   }}
+                          //   className="ml-2 p-1.5 rounded-full hover:bg-blue-100 text-blue-600 transition"
+                          // >
+                          //   <Share2 className="w-4 h-4" />
+                          // </button>
+
                           <button
                             title="Copy client share link"
-                            // onClick={() => {
-                            //   const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
-                            //   navigator.clipboard.writeText(link);
-                            //   // Replace alert with your toast if you wish
-                            //   toast({
-                            //     title: "Link Copied!",
-                            //     description: "Remark link copied to clipboard.",
-                            //   });
-                            // }}
-
                             onClick={() => {
                               const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
                               const preview = getRemarkPreview(
                                 remark.remark,
                                 5
                               );
-                              const message = `${preview} added by ${remark.userName} in ${caseName}\n\nRead more: ${link}`;
+                              // Markdown bold for apps that support it (not WhatsApp/SMS)
+                              const message =
+                                `{${caseName}} New update for {${
+                                  serviceName || "Service"
+                                }} -\n\n` + `${preview}\n\nView more:\n${link}`;
                               navigator.clipboard.writeText(message);
                               toast({
                                 title: "Copied!",
