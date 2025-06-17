@@ -24,6 +24,7 @@ import { Eye } from "lucide-react";
 import { Pencil } from "lucide-react"; // Add to existing lucide-react imports
 import ServiceTagsModal from "../cases/ServiceTagsModal";
 import type { Tag } from "@/types/tag";
+import axiosInstance from "@/utils/axiosInstance";
 
 const statusStyles: Record<string, string> = {
   "To be Started":
@@ -110,11 +111,13 @@ export default function ServiceTable({
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  
+
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/tags"
+        const response = await axiosInstance.get(
+          "/tags"
         );
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {

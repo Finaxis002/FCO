@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
+import axiosInstance from "@/utils/axiosInstance";
 
 type ViewMode = "table" | "card";
 
@@ -65,15 +66,23 @@ export default function ServicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [serviceSearch, setServiceSearch] = useState<string>("");
   const [statusSearch, setStatusSearch] = useState<string>("");
+  // Add these state variables
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
+    null
+  );
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [selectedServiceForTags, setSelectedServiceForTags] = useState<
+    string | null
+  >(null);
 
   const { permissions } = useSelector((state: RootState) => state.permissions);
 
   const hasAllCaseAccess =
-  currentUser?.name === "Super Admin" || permissions?.allCaseAccess === true;
+    currentUser?.name === "Super Admin" || permissions?.allCaseAccess === true;
 
   const uniqueServiceNames = Array.from(
     new Set(allServices.map((s) => s.name).filter(Boolean))
@@ -200,51 +209,56 @@ export default function ServicesPage() {
     // Optionally, refresh cases after update
     dispatch(getCases());
 
-     // --- PUSH NOTIFICATION LOGIC BELOW ---
-  try {
-    const userStr = localStorage.getItem("user");
-    const userObj = userStr ? JSON.parse(userStr) : {};
-    const caseName = parentCase.unitName || parentCase.name || "Case";
-    const assignedUsers = parentCase.assignedUsers || [];
+    // --- PUSH NOTIFICATION LOGIC BELOW ---
+    try {
+      const userStr = localStorage.getItem("user");
+      const userObj = userStr ? JSON.parse(userStr) : {};
+      const caseName = parentCase.unitName || parentCase.name || "Case";
+      const assignedUsers = parentCase.assignedUsers || [];
 
-    // Send notification to all assigned users except the one making the change
-    for (const user of assignedUsers) {
-      const userId = typeof user === "string" ? user : user._id;
-      console.log("userid :", userId)
-  if (!userId) continue; // skip if undefined/null
-      if (userId === userObj._id) continue; // Skip self
-      try {
-        await fetch("https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+      // Send notification to all assigned users except the one making the change
+      for (const user of assignedUsers) {
+        const userId = typeof user === "string" ? user : user._id;
+        console.log("userid :", userId);
+        if (!userId) continue; // skip if undefined/null
+        if (userId === userObj._id) continue; // Skip self
+        try {
+          // await fetch(
+          //   "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
+          //   {
+          //     method: "POST",
+          //     headers: { "Content-Type": "application/json" },
+          //     body: JSON.stringify({
+          //       userId: userId,
+          //       message: `Service "${service.name}" in case "${caseName}" status updated to "${newStatus}" by ${userObj.name}.`,
+          //       icon: "https://tumbledry.sharda.co.in/favicon.png", // Optional icon
+          //     }),
+          //   }
+          // );
+
+          await axiosInstance.post("/pushnotifications/send-notification", {
             userId: userId,
             message: `Service "${service.name}" in case "${caseName}" status updated to "${newStatus}" by ${userObj.name}.`,
-            icon: "https://tumbledry.sharda.co.in/favicon.png", // Optional icon
-          }),
-        });
-      } catch (err) {
-        console.error(`Error sending notification to user ${userId}:`, err);
+            icon: "https://tumbledry.sharda.co.in/favicon.png",
+          });
+        } catch (err) {
+          console.error(`Error sending notification to user ${userId}:`, err);
+        }
       }
-    }
 
-    // Optionally: Notify Super Admin
-    try {
-      await fetch("https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Optionally: Notify Super Admin
+      try {
+        await axiosInstance.post("/pushnotifications/send-notification", {
           userId: SUPER_ADMIN_ID,
           message: `Service "${service.name}" in case "${caseName}" status updated to "${newStatus}" by ${userObj.name}.`,
           icon: "https://tumbledry.sharda.co.in/favicon.png",
-        }),
-      });
+        });
+      } catch (err) {
+        console.error("Error sending notification to Super Admin:", err);
+      }
     } catch (err) {
-      console.error("Error sending notification to Super Admin:", err);
+      console.error("Error in notification logic:", err);
     }
-  } catch (err) {
-    console.error("Error in notification logic:", err);
-  }
   };
 
   // useEffect(() => {
@@ -310,127 +324,86 @@ export default function ServicesPage() {
     setAllServices(sortedServices);
   }, [allCases]);
 
-  
-  // console.log("currentUser", currentUser)
+  useEffect(() => {
+    if (!currentUser || !Array.isArray(allCases)) return;
 
+    const hasAllCaseAccess =
+      currentUser?.name === "Super Admin" ||
+      permissions?.allCaseAccess === true;
 
-//   useEffect(() => {
-//   if (!currentUser || !Array.isArray(allCases)) return;
+    // Pick relevant cases
+    const visibleCases = hasAllCaseAccess
+      ? allCases
+      : allCases.filter((c: any) =>
+          c.assignedUsers?.some((user: any) => {
+            if (typeof user === "string") {
+              return user === currentUser.userId || user === currentUser.name;
+            } else {
+              return (
+                user._id === currentUser.userId ||
+                user.userId === currentUser.userId ||
+                user.name === currentUser.name
+              );
+            }
+          })
+        );
 
-//   // Show all cases for Admin and Super Admin, assigned only for others
-// // Show all cases for Admin and Super Admin, assigned only for others
-//    const userRole = localStorage.getItem("userRole");
-//   const isAdmin = userRole === "Admin" || userRole === "Super Admin";
+    // Flatten services from the selected cases
+    const servicesWithEditTime: any[] = [];
 
-//   console.log("isAdmin", isAdmin)
+    visibleCases.forEach((parentCase: any) => {
+      if (!Array.isArray(parentCase.services)) return;
 
-//   const visibleCases = isAdmin
-//     ? allCases
-//     : allCases.filter((c: any) =>
-//         c.assignedUsers?.some((user: any) => {
-//           if (typeof user === "string") {
-//             return user === currentUser.userId || user === currentUser.name;
-//           } else {
-//             return (
-//               user._id === currentUser.userId ||
-//               user.userId === currentUser.userId ||
-//               user.name === currentUser.name
-//             );
-//           }
-//         })
-//       );
+      const lastEdited = parentCase.lastEditedService || {};
 
+      parentCase.services.forEach((service: any) => {
+        if (!service.id) return;
 
-//   const servicesWithEditTime: any[] = [];
-
-//   visibleCases.forEach((parentCase: any) => {
-//     if (!Array.isArray(parentCase.services)) return;
-
-//     const lastEdited = parentCase.lastEditedService || {};
-
-//     parentCase.services.forEach((service: any) => {
-//       if (!service.id) return;
-
-//       servicesWithEditTime.push({
-//         ...service,
-//         status: service.status === "New-Case" ? "To be Started" : service.status,
-//         parentCase,
-//         editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
-//       });
-//     });
-//   });
-
-//   const limitedServices = servicesWithEditTime.slice(0, 1000);
-//   const getTimeSafe = (date: any) => {
-//     const t = new Date(date).getTime();
-//     return isNaN(t) ? 0 : t;
-//   };
-
-//   const sortedServices = limitedServices.sort((a, b) => {
-//     return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
-//   });
-
-//   setAllServices(sortedServices);
-// }, [allCases, currentUser]);
-
-useEffect(() => {
-  if (!currentUser || !Array.isArray(allCases)) return;
-
-  const hasAllCaseAccess =
-    currentUser?.name === "Super Admin" || permissions?.allCaseAccess === true;
-
-  // Pick relevant cases
-  const visibleCases = hasAllCaseAccess
-    ? allCases
-    : allCases.filter((c: any) =>
-        c.assignedUsers?.some((user: any) => {
-          if (typeof user === "string") {
-            return user === currentUser.userId || user === currentUser.name;
-          } else {
-            return (
-              user._id === currentUser.userId ||
-              user.userId === currentUser.userId ||
-              user.name === currentUser.name
-            );
-          }
-        })
-      );
-
-  // Flatten services from the selected cases
-  const servicesWithEditTime: any[] = [];
-
-  visibleCases.forEach((parentCase: any) => {
-    if (!Array.isArray(parentCase.services)) return;
-
-    const lastEdited = parentCase.lastEditedService || {};
-
-    parentCase.services.forEach((service: any) => {
-      if (!service.id) return;
-
-      servicesWithEditTime.push({
-        ...service,
-        status: service.status === "New-Case" ? "To be Started" : service.status,
-        parentCase,
-        editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+        servicesWithEditTime.push({
+          ...service,
+          status:
+            service.status === "New-Case" ? "To be Started" : service.status,
+          parentCase,
+          editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
+        });
       });
     });
-  });
 
-  // Limit, sort, and set state
-  const limitedServices = servicesWithEditTime.slice(0, 1000);
-  const getTimeSafe = (date: any) => {
-    const t = new Date(date).getTime();
-    return isNaN(t) ? 0 : t;
+    // Limit, sort, and set state
+    const limitedServices = servicesWithEditTime.slice(0, 1000);
+    const getTimeSafe = (date: any) => {
+      const t = new Date(date).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
+    const sortedServices = limitedServices.sort((a, b) => {
+      return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
+    });
+
+    setAllServices(sortedServices);
+  }, [allCases, currentUser, permissions]);
+
+  // Add these handlers
+  const handleViewRemarks = (service: any) => {
+    setSelectedServiceId(service.id);
+    setSelectedCaseId(service.parentCase?._id);
   };
 
-  const sortedServices = limitedServices.sort((a, b) => {
-    return getTimeSafe(b.editedAt) - getTimeSafe(a.editedAt);
-  });
+  const handleAddRemark = (service: any) => {
+    setSelectedServiceId(service.id);
+    setSelectedCaseId(service.parentCase?._id);
+  };
 
+  const handleEditTags = (service: any) => {
+    setSelectedServiceForTags(service.id);
+    setSelectedCaseId(service.parentCase?._id);
+  };
 
+  const caseId =
+    filteredServices.length > 0 ? filteredServices[0].parentCase?._id : null;
 
-  setAllServices(sortedServices);
-}, [allCases, currentUser, permissions]);
+  console.log("case ID : ", caseId);
+
 
 
   return (
@@ -610,9 +583,16 @@ useEffect(() => {
             <ServiceCardView
               services={filteredServices}
               onDelete={handleDelete}
+              onViewRemarks={handleViewRemarks}
+              onAddRemark={handleAddRemark}
               onStatusChange={handleStatusChange}
               currentUser={currentUser}
-              caseId={""}
+              onRemarkRead={(serviceId, userId) => {
+                // Handle remark read logic here
+                console.log(
+                  `User ${userId} read remarks for service ${serviceId}`
+                );
+              }}
             />
           </div>
           {/* Desktop: Table or CardView based on viewMode */}
@@ -621,19 +601,31 @@ useEffect(() => {
               <ServiceTable
                 services={filteredServices}
                 onDelete={handleDelete}
+                onViewRemarks={handleViewRemarks}
+                onAddRemark={handleAddRemark}
                 onStatusChange={handleStatusChange}
                 currentUser={currentUser}
-               
+                onRemarkRead={(serviceId, userId) => {
+                  // Handle remark read logic here
+                  console.log(
+                    `User ${userId} read remarks for service ${serviceId}`
+                  );
+                }}
               />
             ) : (
               <ServiceCardView
                 services={filteredServices}
                 onDelete={handleDelete}
+                onViewRemarks={handleViewRemarks}
+                onAddRemark={handleAddRemark}
                 onStatusChange={handleStatusChange}
                 currentUser={currentUser}
-                caseId={
-                  ""
-                }
+                onRemarkRead={(serviceId, userId) => {
+                  // Handle remark read logic here
+                  console.log(
+                    `User ${userId} read remarks for service ${serviceId}`
+                  );
+                }}
               />
             )}
           </div>

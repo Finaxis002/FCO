@@ -25,6 +25,8 @@ import { AppDispatch, RootState } from "@/store";
 import { fetchPermissions } from "@/features/permissionsSlice";
 import { useDispatch, useSelector } from "react-redux";
 import CaseServices from "@/components/cases/CaseServices";
+import axiosInstance from "@/utils/axiosInstance";
+import axios from "axios";
 
 function getFormattedDate(dateString?: string) {
   if (!dateString) return "N/A";
@@ -59,35 +61,28 @@ export default function CaseDetailPage({
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchAllRemarks = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+ useEffect(() => {
+  const fetchAllRemarks = async () => {
+    try {
+      const res = await axiosInstance.get("/remarks/recent");
+      
+      // With axios, successful responses come with status 200-299
+      // The data is directly available in res.data
+      setAllRemarks(res.data);
 
-        if (!res.ok) throw new Error("Failed to fetch recent remarks");
-        const data = await res.json();
-        setAllRemarks(data);
+      // Count only unread remarks for pulsing dot
+      const unread = res.data.filter((r: any) => !r.read).length;
+      setUnreadRemarkCount(unread);
 
-        // Count only unread remarks for pulsing dot
-        const unread = data.filter((r: any) => !r.read).length;
-        setUnreadRemarkCount(unread);
+    } catch (err) {
+      console.error("Error loading recent remarks:", err);
+      // Optional: Set error state if you want to display it in UI
+      // setError("Failed to load remarks");
+    }
+  };
 
-        // console.log("unread remarks count:", unread);
-      } catch (err) {
-        console.error("Error loading recent remarks:", err);
-      }
-    };
-
-    if (caseId) fetchAllRemarks();
-  }, [caseId]);
+  if (caseId) fetchAllRemarks();
+}, [caseId]);
 
   const handleRemarkRead = (serviceId: string, userId: string) => {
     setAllRemarks((prevRemarks) =>
@@ -218,23 +213,24 @@ export default function CaseDetailPage({
     }
   }, [caseData]);
 
-  const fetchCaseById = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-      );
-      if (!response.ok) {
-        setCaseData(undefined);
-      } else {
-        const result = await response.json();
-        setCaseData(result);
-      }
-    } catch (err) {
-      setCaseData(undefined);
+ const fetchCaseById = async () => {
+  setLoading(true);
+  try {
+    const response = await axiosInstance.get(`/cases/${caseId}`);
+    setCaseData(response.data);
+  } catch (err) {
+    setCaseData(undefined);
+    
+    // Optional: More detailed error handling
+    if (axios.isAxiosError(err)) {
+      console.error("Failed to fetch case:", err.response?.data?.message || err.message);
+    } else {
+      console.error("Failed to fetch case:", err);
     }
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   useEffect(() => {
     if (caseId) fetchCaseById();

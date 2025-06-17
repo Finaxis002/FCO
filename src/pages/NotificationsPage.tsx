@@ -31,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import axiosInstance from "@/utils/axiosInstance";
 
 function getRelativeTime(dateString: string) {
   const date = new Date(dateString);
@@ -67,16 +68,11 @@ export default function NotificationsPage() {
     const fetchNotifications = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/notifications",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
+        const res = await axiosInstance(
+          "/notifications",
         );
-        if (!res.ok) throw new Error("Failed to fetch notifications");
-        const data = await res.json();
+        if (!res.data) throw new Error("Failed to fetch notifications");
+        const data = res.data;
 
         // Normalize _id to id for React keys & logic
         const normalizedNotifications = Array.isArray(data)
@@ -106,19 +102,9 @@ export default function NotificationsPage() {
   const markAsRead = async (id: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/notifications/${id}/read`,
-        {
-          method: "PUT", // Use PUT as per your existing API
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await axiosInstance.put(
+        `/notifications/${id}/read`,
       );
-
-      if (!res.ok) throw new Error("Failed to mark notification as read");
-
       // Update local state after successful API call
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -138,20 +124,10 @@ export default function NotificationsPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        "https://tumbledrybe.sharda.co.in/api/notifications/read-all",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await axiosInstance.put(
+        "/notifications/read-all",
+      
       );
-
-      if (!res.ok) {
-        throw new Error("Failed to mark all notifications as read");
-      }
 
       // Update local state
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -169,20 +145,10 @@ export default function NotificationsPage() {
   const deleteNotification = async (id: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/notifications/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await axiosInstance.delete(
+        `/notifications/${id}`,
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to delete notification");
-      }
 
       // Only update local state if API call succeeds
       setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -199,18 +165,12 @@ export default function NotificationsPage() {
   const deleteAllNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/notifications`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await axiosInstance.delete(
+        `/notifications`,
+       
       );
 
-      if (!res.ok) {
+      if (!res.data) {
         throw new Error("Failed to delete all notifications");
       }
 

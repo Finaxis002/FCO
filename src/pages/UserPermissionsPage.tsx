@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ShieldCheck, UserCircle, Save } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import axiosInstance from "@/utils/axiosInstance";
 
 type PermissionsState = typeof DEFAULT_USER_PERMISSIONS;
 
@@ -48,14 +49,10 @@ export default function UserPermissionsPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(
-          `https://tumbledrybe.sharda.co.in/api/users/${userId}/permissions`
-        );
-        if (!res.ok) {
-          setUser(undefined);
-          return;
-        }
-        const data = await res.json();
+        const res = await axiosInstance(
+          `/users/${userId}/permissions`
+        ); 
+        const data = res.data;
         setUser(data);
         setPermissions(data.permissions);
       } catch (err) {
@@ -79,31 +76,28 @@ export default function UserPermissionsPage() {
     }));
   };
 
-  const handleSaveChanges = async () => {
-    if (!user || !user._id) return;
-    try {
-      const res = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/users/${user._id}/permissions`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ permissions }),
-        }
-      );
-      const result = await res.json();
-      toast({
-        title: "Permissions Updated",
-        description: `Permissions for ${user.name} have been saved.`,
-      });
-      navigate("/users");
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to update permissions.",
-        variant: "destructive",
-      });
-    }
-  };
+ const handleSaveChanges = async () => {
+  if (!user || !user._id) return;
+  try {
+    const res = await axiosInstance.put(
+      `/users/${user._id}/permissions`,
+      { permissions } // wrap in an object
+    );
+    toast({
+      title: "Permissions Updated",
+      description: `Permissions for ${user.name} have been saved.`,
+      variant: "default",
+    });
+    navigate("/users");
+  } catch (err) {
+    toast({
+      title: "Error",
+      description: "Failed to update permissions.",
+      variant: "destructive",
+    });
+  }
+};
+
 
   if (loading || user === null) {
     return (

@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
 
 type AppNameContextType = {
   appName: string;
-  setAppName: (name: string) => Promise<void>;
+  setAppName: (name: string) => Promise<void>;  
 };
 
 const AppNameContext = createContext<AppNameContextType | undefined>(undefined);
@@ -14,8 +14,8 @@ export function AppNameProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    axios
-      .get("https://tumbledrybe.sharda.co.in/api/settings/app-name")
+    axiosInstance
+      .get("/settings/app-name")
       .then((res) => setAppNameState(res.data.appName))
       .catch(console.error);
   }, []);
@@ -28,7 +28,7 @@ export function AppNameProvider({ children }: { children: ReactNode }) {
 
 
   const setAppName = async (name: string) => {
-    await axios.post("https://tumbledrybe.sharda.co.in/api/settings/app-name", { appName: name });
+    await axiosInstance.post("/settings/app-name", { appName: name });
     setAppNameState(name);
   };
 

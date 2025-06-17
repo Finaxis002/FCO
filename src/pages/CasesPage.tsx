@@ -40,6 +40,7 @@ import { getCases, deleteCase } from "@/features/caseSlice";
 import { fetchPermissions } from "@/features/permissionsSlice";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import axiosInstance from "@/utils/axiosInstance";
 
 const FILTER_OPTIONS: { label: string; value: DashboardFilterStatus }[] = [
   { label: "All Cases", value: "Total" },
@@ -118,10 +119,7 @@ export default function CasesPage() {
 
         if (!token || !currentUser) return;
 
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/chats/unread-counts",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const res = await axiosInstance.get("/chats/unread-counts");
 
         // This should return an object with caseId as key and unread count as value
         const unreadCounts = res.data;
@@ -152,12 +150,7 @@ export default function CasesPage() {
         const currentUserId = currentUser?._id || currentUser?.userId || "";
 
         // Fetch unread remarks
-        const remarksRes = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const remarksRes = await axiosInstance.get("/remarks/recent");
         const remarks = remarksRes.data;
 
         setAllRemarks(remarks);
@@ -175,12 +168,7 @@ export default function CasesPage() {
         setUnreadRemarks(unreadRemarkCounts);
 
         // Fetch unread chats
-        const chatsRes = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/chats/unread-counts",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const chatsRes = await axiosInstance.get("/chats/unread-counts");
 
         // console.log("Chats API response data:", chatsRes.data);
         const chats = chatsRes.data;
@@ -221,11 +209,7 @@ export default function CasesPage() {
         const token = localStorage.getItem("token");
         if (!token || !caseId) return;
 
-        await axios.put(
-          `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axiosInstance.put(`/chats/mark-read/${caseId}`);
 
         // Update local state to remove this case from unreadChats
         setUnreadChats((prev) => {

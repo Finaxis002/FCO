@@ -17,7 +17,7 @@ import {
   Trash2,
   EyeOff,
   Eye,
-  Plus
+  Plus,
 } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import { UserRole } from "@/types/franchise";
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast"; // If you use a toast/snackbar
+import axiosInstance from "@/utils/axiosInstance";
 
 interface User {
   _id: string;
@@ -67,14 +68,14 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
   const [permissions, setPermissions] = useState<any>({});
   const [isAddEditUserDialogOpen, setIsAddEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [permissionsLoading, setPermissionsLoading] = useState(false);
-    const [permissionsError, setPermissionsError] = useState<string | null>(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsError, setPermissionsError] = useState<string | null>(null);
 
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState("");
-const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
 
   const userRole = localStorage.getItem("userRole") || "User";
@@ -85,9 +86,8 @@ const [showPassword, setShowPassword] = useState(false);
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(BASE_URL);
-      if (!response.ok) throw new Error("Failed to fetch users");
-      const data = await response.json();
+      const response = await axiosInstance.get("/users");
+      const data = response.data;
       setUsers(data);
     } catch (err: any) {
       setError(err.message || "Error fetching users");
@@ -101,20 +101,18 @@ const [showPassword, setShowPassword] = useState(false);
     // eslint-disable-next-line
   }, [refreshKey]);
 
-   const handleAddUser = () => {
+  const handleAddUser = () => {
     setEditingUser(null);
     setIsAddEditUserDialogOpen(true);
   };
 
-    const fetchPermissions = async (userId: string) => {
+  const fetchPermissions = async (userId: string) => {
     setPermissionsLoading(true);
     setPermissionsError(null);
     try {
-      const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/users/${userId}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch permissions");
-      const data = await response.json();
+      const response = await axiosInstance.get(`/users/${userId}`);
+
+      const data = response.data;
 
       // Extract permissions from the user object:
       setPermissions(data.permissions || {}); // <-- important!
@@ -125,27 +123,27 @@ const [showPassword, setShowPassword] = useState(false);
     }
   };
 
-   useEffect(() => {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          const userId = parsedUser._id || parsedUser.userId;
-  
-          setCurrentUser({
-            name: parsedUser.name,
-            role: parsedUser.role,
-            userId,
-          });
-  
-          if (parsedUser.name !== "Super Admin" && userId) {
-            fetchPermissions(userId);
-          }
-        } catch (e) {
-          console.error("Error parsing user data", e);
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        const userId = parsedUser._id || parsedUser.userId;
+
+        setCurrentUser({
+          name: parsedUser.name,
+          role: parsedUser.role,
+          userId,
+        });
+
+        if (parsedUser.name !== "Super Admin" && userId) {
+          fetchPermissions(userId);
         }
+      } catch (e) {
+        console.error("Error parsing user data", e);
       }
-    }, []);
+    }
+  }, []);
 
   // Dummy handlers for edit, delete, reset password
   const handleEditUser = (user: User) => {
@@ -205,7 +203,6 @@ const [showPassword, setShowPassword] = useState(false);
     );
   }
 
-
   const handleSaveUser = async (
     userData: Partial<User>,
     isEditing: boolean
@@ -218,13 +215,8 @@ const [showPassword, setShowPassword] = useState(false);
 
       if (isEditing && editingUser) {
         const userId = editingUser._id;
-        const response = await fetch(`${BASE_URL}/${userId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to update user");
-        const data = await response.json();
+        const response = await axiosInstance.put(`/users/${userId}`, payload);
+        const data = response.data;
 
         // Check for role change and if updated user is current logged-in user
         if (data.roleChanged && data.updatedUser._id === currentUser?.userId) {
@@ -245,12 +237,7 @@ const [showPassword, setShowPassword] = useState(false);
           return; // stop further processing
         }
       } else {
-        const response = await fetch(BASE_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to add user");
+        const response = await axiosInstance.post("/users", payload);
         // Show success toast on user creation
         toast({
           title: "User Added",
@@ -271,7 +258,7 @@ const [showPassword, setShowPassword] = useState(false);
 
   return (
     <>
-    {(userRole === "Admin" || permissions?.userRolesAndResponsibility) && (
+      {(userRole === "Admin" || permissions?.userRolesAndResponsibility) && (
         <div className="flex justify-end mb-4">
           <Button
             variant="default"
@@ -283,185 +270,197 @@ const [showPassword, setShowPassword] = useState(false);
           </Button>
         </div>
       )}
-   
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ">
-      {users.map((user) => (
-        <Card key={user._id} className="flex flex-col h-full">
-          <CardHeader className="flex flex-row items-center gap-4">
-            {user.avatarUrl ? (
-              <img
-                alt={`${user.name}'s avatar`}
-                className="aspect-square rounded-md object-cover h-12 w-12"
-                src={user.avatarUrl}
-                data-ai-hint={user.dataAIHint || "user avatar"}
-              />
-            ) : (
-              <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center text-muted-foreground text-lg font-bold">
-                {user.name.substring(0, 2).toUpperCase()}
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ">
+        {users.map((user) => (
+          <Card key={user._id} className="flex flex-col h-full">
+            <CardHeader className="flex flex-row items-center gap-4">
+              {user.avatarUrl ? (
+                <img
+                  alt={`${user.name}'s avatar`}
+                  className="aspect-square rounded-md object-cover h-12 w-12"
+                  src={user.avatarUrl}
+                  data-ai-hint={user.dataAIHint || "user avatar"}
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center text-muted-foreground text-lg font-bold">
+                  {user.name.substring(0, 2).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <CardTitle className="text-base">{user.name}</CardTitle>
+                <CardDescription className="text-xs">
+                  {user.email}
+                </CardDescription>
               </div>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <div className="mb-2">
+                <span className="font-semibold">User ID:</span> {user.userId}
+              </div>
+              <div className="mb-2">
+                <span className="font-semibold">Role:</span>{" "}
+                <Badge
+                  variant={user.role === "Admin" ? "default" : "secondary"}
+                >
+                  {user.role}
+                </Badge>
+              </div>
+            </CardContent>
+
+            {(currentUser?.name === "Super Admin" ||
+              permissions?.userRolesAndResponsibility) && (
+              <CardFooter className="flex flex-wrap gap-2 justify-end p-3 sm:p-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditUser(user)}
+                  className="text-blue-600 hover:!bg-blue-600 hover:!text-white flex items-center"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  <span className="hidden xs:inline">Edit</span>
+                </Button>
+                <RouterLink
+                  to={`/users/${user._id}/permissions`}
+                  className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
+                >
+                  <Settings2 className="h-4 w-4 mr-1" />
+                  <span className="hidden xs:inline">Manage</span>
+                </RouterLink>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleResetPassword(user)}
+                  className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white flex items-center"
+                >
+                  <ShieldCheck className="h-4 w-4 mr-1" />
+                  <span className="hidden xs:inline">Reset</span>
+                  <span className="hidden sm:inline"> Password</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteUser(user._id)}
+                  className="text-red-600 hover:!bg-red-600 hover:!text-white flex items-center"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  <span className="hidden xs:inline">Delete</span>
+                </Button>
+              </CardFooter>
             )}
-            <div>
-              <CardTitle className="text-base">{user.name}</CardTitle>
-              <CardDescription className="text-xs">
-                {user.email}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <div className="mb-2">
-              <span className="font-semibold">User ID:</span> {user.userId}
-            </div>
-            <div className="mb-2">
-              <span className="font-semibold">Role:</span>{" "}
-              <Badge variant={user.role === "Admin" ? "default" : "secondary"}>
-                {user.role}
-              </Badge>
-            </div>
-          </CardContent>
-
-         {(currentUser?.name === "Super Admin" || permissions?.userRolesAndResponsibility) && (
-            <CardFooter className="flex flex-wrap gap-2 justify-end p-3 sm:p-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEditUser(user)}
-                className="text-blue-600 hover:!bg-blue-600 hover:!text-white flex items-center"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Edit</span>
-              </Button>
-              <RouterLink
-                to={`/users/${user._id}/permissions`}
-                className="text-gray-600 hover:text-gray-800 flex items-center text-sm font-medium"
-              >
-                <Settings2 className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Manage</span>
-              </RouterLink>
-               <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleResetPassword(user)}
-                className="text-yellow-600 hover:!bg-yellow-600 hover:!text-white flex items-center"
-              >
-                <ShieldCheck className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Reset</span>
-                <span className="hidden sm:inline"> Password</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDeleteUser(user._id)}
-                className="text-red-600 hover:!bg-red-600 hover:!text-white flex items-center"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Delete</span>
-              </Button>
-            </CardFooter>
-          )}
-        </Card>
-      ))}
-      {isAddEditUserDialogOpen && (
-        <AddEditUserDialog
-          user={
-            editingUser
-              ? {
-                  ...editingUser,
-                  id: editingUser.id ?? editingUser._id ?? "",
-                }
-              : undefined // undefined for add new user
-          }
-          isOpen={isAddEditUserDialogOpen}
-          onClose={() => {
-            setIsAddEditUserDialogOpen(false);
-            setEditingUser(null);
-          }}
-         onSave={handleSaveUser}
-        />
-      )}
-
-      {isAddEditUserDialogOpen && editingUser && (
-        <AddEditUserDialog
-          user={
-            editingUser
-              ? { ...editingUser, id: editingUser.id ?? editingUser._id ?? "" }
-              : editingUser
-          }
-          isOpen={isAddEditUserDialogOpen}
-          onClose={() => {
-            setIsAddEditUserDialogOpen(false);
-            setEditingUser(null);
-          }}
-          onSave={handleSaveUser}
-        />
-      )}
-
-       {/* Reset Password Dialog */}
-      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>
-              Enter a new password for <strong>{selectedUser?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium">New Password</label>
-      <input
-        type={showPassword ? "text" : "password"}
-        value={resetPassword}
-        onChange={(e) => setResetPassword(e.target.value)}
-        placeholder="Enter new password"
-        className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring focus:ring-blue-500"
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword((prev) => !prev)}
-        className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
-      >
-        {showPassword ? (
-          <EyeOff className="h-4 w-4" />
-        ) : (
-          <Eye className="h-4 w-4" />
+          </Card>
+        ))}
+        {isAddEditUserDialogOpen && (
+          <AddEditUserDialog
+            user={
+              editingUser
+                ? {
+                    ...editingUser,
+                    id: editingUser.id ?? editingUser._id ?? "",
+                  }
+                : undefined // undefined for add new user
+            }
+            isOpen={isAddEditUserDialogOpen}
+            onClose={() => {
+              setIsAddEditUserDialogOpen(false);
+              setEditingUser(null);
+            }}
+            onSave={handleSaveUser}
+          />
         )}
-      </button>
-    </div>
-    <DialogFooter className="pt-4">
-      <Button variant="outline" onClick={() => setShowResetDialog(false)}>
-        Cancel
-      </Button>
-      <Button
-        variant="destructive"
-        onClick={confirmResetPassword}
-        disabled={!resetPassword}
-      >
-        Reset Password
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
 
-      {/* Delete User Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <b>{selectedUser?.name}</b>? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteUser}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {isAddEditUserDialogOpen && editingUser && (
+          <AddEditUserDialog
+            user={
+              editingUser
+                ? {
+                    ...editingUser,
+                    id: editingUser.id ?? editingUser._id ?? "",
+                  }
+                : editingUser
+            }
+            isOpen={isAddEditUserDialogOpen}
+            onClose={() => {
+              setIsAddEditUserDialogOpen(false);
+              setEditingUser(null);
+            }}
+            onSave={handleSaveUser}
+          />
+        )}
 
-    </div>
-     </>
+        {/* Reset Password Dialog */}
+        <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+          <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Enter a new password for <strong>{selectedUser?.name}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 relative">
+              <label className="text-sm font-medium">New Password</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowResetDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmResetPassword}
+                disabled={!resetPassword}
+              >
+                Reset Password
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete User Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Delete User</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete <b>{selectedUser?.name}</b>?
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteUser}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 };
 

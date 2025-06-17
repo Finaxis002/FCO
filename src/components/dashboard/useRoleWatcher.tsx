@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import axiosInstance from "@/utils/axiosInstance";
 
 const useRoleWatcher = (token: string | null, userId: string | null) => {
   const navigate = useNavigate();
@@ -12,11 +13,9 @@ const useRoleWatcher = (token: string | null, userId: string | null) => {
 
     const interval = setInterval(async () => {
       try {
-        const res = await axios.get(
-          `https://tumbledrybe.sharda.co.in/api/users/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        const res = await axiosInstance.get(
+          `/users/${userId}`,
+         
         );
         // console.log("Polled user data:", res.data);
 

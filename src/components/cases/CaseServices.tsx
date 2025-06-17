@@ -19,6 +19,7 @@ type Tag = {
   color: string;
 };
 import { Tag as TagIcon } from "lucide-react";
+import axiosInstance from "@/utils/axiosInstance";
 
 interface CaseServicesProps {
   caseId: string;
@@ -94,9 +95,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
   useEffect(() => {
     const fetchAllTags = async () => {
       try {
-        const response = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/tags"
-        );
+        const response = await axiosInstance.get("/tags");
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
           acc[tag._id] = tag;
@@ -115,8 +114,8 @@ const CaseServices: React.FC<CaseServicesProps> = ({
     try {
       setIsRemoving(tagId);
 
-      await axios.delete(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags/${tagId}`
+      await axiosInstance.delete(
+        `/cases/${caseId}/services/${serviceId}/tags/${tagId}`
       );
 
       // Update UI
@@ -235,9 +234,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         let assignedUsers = [];
         let unitName = caseName || "";
         try {
-          const caseRes = await axios.get(
-            `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-          );
+          const caseRes = await axiosInstance.get(`/cases/${caseId}`);
           assignedUsers = caseRes.data.assignedUsers || [];
           unitName = caseRes.data.unitName || caseName || "";
         } catch (err) {
@@ -249,22 +246,15 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         for (const user of assignedUsers) {
           if (user.userId === userObj._id) continue;
           try {
-            await fetch(
-              "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: user._id,
-                  message: `Service "${
-                    localServices.find((s) => s.id === serviceId)?.name
-                  }" in case "${unitName}" was updated to "${newStatus}" by ${
-                    userObj.name
-                  }.`,
-                  icon: "https://tumbledry.sharda.co.in/favicon.png",
-                }),
-              }
-            );
+            await axiosInstance.post("/pushnotifications/send-notification", {
+              userId: user._id,
+              message: `Service "${
+                localServices.find((s) => s.id === serviceId)?.name
+              }" in case "${unitName}" was updated to "${newStatus}" by ${
+                userObj.name
+              }.`,
+              icon: "https://tumbledry.sharda.co.in/favicon.png",
+            });
           } catch (notifyErr) {
             console.error(
               `Error sending notification to ${user._id}:`,
@@ -276,22 +266,15 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         // --- Super Admin Notification ---
         const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
         try {
-          await fetch(
-            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: SUPER_ADMIN_ID,
-                message: `Service "${
-                  localServices.find((s) => s.id === serviceId)?.name
-                }" in case "${unitName}" was updated to "${newStatus}" by ${
-                  userObj.name
-                }.`,
-                icon: "https://tumbledry.sharda.co.in/favicon.png",
-              }),
-            }
-          );
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId: SUPER_ADMIN_ID,
+            message: `Service "${
+              localServices.find((s) => s.id === serviceId)?.name
+            }" in case "${unitName}" was updated to "${newStatus}" by ${
+              userObj.name
+            }.`,
+            icon: "https://tumbledry.sharda.co.in/favicon.png",
+          });
         } catch (superAdminErr) {
           console.error(
             "Error sending notification to Super Admin:",
@@ -531,6 +514,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                       : undefined
                   }
                   caseId={caseId}
+                  caseName={unitName || caseName || "Case"}
                   serviceId={service.id}
                   currentUser={currentUser}
                   serviceName={service.name}

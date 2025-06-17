@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Loader2, Plus, X } from "lucide-react";
+import axiosInstance from "@/utils/axiosInstance";
 
 interface Tag {
   _id: string;
@@ -40,8 +41,8 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
     (async () => {
       setLoading(true);
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/tags"
+        const res = await axiosInstance.get(
+          "/tags"
         ); // relative path if running via proxy
         setAllTags(res.data);
         setSelectedTags(existingTags || []);
@@ -58,8 +59,8 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
     if (!input.trim()) return;
     setAddLoading(true);
     try {
-      const { data } = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/tags",
+      const { data } = await axiosInstance.post(
+        "/tags",
         {
           name: input.trim(),
           createdBy: currentUser?.id,
@@ -99,8 +100,8 @@ const ServiceTagsModal: React.FC<ServiceTagsModalProps> = ({
   const handleSave = async () => {
     setLoading(true);
     try {
-      await axios.patch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/tags`,
+      await axiosInstance.patch(
+        `/cases/${caseId}/services/${serviceId}/tags`,
         {
           tagIds: selectedTags.map((tag) => tag._id),
         }

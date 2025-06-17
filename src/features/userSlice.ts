@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
 
 // 👇 Define your User type
 export interface User {
@@ -17,7 +18,6 @@ export interface User {
 export type UserRole = "Admin" | "User"; // adjust according to your app
 
 // Base URL
-const API_BASE_URL = "https://tumbledrybe.sharda.co.in/api/users"; // replace with your backend
 
 // Async Thunks
 export const getAllUsers = createAsyncThunk<User[]>(
@@ -27,8 +27,7 @@ export const getAllUsers = createAsyncThunk<User[]>(
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
 
-      const response = await axios.get(API_BASE_URL, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axiosInstance.get("/users", {
       });
       return response.data;
     } catch (error: any) {
@@ -43,7 +42,7 @@ export const addUser = createAsyncThunk<
   User,
   Omit<User, "_id" | "avatarUrl" | "dataAIHint">
 >("/users/add", async (userData) => {
-  const response = await axios.post(API_BASE_URL, userData);
+  const response = await axiosInstance.post("/users/add", userData);
   return response.data;
 });
 
@@ -51,17 +50,18 @@ export const editUser = createAsyncThunk<
   User,
   { id: string; user: Partial<User> }
 >("/users/edit", async ({ id, user }) => {
-  const response = await axios.put(`${API_BASE_URL}/${id}`, user);
+  const response = await axiosInstance.put(`/users/${id}`, user);
   return response.data;
 });
 
 export const deleteUser = createAsyncThunk<string, string>(
   "/users/delete",
   async (id) => {
-    await axios.delete(`${API_BASE_URL}/${id}`);
+    await axiosInstance.delete(`/users/${id}`);
     return id;
   }
 );
+
 
 export const fetchCurrentUser = createAsyncThunk<
   { user: User; permissions: Permissions },
@@ -69,16 +69,12 @@ export const fetchCurrentUser = createAsyncThunk<
   { rejectValue: string }
 >("users/fetchCurrentUser", async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
     const userString = localStorage.getItem("user");
-    if (!token || !userString) return rejectWithValue("Missing token or user");
+    if (!userString) return rejectWithValue("Missing user");
 
     const user = JSON.parse(userString);
     const userId = user?._id || user?.id || user?.userId;
-    const res = await axios.get(
-      `${API_BASE_URL}/${userId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const res = await axiosInstance.get(`/users/${userId}`);
 
     if (!res.data) return rejectWithValue("No user data returned");
 
@@ -103,6 +99,7 @@ export const fetchCurrentUser = createAsyncThunk<
     return rejectWithValue(error.message || "Failed to fetch current user");
   }
 });
+
 
 
 // State shape

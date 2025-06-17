@@ -47,15 +47,27 @@ export default function DashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
+         const token = localStorage.getItem("token");
+
         // Fetch cases from API
         const casesResponse = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/cases"
+          "https://tumbledrybe.sharda.co.in/api/cases",
+          {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
         );
         const casesData = await casesResponse.json();
 
         // Fetch users from API
         const usersResponse = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/users"
+          "https://tumbledrybe.sharda.co.in/api/users",
+          {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
         );
         const usersData = await usersResponse.json();
 
@@ -88,7 +100,12 @@ export default function DashboardPage() {
     const fetchCases = async () => {
       try {
         const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/cases"
+          "https://tumbledrybe.sharda.co.in/api/cases",
+          {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
         );
         if (!res.ok) throw new Error("Failed to fetch cases");
 

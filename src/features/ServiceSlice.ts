@@ -2,20 +2,17 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 // Update the path below to the correct relative path where 'service.d.ts' or 'service.ts' is located
 import type { Service } from "../types/service";
+import axiosInstance from "@/utils/axiosInstance";
 
 export const getServices = createAsyncThunk("service/getServices", async () => {
   const token = localStorage.getItem("token");
-  const res = await axios.get("https://tumbledrybe.sharda.co.in/api/cases", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await axiosInstance.get("/cases");
   return res.data;
 });
 
 export const deleteService = createAsyncThunk("service/deleteService", async (id: string) => {
   const token = localStorage.getItem("token");
-  await axios.delete(`https://tumbledrybe.sharda.co.in/api/services/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  await axiosInstance.delete(`/services/${id}`);
   return id;
 });
 

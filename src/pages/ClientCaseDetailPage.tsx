@@ -27,6 +27,7 @@ import { AppDispatch, RootState } from "@/store";
 import { fetchPermissions } from "@/features/permissionsSlice";
 import { useDispatch, useSelector } from "react-redux";
 import CaseServices from "@/components/cases/CaseServices";
+import axiosInstance from "@/utils/axiosInstance";
 
 function getFormattedDate(dateString?: string) {
   if (!dateString) return "N/A";
@@ -56,23 +57,18 @@ export default function ClientCaseDetailPage({
   >([]);
   const [searchParams] = useSearchParams();
   const initialHighlightServiceId = searchParams.get("serviceId") || undefined;
-const initialHighlightRemarkId = searchParams.get("remarkId") || undefined;
-
+  const initialHighlightRemarkId = searchParams.get("remarkId") || undefined;
 
   useEffect(() => {
     const fetchAllRemarks = async () => {
-      const url = "https://tumbledrybe.sharda.co.in/api/remarks/public/recent"; // always public endpoint
-
       try {
-        const res = await fetch(url, {
-          headers: {
-            "Content-Type": "application/json",
-          },
+        const res = await axiosInstance.get("/remarks/public/recent", {
+          headers: { skipAuth: true },
         });
 
-        if (!res.ok) throw new Error("Failed to fetch remarks");
+        if (!res.data) throw new Error("Failed to fetch remarks");
 
-        const data = await res.json();
+        const data = res.data;
         setAllRemarks(data);
 
         // Since public API has no read info, consider all unread or zero
@@ -180,15 +176,10 @@ const initialHighlightRemarkId = searchParams.get("remarkId") || undefined;
   const fetchCaseById = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-      );
-      if (!response.ok) {
-        setCaseData(undefined);
-      } else {
-        const result = await response.json();
-        setCaseData(result);
-      }
+      const response = await axiosInstance.get(`/cases/${caseId}`, {
+        headers: { skipAuth: true }, // <-- This disables the Authorization header
+      });
+      setCaseData(response.data);
     } catch (err) {
       setCaseData(undefined);
     }

@@ -34,6 +34,7 @@ import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
 
 interface CaseCardViewProps {
   cases: Case[]; // array of Case objects
@@ -97,10 +98,9 @@ export default function CaseCard({
     if (!caseData.id || !currentUserId) return;
     const token = localStorage.getItem("token");
     try {
-      await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseData.id}`,
-        { userId: currentUserId }, // Send the ObjectId here
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axiosInstance.put(
+        `/chats/mark-read/${caseData.id}`,
+        { userId: currentUserId } // Send the ObjectId here
       );
       console.log(`Marked chats as read for case ${caseData.id}`);
     } catch (error) {
@@ -180,67 +180,38 @@ export default function CaseCard({
       const userStr = localStorage.getItem("user");
       const userObj = userStr ? JSON.parse(userStr) : {};
 
-      await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axiosInstance.put(`/cases/${caseData.id}`, payload);
 
-      const caseRes = await axios.get(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const caseRes = await axiosInstance.get(`/cases/${caseData.id}`);
       const { assignedUsers, unitName } = caseRes.data;
 
       // Send notification to all assigned users except the actor
       for (const user of assignedUsers) {
         if (user.userId === userObj._id) continue; // adjust field as needed
         try {
-          await fetch(
-            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: user._id,
-                message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
-                icon: "https://tumbledry.sharda.co.in/favicon.png",
-              }),
-            }
-          );
-        } catch (notifyErr) {
-          console.error(
-            `Error sending notification to ${user._id}:`,
-            notifyErr
-          );
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId: user._id,
+            message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+            icon: "https://tumbledry.sharda.co.in/favicon.png",
+          });
+        } catch (err) {
+          console.error(`Error sending notification to user ${user._id}:`, err);
         }
       }
 
       // Notify Super Admin
       try {
-        await fetch(
-          "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: SUPER_ADMIN_ID,
-              message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
-              icon: "https://tumbledry.sharda.co.in/favicon.png",
-            }),
-          }
-        );
+        await axiosInstance.post("/pushnotifications/send-notification", {
+          userId: SUPER_ADMIN_ID,
+          message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+          icon: "https://tumbledry.sharda.co.in/favicon.png",
+        });
       } catch (superAdminErr) {
         console.error(
           "Error sending notification to Super Admin:",
           superAdminErr
         );
       }
-
       toast({
         title: "Status Updated",
         description: `Case status updated to "${newStatus}".`,

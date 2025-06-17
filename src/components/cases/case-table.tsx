@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Share2 } from "lucide-react";
 
-
 import {
   Table,
   TableBody,
@@ -39,6 +38,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import axios from "axios";
 import { useAppDispatch } from "../../hooks/hooks"; // your typed useDispatch
 import { fetchCurrentUser } from "../../features/userSlice";
+import axiosInstance from "@/utils/axiosInstance";
 
 const statusStyles: Record<string, string> = {
   "New-Case":
@@ -116,11 +116,10 @@ export default function CaseCardView({
     const token = localStorage.getItem("token");
 
     try {
-      await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
-        { userId: currentUserId }, // Send the ObjectId here
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axiosInstance.put(`/chats/mark-read/${caseId}`, {
+        userId: currentUserId,
+      });
+
       console.log(
         `Marked chats as read for case ${caseId} by user ${currentUserId}`
       );
@@ -217,15 +216,7 @@ export default function CaseCardView({
 
       // console.log("userobject", userObj);
 
-      const response = await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axiosInstance.put(`/cases/${caseId}`, payload);
 
       // console.log("API response:", response.data);
 
@@ -244,14 +235,7 @@ export default function CaseCardView({
       );
 
       // ========== NEW: Fetch case details to get assigned users and unit name ==========
-      const caseRes = await axios.get(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const caseRes = await axiosInstance.get(`/cases/${caseId}`);
       const { assignedUsers, unitName } = caseRes.data;
 
       // ========== NEW: Send notifications ==========
@@ -260,18 +244,11 @@ export default function CaseCardView({
         if (user.userId === userObj._id) continue;
 
         try {
-          await fetch(
-            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: user._id, // or user.userId, whichever is correct for your system
-                message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
-                icon: "https://tumbledry.sharda.co.in/favicon.png", // if you want to attach an icon
-              }),
-            }
-          );
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId: user._id, // or user.userId, whichever is correct
+            message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+            icon: "https://tumbledry.sharda.co.in/favicon.png",
+          });
         } catch (notifyErr) {
           console.error(
             `Error sending notification to ${user._id}:`,
@@ -282,18 +259,11 @@ export default function CaseCardView({
 
       // ========== Optionally: Notify Super Admin ==========
       try {
-        await fetch(
-          "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: SUPER_ADMIN_ID,
-              message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
-              icon: "https://tumbledry.sharda.co.in/favicon.png",
-            }),
-          }
-        );
+        await axiosInstance.post("/pushnotifications/send-notification", {
+          userId: SUPER_ADMIN_ID,
+          message: `Case "${unitName}" status updated to "${newStatus}" by ${userObj.name}.`,
+          icon: "https://tumbledry.sharda.co.in/favicon.png",
+        });
       } catch (superAdminErr) {
         console.error(
           "Error sending notification to Super Admin:",
@@ -448,7 +418,8 @@ export default function CaseCardView({
                   ).length;
                 };
 
-                const unreadRemarkCount = getUnreadRemarkCount(caseData);
+                const unreadRemarkCount =
+                  unreadRemarks?.[caseData.id ?? ""] || 0;
 
                 const unreadChatCount = unreadChats?.[caseData.id ?? ""] || 0;
 

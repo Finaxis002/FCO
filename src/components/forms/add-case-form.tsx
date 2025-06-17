@@ -44,6 +44,7 @@ import { Controller } from "react-hook-form";
 import { getAllUsers } from "@/features/userSlice"; // adjust path if needed
 // import { AddServiceDialog } from "../ui/AddServiceDialog";
 import type { ServiceStatus } from "@/types/franchise"; // <-- Adjust the import path as needed
+import axiosInstance from "@/utils/axiosInstance";
 
 const allowedStatuses = [
   "New-Case",
@@ -161,9 +162,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/services"
-        );
+        const res = await axiosInstance.get("/services");
         setGlobalServices(res.data);
 
         // Only reset services if not editing
@@ -216,8 +215,8 @@ export default function AddCaseForm() {
       setLoadingEdit(true);
       try {
         const [caseRes, serviceRes] = await Promise.all([
-          axios.get(`https://tumbledrybe.sharda.co.in/api/cases/${caseId}`),
-          axios.get(`https://tumbledrybe.sharda.co.in/api/services`),
+          axiosInstance.get(`/cases/${caseId}`),
+          axiosInstance.get(`/services`),
         ]);
 
         const caseData = caseRes.data;
@@ -296,9 +295,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/owners"
-        );
+        const res = await axiosInstance.get("/owners");
         setOwnerOptions(
           res.data.map((o: any) => ({
             label: o.name,
@@ -316,9 +313,7 @@ export default function AddCaseForm() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/clients"
-        );
+        const res = await axiosInstance.get("/clients");
         setClientOptions(
           res.data.map((c: any) => ({
             label: c.name,
@@ -340,12 +335,9 @@ export default function AddCaseForm() {
   // Create Owner if not exists
   const createOwner = async (name: string) => {
     try {
-      const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/owners",
-        {
-          name,
-        }
-      );
+      const res = await axiosInstance.post("/owners", {
+        name,
+      });
       const newOption = { label: name, value: name }; // Create proper option object
       setOwnerOptions((prev) => [...prev, newOption]); // Add the complete option
       return name; // Return the name for consistency
@@ -363,12 +355,9 @@ export default function AddCaseForm() {
   const createClient = async (name: string) => {
     console.log("Attempting to create client:", name);
     try {
-      const res = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/clients",
-        {
-          name,
-        }
-      );
+      const res = await axiosInstance.post("/clients", {
+        name,
+      });
       console.log("Client creation response:", res.data);
       const newOption = { label: name, value: name };
       setClientOptions((prev) => [...prev, newOption]);
@@ -505,20 +494,13 @@ export default function AddCaseForm() {
           for (const user of assignedUsers) {
             if (user.userId === userObj._id) continue;
             try {
-              await fetch(
-                "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    userId: user._id,
-                    message: isEditing
-                      ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
-                      : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
-                    icon: "https://tumbledry.sharda.co.in/favicon.png",
-                  }),
-                }
-              );
+              await axiosInstance.post("/pushnotifications/send-notification", {
+                userId: user._id,
+                message: isEditing
+                  ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
+                  : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
+                icon: "https://tumbledry.sharda.co.in/favicon.png",
+              });
             } catch (notifyErr) {
               console.error(
                 `Error sending notification to ${user._id}:`,
@@ -530,20 +512,17 @@ export default function AddCaseForm() {
           // --- Optionally, notify Super Admin ---
           const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
           try {
-            await fetch(
-              "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: SUPER_ADMIN_ID,
-                  message: isEditing
-                    ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
-                    : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
-                  icon: "https://tumbledry.sharda.co.in/favicon.png",
-                }),
-              }
-            );
+            await axiosInstance.post("/pushnotifications/send-notification", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: SUPER_ADMIN_ID,
+                message: isEditing
+                  ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
+                  : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
+                icon: "https://tumbledry.sharda.co.in/favicon.png",
+              }),
+            });
           } catch (superAdminErr) {
             console.error(
               "Error sending notification to Super Admin:",

@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Eye, Loader2, MessageSquarePlus, Plus } from "lucide-react";
 import { permission } from "process";
+import axiosInstance from "@/utils/axiosInstance";
 
 type Remark = {
   _id: string;
@@ -109,21 +110,13 @@ export default function Remarks({
     try {
       const token = localStorage.getItem("token"); // or wherever you store it
 
-      const res = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Add this header
-          },
-          body: JSON.stringify(payload),
-        }
+      const res = await axiosInstance.post(
+        `/cases/${caseId}/services/${serviceId}/remarks`,
+        payload // Just pass your payload object directly
       );
 
-      if (!res.ok) throw new Error("Failed to add remark");
+      const newRemark = res.data;
 
-      const newRemark = await res.json();
       setRemarks((prev) => [newRemark, ...prev]); // This newRemark will have readBy including currentUser.id
 
       setNewRemarkText("");
@@ -171,15 +164,7 @@ export default function Remarks({
   const markAsRead = async (remarkId: string) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(
-        `https://tumbledrybe.sharda.co.in/api/remarks/${remarkId}/read`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axiosInstance.patch(`/remarks/${remarkId}/read`);
 
       // Locally update UI: add current user to readBy[] for this remark
       setRemarks((prevRemarks) =>

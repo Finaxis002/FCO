@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Activity, MessageSquareText, FileText } from "lucide-react";
+import axiosInstance from "@/utils/axiosInstance";
 
 function getRelativeTime(dateString: string) {
   if (!dateString) return "Unknown time";
@@ -62,19 +63,8 @@ export default function RecentActivity({
   useEffect(() => {
     const fetchRecentRemarks = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(
-          "https://tumbledrybe.sharda.co.in/api/remarks/recent",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!res.ok) throw new Error("Failed to fetch recent remarks");
-        const data = await res.json();
-        setRemarks(data);
+        const res = await axiosInstance.get("/remarks/recent");
+        setRemarks(res.data);
       } catch (error) {
         console.error("Error fetching recent remarks:", error);
       } finally {

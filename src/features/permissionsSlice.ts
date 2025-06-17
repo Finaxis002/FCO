@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
+
+// -- Types --
 
 interface Permissions {
   allCaseAccess: boolean;
@@ -9,8 +11,8 @@ interface Permissions {
   userRolesAndResponsibility: boolean;
   delete: boolean;
   edit: boolean;
-  remarks: boolean; // ✅ separated
-  chat: boolean; // ✅ separated
+  remarks: boolean;
+  chat: boolean;
   canShare: boolean;
 }
 
@@ -21,39 +23,54 @@ interface PermissionsState {
   error: string | null;
 }
 
-// Async thunk to fetch permissions by user ID
+// -- Async thunk to fetch permissions by user ID --
+
 export const fetchPermissions = createAsyncThunk<
   Permissions,
   string,
   { rejectValue: string }
 >("permissions/fetchPermissions", async (userId, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("token");
     if (!userId) return rejectWithValue("User ID not found");
-    if (!token) return rejectWithValue("Auth token not found");
 
-    const res = await axios.get(
-      `https://tumbledrybe.sharda.co.in/api/users/${userId}/permissions`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    // --- Handle "Super Admin" (change ID as per your system!) ---
+    if (userId === "68271c74487f3a8ea0dd6bdd" || userId === "admin") {
+      // Return ALL permissions enabled for Super Admin
+      return {
+        allCaseAccess: true,
+        viewRights: true,
+        createCaseRights: true,
+        createUserRights: true,
+        userRolesAndResponsibility: true,
+        delete: true,
+        edit: true,
+        remarks: true,
+        chat: true,
+        canShare: true,
+      };
+    }
 
-    if (!res.data) return rejectWithValue("No user data found");
+    // --- Normal user: fetch from `/users/:userId` and extract .permissions ---
+    const res = await axiosInstance.get(`/users/${userId}`);
 
-    // THIS IS THE KEY:
-    // Return the nested permissions object from the user document
-    return res.data.permissions;
+    if (!res.data || !res.data.permissions)
+      return rejectWithValue("No user permissions found");
+
+    return res.data.permissions as Permissions;
   } catch (error: any) {
-    return rejectWithValue(error.message || "Failed to fetch permissions");
+    return rejectWithValue(
+      error?.response?.data?.message || error.message || "Failed to fetch permissions"
+    );
   }
 });
+
+// -- Slice setup --
 
 const initialState: PermissionsState = {
   permissions: null,
   loading: false,
   error: null,
-  edit: false, // This is used to control the edit mode in the UI
+  edit: false,
 };
 
 const permissionsSlice = createSlice({

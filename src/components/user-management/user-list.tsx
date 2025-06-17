@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { UserRole } from "@/types/franchise";
+import axiosInstance from "@/utils/axiosInstance";
 
 interface User {
   _id: string;
@@ -87,11 +88,8 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
     setPermissionsLoading(true);
     setPermissionsError(null);
     try {
-      const response = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/users/${userId}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch permissions");
-      const data = await response.json();
+      const response = await axiosInstance.get(`/users/${userId}`);
+      const data = response.data;
 
       // Extract permissions from the user object:
       setPermissions(data.permissions || {}); // <-- important!
@@ -132,9 +130,8 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(BASE_URL);
-      if (!response.ok) throw new Error("Failed to fetch users");
-      const data = await response.json();
+      const response = await axiosInstance.get("/users");
+      const data = response.data;
       setUsers(data);
     } catch (err: any) {
       setError(err.message || "Error fetching users");
@@ -160,13 +157,8 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
 
       if (isEditing && editingUser) {
         const userId = editingUser._id;
-        const response = await fetch(`${BASE_URL}/${userId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to update user");
-        const data = await response.json();
+        const response = await axiosInstance.put(`/${userId}`, payload);
+        const data = response.data;
 
         // Check for role change and if updated user is current logged-in user
         if (data.roleChanged && data.updatedUser._id === currentUser?.userId) {
@@ -187,13 +179,12 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
           return; // stop further processing
         }
       } else {
-        const response = await fetch(BASE_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to add user");
+        const response = await axiosInstance.post("/", payload); // if BASE_URL is set in axiosInstance
+        // If your endpoint is `/users`, use axiosInstance.post("/users", payload);
+
+        const data = response.data;
         // Show success toast on user creation
+
         toast({
           title: "User Added",
           description: `${userData.name} added successfully.`,
@@ -216,10 +207,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const response = await fetch(`${BASE_URL}/${userId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete user");
+      const response = await axiosInstance.delete(`users/${userId}`, {});
       toast({
         title: "User Deleted",
         description: `User with ID ${userId} deleted successfully.`,
@@ -247,17 +235,11 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
       return toast({ title: "Enter new password", variant: "destructive" });
 
     try {
-      const response = await fetch(
-        `${BASE_URL}/${userToReset._id}/reset-password`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ newPassword: resetPassword }),
-        }
+      const response = await axiosInstance.put(
+        `/users/${userToReset._id}/reset-password`,
+        { newPassword: resetPassword }
       );
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || "Failed to reset password");
+      const data = response.data;
 
       toast({
         title: "Password Reset",
@@ -329,9 +311,10 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                {(currentUser?.name === "Super Admin" || permissions?.userRolesAndResponsibility) && (
-      <TableHead className="text-right pr-6">Actions</TableHead>
-    )}
+                  {(currentUser?.name === "Super Admin" ||
+                    permissions?.userRolesAndResponsibility) && (
+                    <TableHead className="text-right pr-6">Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -363,7 +346,8 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
                         {user.role}
                       </Badge>
                     </TableCell>
-                    {(currentUser?.name === "Super Admin" || permissions?.userRolesAndResponsibility) && (
+                    {(currentUser?.name === "Super Admin" ||
+                      permissions?.userRolesAndResponsibility) && (
                       <TableCell className="text-right flex justify-end gap-4 flex-wrap">
                         <Button
                           variant="ghost"
@@ -491,50 +475,55 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
       )}
 
       {showDeleteDialog && (
-  <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Delete User</DialogTitle>
-        <DialogDescription>
-          Are you sure you want to delete <strong>{userToDelete?.name}</strong>? This action cannot be undone.
-        </DialogDescription>
-      </DialogHeader>
-      <DialogFooter>
-        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-          Cancel
-        </Button>
-        <Button
-          variant="destructive"
-          onClick={async () => {
-            if (!userToDelete) return;
-            try {
-              const response = await fetch(`${BASE_URL}/${userToDelete._id}`, {
-                method: "DELETE",
-              });
-              if (!response.ok) throw new Error("Failed to delete user");
-              toast({
-                title: "User Deleted",
-                description: `${userToDelete.name} deleted successfully.`,
-                variant: "destructive",
-              });
-              setShowDeleteDialog(false);
-              setUserToDelete(null);
-              fetchUsers();
-            } catch (err: any) {
-              toast({
-                title: "Error",
-                description: err.message || "Failed to delete user.",
-                variant: "destructive",
-              });
-            }
-          }}
-        >
-          Delete
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-)}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete User</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete{" "}
+                <strong>{userToDelete?.name}</strong>? This action cannot be
+                undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (!userToDelete) return;
+                  try {
+                    await axiosInstance.delete(`/users/${userToDelete._id}`);
+                    toast({
+                      title: "User Deleted",
+                      description: `${userToDelete.name} deleted successfully.`,
+                      variant: "default",
+                    });
+                    setShowDeleteDialog(false);
+                    setUserToDelete(null);
+                    fetchUsers();
+                  } catch (err: any) {
+                    toast({
+                      title: "Error",
+                      description:
+                        err.response?.data?.message ||
+                        err.message ||
+                        "Failed to delete user.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }

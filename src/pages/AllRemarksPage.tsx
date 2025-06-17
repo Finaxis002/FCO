@@ -21,6 +21,7 @@ import {
 import PageHeader from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
+import axiosInstance from "@/utils/axiosInstance";
 
 export default function AllRemarksPage() {
   const [remarks, setRemarks] = useState<any[]>([]);
@@ -40,34 +41,28 @@ export default function AllRemarksPage() {
     fetchAllRemarks();
   }, []);
 
-  const fetchAllRemarks = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        "https://tumbledrybe.sharda.co.in/api/remarks/recent",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+const fetchAllRemarks = async () => {
+  setLoading(true); // Best to set at the top for instant feedback
+  try {
+    // No need to get token or set headers manually if your axiosInstance already does it via interceptor!
+    const res = await axiosInstance.get("/remarks/recent");
 
-      if (!res.ok) throw new Error("Failed to fetch recent remarks");
-      const data = await res.json();
-      setRemarks(data);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: (err as Error).message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Axios puts response data in res.data
+    setRemarks(res.data);
+  } catch (err: any) {
+    toast({
+      title: "Error",
+      description: err?.response?.data?.message || err.message || "Unknown error",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const markAllAsRead = async () => {
-    await fetch(`https://tumbledrybe.sharda.co.in/api/remarks/read-all`, {
+    await axiosInstance.get(`/remarks/read-all`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
@@ -81,7 +76,7 @@ export default function AllRemarksPage() {
   };
 
   const deleteRemark = async (id: string) => {
-    await fetch(`https://tumbledrybe.sharda.co.in/api/remarks/${id}`, {
+    await axiosInstance.get(`/remarks/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
@@ -89,7 +84,7 @@ export default function AllRemarksPage() {
   };
 
   const deleteAllRemarks = async () => {
-    await fetch(`https://tumbledrybe.sharda.co.in/api/remarks`, {
+    await axiosInstance.get(`/remarks`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });

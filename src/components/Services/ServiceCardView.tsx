@@ -33,6 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ServiceTagsModal from "../cases/ServiceTagsModal";
+import axiosInstance from "@/utils/axiosInstance";
 
 type Tag = {
   _id: string;
@@ -52,8 +53,7 @@ const statusStyles: Record<string, string> = {
 };
 
 interface ServiceCardViewProps {
-  caseId: string;
-  services: any[];
+ services: any[];
   onDelete: (service: any) => void;
   onViewRemarks?: (service: any) => void;
   onAddRemark?: (service: any) => void;
@@ -109,7 +109,6 @@ export default function ServiceCardView({
   onAddRemark,
   onStatusChange,
   currentUser,
-  caseId,
   showTags,
   onRemarkRead,
 }: ServiceCardViewProps) {
@@ -130,9 +129,7 @@ export default function ServiceCardView({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await axios.get(
-          "https://tumbledrybe.sharda.co.in/api/tags"
-        );
+         const response = await axiosInstance.get("/tags"); // Notice the simplified URL
         const tags = response.data;
         const map = tags.reduce((acc: Record<string, Tag>, tag: Tag) => {
           acc[tag._id] = tag;
@@ -228,7 +225,7 @@ export default function ServiceCardView({
             : []);
 
         return (
-          <Card>
+           <Card key={service._id || idx}>
             <CardContent key={service._id || idx}>
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">

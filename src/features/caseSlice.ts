@@ -1,21 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { Case } from "@/types/franchise";
+import axiosInstance from "@/utils/axiosInstance";
 
 export const addCase = createAsyncThunk(
   "case/addCase",
   async (caseData: Omit<Case, "id">, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token"); // get token from localStorage
-      const response = await axios.post(
-        "https://tumbledrybe.sharda.co.in/api/cases/add",
-        caseData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Pass token here
-          },
-        }
-      );
+      const response = await axiosInstance.post("/cases/add", caseData);
       return response.data.case;
     } catch (error: any) {
       return rejectWithValue(
@@ -29,8 +21,10 @@ export const getCases = createAsyncThunk(
   "case/getCases",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        "https://tumbledrybe.sharda.co.in/api/cases"
+      const token = localStorage.getItem("token");
+      const response = await axiosInstance.get(
+        "/cases",
+        
       );
       return response.data; // Assuming API returns array of cases
     } catch (error: any) {
@@ -47,13 +41,9 @@ export const deleteCase = createAsyncThunk(
   async (caseId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token"); // or wherever you store it
-      await axios.delete(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await axiosInstance.delete(
+        `/cases/${caseId}`,
+       
       );
       return caseId; // Return deleted case id for reducer
     } catch (error: any) {
@@ -70,14 +60,10 @@ export const updateCase = createAsyncThunk(
     try {
       const token = localStorage.getItem("token"); // get token from localStorage
 
-      const response = await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseData.id}`,
+      const response = await axiosInstance.put(
+        `/cases/${caseData.id}`,
         caseData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Pass token here
-          },
-        }
+       
       );
       return response.data.case;
     } catch (error: any) {

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
 
 interface CaseChatProps {
   caseId: string;
@@ -82,31 +83,28 @@ export default function CaseChat({
   );
 
   // Load previous messages
-  useEffect(() => {
-    const loadMessages = async () => {
-      try {
-        const response = await fetch(
-          `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/messages`
-        );
-        const data = await response.json();
-
-        if (response.ok && Array.isArray(data)) {
-          setMessages(data);
-        } else {
-          throw new Error(data.message || "Failed to load messages");
-        }
-      } catch (error) {
-        console.error("Fetch messages error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load chat messages",
-          variant: "destructive",
-        });
+ useEffect(() => {
+  const loadMessages = async () => {
+    try {
+      const { data } = await axiosInstance.get(`/cases/${caseId}/messages`);
+      
+      if (Array.isArray(data)) {
+        setMessages(data);
+      } else {
+        throw new Error("Invalid response format - expected array");
       }
-    };
+    } catch (error) {
+      console.error("Fetch messages error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat messages",
+        variant: "destructive",
+      });
+    }
+  };
 
-    loadMessages();
-  }, [caseId, toast]);
+  loadMessages();
+}, [caseId, toast]);
 
   // Socket connection and event handlers
   useEffect(() => {
@@ -195,122 +193,6 @@ export default function CaseChat({
     scrollToBottom();
   }, [messages]);
 
-  // const handleSendMessage = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const messageContent = newMessage.trim();
-  //   if (!messageContent || isSending || !isConnected) return;
-
-  //   try {
-  //     setIsSending(true);
-
-  //     const tempMessage: ChatMessage = {
-  //       id: `temp-${Date.now()}`,
-  //       caseId,
-  //       senderId: currentUser.userId!, // can keep for optimistic UI
-  //       senderName: currentUser.name,
-  //       message: messageContent,
-  //       timestamp: new Date().toISOString(),
-  //       status: "sending",
-  //     };
-
-  //     setMessages((prev) => [...prev, tempMessage]);
-  //     setNewMessage("");
-
-  //     // Send via socket
-  //     socket.emit("sendMessage", {
-  //       caseId,
-  //       message: messageContent,
-  //     });
-
-  //     // Get user _id from localStorage
-  //     const userStr = localStorage.getItem("user");
-  //     const userObj = userStr ? JSON.parse(userStr) : null;
-  //     const userIdToSend = userObj?._id;
-  //     console.log("Sending userId (ObjectId) in mark-read:", userIdToSend);
-
-  //     if (!userIdToSend) {
-  //       throw new Error("User _id not found in localStorage");
-  //     }
-
-  //     const token = localStorage.getItem("token");
-
-  //     await axios.put(
-  //       `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
-  //       {
-  //         userId: userIdToSend, // send _id from localStorage user object
-  //       },
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-
-  //     const caseResponse = await axios.get(
-  //       `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-  //     );
-  //     const caseName = caseResponse.data.unitName; // Adjust this based on your API response
-  //     console.log("caseResponse : ", caseResponse)
-
-  //     // Send push notification to all assigned users within the case
-  //     // for (const user of assignedUsers) {
-  //     //   const userId = userIdToSend;
-  //     //   console.log(`Sending notification to userId: ${userId}`);
-
-  //     //   // Send a push notification API request
-  //     //   await fetch(
-  //     //     "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-  //     //     {
-  //     //       method: "POST",
-  //     //       headers: {
-  //     //         "Content-Type": "application/json",
-  //     //       },
-  //     //       body: JSON.stringify({
-  //     //         userId: userId, // Use assigned user's ID
-  //     //         message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
-  //     //       }),
-  //     //     }
-  //     //   );
-  //     // }
-
-  //      // Send push notification to all assigned users except the sender
-  //   for (const user of caseResponse.data.assignedUsers) {
-  //     // Skip the sender from notifications
-  //     if (user.userId === currentUser.userId) {
-  //       continue;
-  //     }
-
-  //     const userId = user.id; // UserId for the assigned user
-
-  //     console.log(`Sending notification to userId: ${userId}`);
-
-  //     // Send a push notification API request
-  //     await fetch(
-  //       "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           userId: userId, // Send notification to assigned user's ID
-  //           message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
-  //         }),
-  //       }
-  //     );
-  //   }
-  //   } catch (error) {
-  //     console.error("Error sending message:", error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to send message",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsSending(false);
-  //   }
-  // };
-
   const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -352,21 +234,11 @@ export default function CaseChat({
 
       const token = localStorage.getItem("token");
 
-      await axios.put(
-        `https://tumbledrybe.sharda.co.in/api/chats/mark-read/${caseId}`,
-        {
-          userId: userIdToSend, // send _id from localStorage user object
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axiosInstance.put(`/chats/mark-read/${caseId}`, {
+        userId: userIdToSend, // send _id from localStorage user object
+      });
 
-      const caseResponse = await axios.get(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-      );
+      const caseResponse = await axiosInstance.get(`/api/cases/${caseId}`);
       const caseName = caseResponse.data.unitName; // Adjust this based on your API response
       // console.log("caseResponse : ", caseResponse);
 
@@ -385,19 +257,10 @@ export default function CaseChat({
 
         // Send a push notification API request
         try {
-          await fetch(
-            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                userId: userId, // Send notification to assigned user's ID
-                message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
-              }),
-            }
-          );
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId: userId, // Send notification to assigned user's ID
+            message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+          });
         } catch (error: unknown) {
           if (error instanceof Error) {
             // Narrow down the error type here
@@ -421,19 +284,14 @@ export default function CaseChat({
       console.log(
         `Sending notification to Super Admin with userId: ${SUPER_ADMIN_ID}`
       );
-      await fetch(
-        "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: SUPER_ADMIN_ID, // Send notification to Super Admin
-            message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
-          }),
-        }
-      );
+    await axiosInstance.post(
+  "/pushnotifications/send-notification",
+  {
+    userId: SUPER_ADMIN_ID, // Send notification to Super Admin
+    message: `New message in case "${caseName}" by ${currentUser.name}: ${messageContent}`, // Custom message
+  }
+);
+
     } catch (error) {
       console.error("Error sending message:", error);
       toast({

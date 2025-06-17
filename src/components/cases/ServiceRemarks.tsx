@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import type { Case } from "@/types/franchise";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store"; // adjust path as per your project
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +21,8 @@ import { Loader2, MessageSquarePlus } from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
-
 import { Share2 } from "lucide-react";
+import axiosInstance from "@/utils/axiosInstance";
 
 type Remark = {
   _id: string;
@@ -44,7 +43,8 @@ interface ServiceRemarksProps {
   } | null;
   serviceName: string;
   onRemarkRead?: (serviceId: string, userId: string) => void;
-    highlightRemarkId?: string;
+  highlightRemarkId?: string;
+  caseName: string;
 }
 
 interface CurrentUser {
@@ -59,7 +59,8 @@ export default function ServiceRemarks({
   currentUser,
   serviceName,
   onRemarkRead,
-   highlightRemarkId
+  highlightRemarkId,
+  caseName,
 }: ServiceRemarksProps) {
   const [remarks, setRemarks] = useState<Remark[]>([]);
   const [newRemarkText, setNewRemarkText] = useState("");
@@ -71,7 +72,6 @@ export default function ServiceRemarks({
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
 
   const { toast } = useToast();
-
 
   const fetchRemarks = async () => {
     setLoading(true);
@@ -128,21 +128,16 @@ export default function ServiceRemarks({
     try {
       const token = localStorage.getItem("token"); // or wherever you store it
 
-      const res = await fetch(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Add this header
-          },
-          body: JSON.stringify(payload),
-        }
+      const res = await axiosInstance.post(
+        `/cases/${caseId}/services/${serviceId}/remarks`,
+        payload // Just the payload, NOT body/stringify!
+        // If you want to add custom headers, pass as third argument (optional):
+        // { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (!res.ok) throw new Error("Failed to add remark");
+      // Axios automatically throws on error status, so no need for res.ok check
+      const newRemark = res.data; // Axios puts the data here
 
-      const newRemark = await res.json();
       setRemarks((prev) => [newRemark, ...prev]); // This newRemark will have readBy including currentUser.id
 
       setNewRemarkText("");
@@ -152,9 +147,7 @@ export default function ServiceRemarks({
       setIsDialogOpen(false);
 
       // Send push notification to all assigned users except the sender
-      const caseResponse = await axios.get(
-        `https://tumbledrybe.sharda.co.in/api/cases/${caseId}`
-      );
+      const caseResponse = await axiosInstance.get(`/cases/${caseId}`);
       const caseName = caseResponse.data.unitName; // Adjust this based on your API response
       console.log("caseResponse : ", caseResponse);
 
@@ -171,19 +164,12 @@ export default function ServiceRemarks({
 
         // Send a push notification API request
         try {
-          await fetch(
-            "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                userId: userId, // Send notification to assigned user's ID
-                message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`, // Custom message
-              }),
-            }
-          );
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId: userId, // Send notification to assigned user's ID
+            message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`, // Custom message
+            // You can add icon if needed
+            // icon: "https://youricon.url"
+          });
         } catch (error: unknown) {
           if (error instanceof Error) {
             // Narrow down the error type here
@@ -205,19 +191,10 @@ export default function ServiceRemarks({
       console.log(
         `Sending notification to Super Admin with userId: ${SUPER_ADMIN_ID}`
       );
-      await fetch(
-        "https://tumbledrybe.sharda.co.in/api/pushnotifications/send-notification",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: SUPER_ADMIN_ID, // Send notification to Super Admin
-            message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}". `, // Custom message with added details
-          }),
-        }
-      );
+      await axiosInstance.post("/pushnotifications/send-notification", {
+        userId: SUPER_ADMIN_ID, // Send notification to Super Admin
+        message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}". `,
+      });
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
     } finally {
@@ -241,46 +218,38 @@ export default function ServiceRemarks({
       .toUpperCase();
   };
 
-useEffect(() => {
-  if (
-    highlightRemarkId && 
-    remarks.some(r => r._id === highlightRemarkId)
-  ) {
-    setIsDialogOpen(true); // open dialog if ID is in the list
-    // Optionally: scroll or focus to the remark
-    setTimeout(() => {
-      const remarkElem = document.getElementById(`remark-${highlightRemarkId}`);
-      if (remarkElem) {
-        remarkElem.scrollIntoView({ behavior: "smooth", block: "center" });
-        remarkElem.classList.add("ring-2", "ring-blue-500");
-        setTimeout(() => {
-          remarkElem.classList.remove("ring-2", "ring-blue-500");
-        }, 2000);
-      }
-    }, 400); // Wait for dialog/remarks to render
-  }
-}, [remarks, highlightRemarkId]);
+  useEffect(() => {
+    if (highlightRemarkId && remarks.some((r) => r._id === highlightRemarkId)) {
+      setIsDialogOpen(true); // open dialog if ID is in the list
+      // Optionally: scroll or focus to the remark
+      setTimeout(() => {
+        const remarkElem = document.getElementById(
+          `remark-${highlightRemarkId}`
+        );
+        if (remarkElem) {
+          remarkElem.scrollIntoView({ behavior: "smooth", block: "center" });
+          remarkElem.classList.add("ring-2", "ring-blue-500");
+          setTimeout(() => {
+            remarkElem.classList.remove("ring-2", "ring-blue-500");
+          }, 2000);
+        }
+      }, 400); // Wait for dialog/remarks to render
+    }
+  }, [remarks, highlightRemarkId]);
 
-useEffect(() => {
-  // If highlightRemarkId exists, open the dialog automatically
-  if (highlightRemarkId) {
-    setIsDialogOpen(true);
-  }
-}, [highlightRemarkId]);
-
-
+  useEffect(() => {
+    // If highlightRemarkId exists, open the dialog automatically
+    if (highlightRemarkId) {
+      setIsDialogOpen(true);
+    }
+  }, [highlightRemarkId]);
 
   const markAsRead = async (remarkId: string) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(
-        `https://tumbledrybe.sharda.co.in/api/remarks/${remarkId}/read`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await axiosInstance.patch(
+        `/remarks/${remarkId}/read`
+        // No need for data in PATCH if you're just marking as read and sending no body
       );
 
       // Locally update UI: add current user to readBy[] for this remark
@@ -313,6 +282,15 @@ useEffect(() => {
     window.location.pathname.startsWith("/client/");
 
   const token = localStorage.getItem("token");
+
+  console.log("case Name : ", caseName);
+
+  function getRemarkPreview(remarkText: string, wordCount = 5): string {
+    const words = remarkText.split(" ");
+    if (words.length <= wordCount) return remarkText;
+    return words.slice(0, wordCount).join(" ") + "...";
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -396,7 +374,6 @@ useEffect(() => {
           <ScrollArea className="flex-1 pr-4 h-[20vh] overflow-auto">
             <div className="space-y-6 py-2">
               {remarks.map((remark) => {
-                
                 return (
                   <div
                     id={`remark-${remark._id}`}
@@ -432,11 +409,29 @@ useEffect(() => {
                         {!isClientPage && (
                           <button
                             title="Copy client share link"
+                            // onClick={() => {
+                            //   const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
+                            //   navigator.clipboard.writeText(link);
+                            //   // Replace alert with your toast if you wish
+                            //   toast({
+                            //     title: "Link Copied!",
+                            //     description: "Remark link copied to clipboard.",
+                            //   });
+                            // }}
+
                             onClick={() => {
                               const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
-                              navigator.clipboard.writeText(link);
-                              // Replace alert with your toast if you wish
-                             toast({ title: "Link Copied!", description: "Remark link copied to clipboard." });
+                              const preview = getRemarkPreview(
+                                remark.remark,
+                                5
+                              );
+                              const message = `${preview} added by ${remark.userName} in ${caseName}\n\nRead more: ${link}`;
+                              navigator.clipboard.writeText(message);
+                              toast({
+                                title: "Copied!",
+                                description:
+                                  "Preview with link copied to clipboard.",
+                              });
                             }}
                             className="ml-2 p-1.5 rounded-full hover:bg-blue-100 text-blue-600 transition"
                           >
