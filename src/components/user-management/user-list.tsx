@@ -179,7 +179,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
           return; // stop further processing
         }
       } else {
-        const response = await axiosInstance.post("/", payload); // if BASE_URL is set in axiosInstance
+        const response = await axiosInstance.post("/users", payload); // if BASE_URL is set in axiosInstance
         // If your endpoint is `/users`, use axiosInstance.post("/users", payload);
 
         const data = response.data;
