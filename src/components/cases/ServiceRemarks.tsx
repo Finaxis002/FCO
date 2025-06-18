@@ -17,11 +17,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { Loader2, MessageSquarePlus } from "lucide-react";
+import { Delete, Loader2, MessageSquarePlus } from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import Swal from "sweetalert2";
 
-import { Share2 } from "lucide-react";
+import { Share2, Trash2 } from "lucide-react";
 import axiosInstance from "@/utils/axiosInstance";
 
 type Remark = {
@@ -346,6 +347,70 @@ export default function ServiceRemarks({
     return words.slice(0, wordCount).join(" ") + "...";
   }
 
+  const isSuperAdmin = currentUser?.name === "Super Admin";
+
+  const hasDeletePermission = useSelector(
+    (state: RootState) => state.permissions.permissions?.delete
+  );
+
+  console.log("delete permissions ?", hasDeletePermission);
+
+  console.log("is super admin ?", isSuperAdmin);
+
+  const handleDeleteRemark = async (remarkId: string) => {
+    if (!isSuperAdmin && !hasDeletePermission) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to delete remarks.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 1. Close the main remarks dialog (so no other dialog covers the SweetAlert2 popup)
+    setIsDialogOpen(false);
+
+    // 2. Wait for dialog close animation (~100-200ms)
+    setTimeout(async () => {
+      // 3. Now show SweetAlert2
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to delete this remark?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+      });
+
+      if (!result.isConfirmed) {
+        // 4. If cancelled, you may want to reopen dialog
+        setIsDialogOpen(true);
+        return;
+      }
+
+      try {
+        await axiosInstance.delete(
+          `/cases/${caseId}/services/${serviceId}/remarks/${remarkId}`
+        );
+        setRemarks((prev) => prev.filter((r) => r._id !== remarkId));
+        toast({
+          title: "Remark Deleted",
+          description: "The remark has been deleted.",
+        });
+      } catch (err) {
+        toast({
+          title: "Delete Failed",
+          description: (err as Error).message || "Could not delete remark.",
+          variant: "destructive",
+        });
+      } finally {
+        // Optionally reopen the dialog
+        setIsDialogOpen(true);
+      }
+    }, 200); // allow dialog to close
+  };
+
   async function getShortUrl(longUrl: string): Promise<string> {
     const apiKey =
       "fSPVhxbIa98zuI6J4d6OKnPMMlJhORd8AgOLbepH5jsZ97QPLWyOpoOWdDxM"; // Replace with your real key
@@ -490,7 +555,6 @@ export default function ServiceRemarks({
                           )}
 
                         {!isClientPage && (
-                         
                           <button
                             title="Copy client share link"
                             onClick={async () => {
@@ -518,6 +582,17 @@ export default function ServiceRemarks({
                           >
                             <Share2 className="w-4 h-4" />
                           </button>
+                        )}
+
+                        {(isSuperAdmin || hasDeletePermission) && (
+                          <Button
+                            variant="destructive"
+                            size="xs"
+                            className="ml-2 mt-1"
+                            onClick={() => handleDeleteRemark(remark._id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                       <p className="text-sm mt-1 whitespace-pre-wrap">

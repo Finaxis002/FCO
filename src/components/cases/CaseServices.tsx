@@ -175,11 +175,10 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
     setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
-    const updatedServices = localServices.map((service) =>
-      service.id === serviceId
-        ? { ...service, status: newStatus as ServiceStatus }
-        : service
-    );
+    const updatedServices = localServices.map((service) => ({
+      ...service,
+      _id: service._id || service.id, // ensure _id exists!
+    }));
 
     setLocalServices(updatedServices);
 
@@ -231,7 +230,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
         let assignedUsers = [];
         let unitName = caseName || "";
         try {
-          const caseRes = await axiosInstance.get(`/cases/${caseId}`);
+          const caseRes =await axiosInstance.patch(`/cases/${caseId}/services/${serviceId}/status`, { status: newStatus });
           assignedUsers = caseRes.data.assignedUsers || [];
           unitName = caseRes.data.unitName || caseName || "";
         } catch (err) {
