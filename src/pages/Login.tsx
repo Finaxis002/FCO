@@ -41,50 +41,6 @@ const Login = () => {
       });
   }
 
-  // Function to subscribe the user for push notifications
-  // const subscribeToPushNotifications = async (
-  //   userId: string,
-  //   token: string
-  // ) => {
-  //   const permission = await Notification.requestPermission();
-  //   if (permission === "granted") {
-  //     console.log("Notification permission granted.");
-  //     const swRegistration = await navigator.serviceWorker.register(
-  //       "/service-worker.js"
-  //     );
-  //     const subscription = await swRegistration.pushManager.subscribe({
-  //       userVisibleOnly: true,
-  //       applicationServerKey:
-  //         "BFiAnzKqV9C437P10UIT5_daMne46XuJiVuSn4zQh2MQBjUIwMP9PMgk2TFQL9LOSiQy17eie7XRYZcJ0NE7jMs",
-  //     });
-
-  //     try {
-  //       const response = await fetch(
-  //         "https://tumbledrybe.sharda.co.in/api/pushnotifications/save-subscription",
-  //         {
-  //           method: "POST",
-  //           body: JSON.stringify({
-  //             userId, // Use the actual user ID
-  //             subscription,
-  //           }),
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //         }
-  //       );
-
-  //       if (!response.ok) {
-  //         const errorData = await response.json();
-  //         throw new Error(errorData.message || "Failed to save subscription");
-  //       }
-  //       console.log("Subscription saved.");
-  //     } catch (error) {
-  //       console.error("Failed to save subscription:", error);
-  //     }
-  //   } else {
-  //     console.error("Notification permission denied.");
-  //   }
-  // };
 
   const subscribeToPushNotifications = async (
     userId: string,
