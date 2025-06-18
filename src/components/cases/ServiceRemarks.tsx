@@ -567,9 +567,9 @@ export default function ServiceRemarks({
                               const shortLink = await getShortUrl(longLink);
 
                               const message =
-                                `{${caseName}} New update for {${
+                                `*${caseName}* New update for *${
                                   serviceName || "Service"
-                                }} -\n\n` +
+                                }* -\n\n` +
                                 `${preview}\n\nView more:\n${shortLink}`;
                               navigator.clipboard.writeText(message);
                               toast({

@@ -19,9 +19,6 @@
 
 // export default axiosInstance;
 
-
-
-
 import axios from "axios";
 
 const axiosInstance = axios.create({
@@ -46,4 +43,3 @@ axiosInstance.interceptors.request.use(
 );
 
 export default axiosInstance;
-
