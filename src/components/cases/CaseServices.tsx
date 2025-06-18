@@ -124,10 +124,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
           service.id === serviceId
             ? {
                 ...service,
-                tags:
-                  service.tags?.filter((tag) =>
-                    typeof tag === "string" ? tag !== tagId : tag._id !== tagId
-                  ) || [],
+                tags: service.tags?.filter((tag) => tag !== tagId),
               }
             : service
         )
@@ -527,7 +524,11 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                       className="ml-0 xs:ml-2 mt-1 xs:mt-0 p-1.5 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                       onClick={() => {
                         setSelectedServiceForTags(service.id);
-                        setExistingTags(service.tags || []);
+                        setExistingTags(
+                          (service.tags || [])
+                            .map((id) => tagsMap[id])
+                            .filter((t): t is Tag => !!t) // remove undefined
+                        );
                         setTagModalOpen(true);
                       }}
                       title="Manage Tags"
@@ -561,7 +562,7 @@ const CaseServices: React.FC<CaseServicesProps> = ({
                   setLocalServices((prev) =>
                     prev.map((s) =>
                       s.id === (selectedServiceForTags ?? "")
-                        ? { ...s, tags: updatedTags }
+                        ? { ...s, tags: updatedTags.map((tag) => tag._id) }
                         : s
                     )
                   );
