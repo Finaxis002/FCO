@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -15,6 +15,16 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState("");
+
+
+   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // If token exists, user is already logged in
+      // Send them to dashboard (or whatever default page)
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
 
   const handleCaptchaChange = (token: string | null) => {
     setRecaptchaToken(token || "");
