@@ -113,87 +113,142 @@ export default function ServiceRemarks({
 
   // console.log("current user:" , currentUser)
 
+  // const handleAddRemark = async () => {
+  //   if (!currentUser || !newRemarkText.trim()) return;
+
+  //   setIsAddingRemark(true);
+  //   const payload = {
+  //     caseId,
+  //     serviceId,
+  //     userId: currentUser.id,
+  //     userName: currentUser.name,
+  //     remark: newRemarkText.trim(),
+  //   };
+
+  //   try {
+  //     const token = localStorage.getItem("token"); // or wherever you store it
+
+  //     const res = await axiosInstance.post(
+  //       `/cases/${caseId}/services/${serviceId}/remarks`,
+  //       payload // Just the payload, NOT body/stringify!
+  //       // If you want to add custom headers, pass as third argument (optional):
+  //       // { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+
+  //     // Axios automatically throws on error status, so no need for res.ok check
+  //     const newRemark = res.data; // Axios puts the data here
+
+  //     setRemarks((prev) => [newRemark, ...prev]); // This newRemark will have readBy including currentUser.id
+
+  //     setNewRemarkText("");
+  //     setNewRemarkAdded(true);
+  //     setIsAddDialogOpen(false);
+  //     // Close the "View All Remarks" dialog after posting
+  //     setIsDialogOpen(false);
+
+  //     // Send push notification to all assigned users except the sender
+  //     const caseResponse = await axiosInstance.get(`/cases/${caseId}`);
+  //     const caseName = caseResponse.data.unitName; // Adjust this based on your API response
+  //     // console.log("caseResponse : ", caseResponse);
+
+  //     // Send push notification to all assigned users except the sender
+  //     for (const user of caseResponse.data.assignedUsers) {
+  //       // Skip the sender from notifications
+  //       if (user.userId === currentUser.id) {
+  //         continue;
+  //       }
+
+  //       const userId = user.id; // Correctly access the userId
+
+  //       // console.log(`Sending notification to userId: ${userId}`);
+
+  //       // Send a push notification API request
+  //       try {
+  //         await axiosInstance.post("/pushnotifications/send-notification", {
+  //           userId: userId, // Send notification to assigned user's ID
+  //           message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`, // Custom message
+  //           // You can add icon if needed
+  //           // icon: "https://youricon.url"
+  //         });
+  //       } catch (error: unknown) {
+  //         if (error instanceof Error) {
+  //           // Narrow down the error type here
+  //           if (
+  //             error.message.includes("404") ||
+  //             error.message.includes("410")
+  //           ) {
+  //             console.log(
+  //               `User ${userId} not subscribed or subscription expired, skipping notification.`
+  //             );
+  //           } else {
+  //             console.error(`Error sending notification to ${userId}:`, error);
+  //           }
+  //         } else {
+  //           console.error("Unknown error:", error);
+  //         }
+  //       }
+  //     } // Send notification to Super Admin (hardcoded)
+  //     console.log(
+  //       `Sending notification to Super Admin with userId: ${SUPER_ADMIN_ID}`
+  //     );
+  //     await axiosInstance.post("/pushnotifications/send-notification", {
+  //       userId: SUPER_ADMIN_ID, // Send notification to Super Admin
+  //       message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}". `,
+  //     });
+  //   } catch (err) {
+  //     alert((err as Error).message || "Error saving remark");
+  //   } finally {
+  //     setIsAddingRemark(false);
+  //   }
+  // };
+
   const handleAddRemark = async () => {
     if (!currentUser || !newRemarkText.trim()) return;
 
     setIsAddingRemark(true);
     const payload = {
-      caseId,
-      serviceId,
+      caseId, // Use the caseId
+      serviceId, // Use the serviceId
       userId: currentUser.id,
       userName: currentUser.name,
       remark: newRemarkText.trim(),
     };
 
     try {
-      const token = localStorage.getItem("token"); // or wherever you store it
-
       const res = await axiosInstance.post(
         `/cases/${caseId}/services/${serviceId}/remarks`,
-        payload // Just the payload, NOT body/stringify!
-        // If you want to add custom headers, pass as third argument (optional):
-        // { headers: { Authorization: `Bearer ${token}` } }
+        payload
       );
 
-      // Axios automatically throws on error status, so no need for res.ok check
-      const newRemark = res.data; // Axios puts the data here
-
-      setRemarks((prev) => [newRemark, ...prev]); // This newRemark will have readBy including currentUser.id
+      // On success, append the new remark
+      const newRemark = res.data; // This is the updated case with new remark
+      setRemarks((prev) => [newRemark, ...prev]);
 
       setNewRemarkText("");
       setNewRemarkAdded(true);
       setIsAddDialogOpen(false);
-      // Close the "View All Remarks" dialog after posting
-      setIsDialogOpen(false);
+      setIsDialogOpen(false); // Close the dialog
 
-      // Send push notification to all assigned users except the sender
+      // Notify all users except the current user
       const caseResponse = await axiosInstance.get(`/cases/${caseId}`);
-      const caseName = caseResponse.data.unitName; // Adjust this based on your API response
-      // console.log("caseResponse : ", caseResponse);
+      const caseName = caseResponse.data.unitName;
 
-      // Send push notification to all assigned users except the sender
       for (const user of caseResponse.data.assignedUsers) {
-        // Skip the sender from notifications
         if (user.userId === currentUser.id) {
           continue;
         }
 
-        const userId = user.id; // Correctly access the userId
+        const userId = user.id;
+        await axiosInstance.post("/pushnotifications/send-notification", {
+          userId,
+          message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`,
+        });
+      }
 
-        // console.log(`Sending notification to userId: ${userId}`);
-
-        // Send a push notification API request
-        try {
-          await axiosInstance.post("/pushnotifications/send-notification", {
-            userId: userId, // Send notification to assigned user's ID
-            message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`, // Custom message
-            // You can add icon if needed
-            // icon: "https://youricon.url"
-          });
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            // Narrow down the error type here
-            if (
-              error.message.includes("404") ||
-              error.message.includes("410")
-            ) {
-              console.log(
-                `User ${userId} not subscribed or subscription expired, skipping notification.`
-              );
-            } else {
-              console.error(`Error sending notification to ${userId}:`, error);
-            }
-          } else {
-            console.error("Unknown error:", error);
-          }
-        }
-      } // Send notification to Super Admin (hardcoded)
-      console.log(
-        `Sending notification to Super Admin with userId: ${SUPER_ADMIN_ID}`
-      );
+      // Notify Super Admin (hardcoded)
       await axiosInstance.post("/pushnotifications/send-notification", {
-        userId: SUPER_ADMIN_ID, // Send notification to Super Admin
-        message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}". `,
+        userId: SUPER_ADMIN_ID,
+        message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}".`,
       });
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
@@ -289,6 +344,34 @@ export default function ServiceRemarks({
     const words = remarkText.split(" ");
     if (words.length <= wordCount) return remarkText;
     return words.slice(0, wordCount).join(" ") + "...";
+  }
+
+  async function getShortUrl(longUrl: string): Promise<string> {
+    const apiKey =
+      "fSPVhxbIa98zuI6J4d6OKnPMMlJhORd8AgOLbepH5jsZ97QPLWyOpoOWdDxM"; // Replace with your real key
+
+    try {
+      const res = await fetch("https://api.tinyurl.com/create", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: longUrl,
+          domain: "tinyurl.com", // (optional, can skip)
+          // alias: "custom-alias", // (optional)
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.data && data.data.tiny_url) {
+        return data.data.tiny_url; // <-- your short URL
+      }
+      throw new Error(data.errors?.[0]?.message || "URL shortening failed");
+    } catch (err) {
+      // fallback to long URL on error
+      return longUrl;
+    }
   }
 
   return (
@@ -407,41 +490,23 @@ export default function ServiceRemarks({
                           )}
 
                         {!isClientPage && (
-                          // <button
-                          //   title="Copy client share link"
-
-                          //   onClick={() => {
-                          //     const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
-                          //     const preview = getRemarkPreview(
-                          //       remark.remark,
-                          //       5
-                          //     );
-                          //     const message = `${preview} added by ${remark.userName} in ${caseName}\n\nRead more: ${link}`;
-                          //     navigator.clipboard.writeText(message);
-                          //     toast({
-                          //       title: "Copied!",
-                          //       description:
-                          //         "Preview with link copied to clipboard.",
-                          //     });
-                          //   }}
-                          //   className="ml-2 p-1.5 rounded-full hover:bg-blue-100 text-blue-600 transition"
-                          // >
-                          //   <Share2 className="w-4 h-4" />
-                          // </button>
-
+                         
                           <button
                             title="Copy client share link"
-                            onClick={() => {
-                              const link = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
+                            onClick={async () => {
+                              const longLink = `${window.location.origin}/client/cases/${caseId}?serviceId=${serviceId}&remarkId=${remark._id}`;
                               const preview = getRemarkPreview(
                                 remark.remark,
                                 5
                               );
-                              // Markdown bold for apps that support it (not WhatsApp/SMS)
+                              // Wait for short url
+                              const shortLink = await getShortUrl(longLink);
+
                               const message =
                                 `{${caseName}} New update for {${
                                   serviceName || "Service"
-                                }} -\n\n` + `${preview}\n\nView more:\n${link}`;
+                                }} -\n\n` +
+                                `${preview}\n\nView more:\n${shortLink}`;
                               navigator.clipboard.writeText(message);
                               toast({
                                 title: "Copied!",

@@ -105,12 +105,26 @@ export const USER_ROLES: UserRole[] = [
   "State Head",
 ];
 
+
 export const MOCK_SERVICES_TEMPLATES: Omit<
   Service,
   "id" | "status" | "remarks" | "completionPercentage" | "assignedUser"
 >[] = [
-
+  {
+    name: "GST Registration",
+    tags: ["compliance"],
+    _id: "gstreg123",
+    serviceId: "service-001",
+  },
+  {
+    name: "Company Incorporation",
+    tags: ["startup"],
+    _id: "incorp123",
+    serviceId: "service-002",
+  },
+  // ...add more as needed
 ];
+
 
 const generateAvatarUrl = (name: string) =>
   `https://picsum.photos/seed/${name.replace(/\s+/g, "-").toLowerCase()}/40/40`;

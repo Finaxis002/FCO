@@ -56,7 +56,7 @@ const allowedStatuses = [
 const caseFormSchema = z.object({
   srNo: z.string().min(1, "SR. No. is required"),
   ownerName: z.string().min(2, "Owner's name must be at least 2 characters."),
-  clientName: z.string().min(2, "Client name must be at least 2 characters."), // new client field
+  clientName: z.string().min(2, "Client name must be at least 2 characters."),
   unitName: z.string().min(2, "Unit name must be at least 2 characters."),
   franchiseAddress: z.string().min(5, "Franchise address is required."),
   stateHead: z.string().optional(),
@@ -67,8 +67,12 @@ const caseFormSchema = z.object({
         name: z.string(),
         selected: z.boolean(),
         status: z.string().optional(),
-        remarks: z.string().optional(),
+        remarks: z.array(z.string()).optional(), // <-- array, not string!
         completionPercentage: z.number().optional(),
+        tags: z.array(z.string()).optional(), // <-- add this!
+        id: z.string().optional(),
+        _id: z.string().optional(),
+        serviceId: z.string().optional(),
       })
     )
     .refine((value) => value.some((service) => service.selected), {
@@ -81,11 +85,30 @@ const caseFormSchema = z.object({
   reasonForStatus: z.string().optional(),
 });
 
+type Service = {
+  name: string;
+  selected: boolean;
+  status?: string;
+  remarks?: string[]; // <-- array
+  completionPercentage?: number;
+  tags?: string[]; // <-- array
+  id?: string;
+  _id?: string;
+  serviceId?: string;
+};
+
 type CaseFormValues = z.infer<typeof caseFormSchema>;
 
 const defaultServices = MOCK_SERVICES_TEMPLATES.map((service) => ({
   name: service.name,
   selected: false,
+  status: "To-be-Started",
+  remarks: [],
+  completionPercentage: 0,
+  tags: [],
+  id: "", // or generate a string if needed
+  _id: "", // or generate a string if needed
+  serviceId: "", // or generate a string if needed
 }));
 
 export default function AddCaseForm() {
@@ -228,8 +251,12 @@ export default function AddCaseForm() {
           name: string;
           selected: boolean;
           status?: string;
-          remarks?: string;
+          remarks?: string[]; // Correct type!
           completionPercentage?: number;
+          tags?: string[];
+          id?: string;
+          _id?: string;
+          serviceId?: string;
         }[] = [];
 
         // First, add all selected services from case (even if deleted in DB)
@@ -239,7 +266,7 @@ export default function AddCaseForm() {
               name: s.name,
               selected: true,
               status: s.status || "To-be-Started",
-              remarks: s.remarks || "",
+              remarks: s.remarks || [],
               completionPercentage: s.completionPercentage || 0,
             });
 
@@ -254,7 +281,7 @@ export default function AddCaseForm() {
               name: s.name,
               selected: false,
               status: s.status || "To-be-Started",
-              remarks: s.remarks || "",
+              remarks: s.remarks || [],
               completionPercentage: s.completionPercentage || 0,
             });
 
@@ -390,6 +417,7 @@ export default function AddCaseForm() {
 
   const onSubmit = async (data: CaseFormValues) => {
     try {
+      // Step 1: Handle owner creation if needed
       if (!ownerOptions.some((opt) => opt.value === data.ownerName)) {
         const createdOwner = await createOwner(data.ownerName);
         if (!createdOwner) {
@@ -404,40 +432,94 @@ export default function AddCaseForm() {
         }
       }
 
-      // Check if client exists (using correct option format)
+      // Step 2: Handle client creation if needed
       if (!clientOptions.some((opt) => opt.value === data.clientName)) {
         const createdClient = await createClient(data.clientName);
         if (!createdClient) throw new Error("Failed to create client.");
       }
-      // Step 2: Prepare service details
-      const newCaseServices = data.services
-        .filter((s) => s.selected)
-        .map((s, index) => ({
-          _id: `service-${index}-${Date.now()}`,
-          id: `service-${index}-${Date.now()}`,
-          serviceId: `service-${index}-${Date.now()}`,
-          name: s.name,
-          status: (s.status || "To-be-Started") as ServiceStatus, // <-- Cast here
-          remarks: s.remarks || "",
-          completionPercentage: s.completionPercentage ?? 0,
-        }));
 
-      // Step 1: Add authorizedPerson and stateHead to assignedUsers
+      // Step 3: Get original case data if editing
+      const originalCase = isEditing
+        ? await axiosInstance.get(`/cases/${caseId}`).then((res) => res.data)
+        : null;
+      // Step 4: Prepare new service details
+     const newCaseServices = data.services
+  .filter((s) => s.selected)
+  .map((s, index) => {
+    let tags = [];
+    let oldService = null;
+
+    if (isEditing && originalCase) {
+      // Find by id, serviceId, or name
+      oldService = originalCase.services.find(
+        (os: Service) =>
+          (os.id && s.id && os.id === s.id) ||
+          (os.serviceId && s.serviceId && os.serviceId === s.serviceId) ||
+          os.name === s.name
+      );
+      if (oldService && oldService.tags) tags = oldService.tags;
+    }
+
+    // Use old id/serviceId if present!
+    return {
+      _id: oldService?._id || s._id || `service-${index}-${Date.now()}`,
+      id: oldService?.id || s.id || `service-${index}-${Date.now()}`,
+      serviceId: oldService?.serviceId || s.serviceId || s.id || `service-${index}-${Date.now()}`,
+      name: s.name,
+      status: s.status || "To-be-Started",
+      remarks: s.remarks || [],
+      completionPercentage: s.completionPercentage ?? 0,
+      tags: s.tags || tags,
+    };
+  });
+
+
+      // Step 5: Delete remarks for deselected services (only when editing)
+      if (isEditing && originalCase) {
+        const deselectedServices = originalCase.services.filter(
+          (originalService: any) =>
+            !data.services.some(
+              (newService) =>
+                newService.selected &&
+                (newService.id === originalService.id ||
+                  newService.name === originalService.name)
+            )
+        );
+
+        // Delete remarks for each deselected service
+        for (const service of deselectedServices) {
+          try {
+            await axiosInstance.delete(`http://localhost:3000/api/remarks`, {
+              data: {
+                caseId: caseId,
+                serviceId: service.serviceId || service.id,
+              },
+            });
+          } catch (err) {
+            console.error(
+              `Failed to delete remarks for service ${service.name}:`,
+              err
+            );
+            // Continue with submission even if remark deletion fails
+          }
+        }
+      }
+
+      // Step 6: Prepare assigned users with additional users
       const additionalUserNames = [
         data.authorizedPerson,
         data.stateHead,
       ].filter(Boolean);
 
-      // Convert user names to user IDs
       const additionalUserIds = additionalUserNames
         .map((name) => users.find((u) => u.name === name)?._id)
-        .filter((id): id is string => !!id); // Type guard to ensure only valid strings
+        .filter((id): id is string => !!id);
 
-      // Merge with manually selected users and remove duplicates
       const combinedAssignedUserIds = Array.from(
         new Set([...(data.assignedUsers || []), ...additionalUserIds])
       );
 
+      // Step 7: Prepare the case payload
       const casePayload = {
         name: data.unitName,
         srNo: data.srNo,
@@ -448,7 +530,6 @@ export default function AddCaseForm() {
         stateHead: data.stateHead || "",
         authorizedPerson: data.authorizedPerson || "",
         services: newCaseServices,
-        // assignedUsers: (data.assignedUsers || []).map((userId) => {
         assignedUsers: combinedAssignedUserIds.map((userId) => {
           const user = users.find((u) => u._id === userId);
           if (!user) {
@@ -467,38 +548,32 @@ export default function AddCaseForm() {
         }),
         reasonForStatus: data.reasonForStatus,
         status: data.status as any,
-        // Set overallStatus based on status
         overallStatus:
           data.status === "In-Progress" ? "In-Progress" : (data.status as any),
         lastUpdate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         overallCompletionPercentage: 0,
-        readBy: [], // <-- Add this line to satisfy Omit<Case, "id">
+        readBy: [],
       };
 
+      // Step 8: Handle case creation/update
       if (isEditing) {
-        // Dispatch updateCase thunk instead of Axios directly
         const result = await dispatch(
           updateCase({ ...casePayload, id: caseId })
         );
 
         if (updateCase.fulfilled.match(result)) {
-          // --- Get current user ---
+          // Notification logic
           const userStr = localStorage.getItem("user");
           const userObj = userStr ? JSON.parse(userStr) : {};
 
-          // --- Prepare assigned users ---
-          const assignedUsers = casePayload.assignedUsers || [];
-
-          // --- Notify all assigned users except the actor ---
-          for (const user of assignedUsers) {
+          // Notify assigned users
+          for (const user of casePayload.assignedUsers) {
             if (user.userId === userObj._id) continue;
             try {
               await axiosInstance.post("/pushnotifications/send-notification", {
                 userId: user._id,
-                message: isEditing
-                  ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
-                  : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
+                message: `Case "${casePayload.unitName}" was updated by ${userObj.name}.`,
                 icon: "https://tumbledry.sharda.co.in/favicon.png",
               });
             } catch (notifyErr) {
@@ -509,19 +584,13 @@ export default function AddCaseForm() {
             }
           }
 
-          // --- Optionally, notify Super Admin ---
+          // Notify Super Admin
           const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
           try {
             await axiosInstance.post("/pushnotifications/send-notification", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: SUPER_ADMIN_ID,
-                message: isEditing
-                  ? `Case "${casePayload.unitName}" was updated by ${userObj.name}.`
-                  : `Case "${casePayload.unitName}" was created by ${userObj.name}.`,
-                icon: "https://tumbledry.sharda.co.in/favicon.png",
-              }),
+              userId: SUPER_ADMIN_ID,
+              message: `Case "${casePayload.unitName}" was updated by ${userObj.name}.`,
+              icon: "https://tumbledry.sharda.co.in/favicon.png",
             });
           } catch (superAdminErr) {
             console.error(
@@ -552,8 +621,8 @@ export default function AddCaseForm() {
           );
         }
       }
-      localStorage.removeItem(FORM_STORAGE_KEY);
 
+      localStorage.removeItem(FORM_STORAGE_KEY);
       navigate("/cases");
     } catch (err: unknown) {
       if (err instanceof Error) {

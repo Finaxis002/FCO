@@ -434,7 +434,7 @@ export default function CaseCardView({
                       {caseData.srNo}
                       {unreadRemarkCount > 0 && (
                         <span
-                          className="bg-blue-600 text-white text-xs px-1.5 rounded-full"
+                          className="bg-blue-600 w-4 h-4 flex items-center justify-center text-white text-xs px-1.5 rounded-full"
                           title="New Remark"
                         >
                           {unreadRemarkCount}

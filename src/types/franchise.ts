@@ -21,15 +21,15 @@ type Tag = {
 };
 
 export interface Service {
-  _id: string;  
-   tags?: Tag[];
-  serviceId: any;
   id: string;
   name: string;
-  status: ServiceStatus;
-  remarks: string;
+  status: string;
+  remarks: string[];
   completionPercentage: number;
-  assignedUser?: string; // User ID
+  tags?: string[];
+  assignedUser?: string;
+  _id?: string;
+  serviceId?: string;
 }
 
 export type StatusType =

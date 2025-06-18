@@ -22,10 +22,7 @@ export const getCases = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axiosInstance.get(
-        "/cases",
-        
-      );
+      const response = await axiosInstance.get("/cases");
       return response.data; // Assuming API returns array of cases
     } catch (error: any) {
       return rejectWithValue(
@@ -41,10 +38,7 @@ export const deleteCase = createAsyncThunk(
   async (caseId: string, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token"); // or wherever you store it
-      await axiosInstance.delete(
-        `/cases/${caseId}`,
-       
-      );
+      await axiosInstance.delete(`/cases/${caseId}`);
       return caseId; // Return deleted case id for reducer
     } catch (error: any) {
       return rejectWithValue(
@@ -62,8 +56,7 @@ export const updateCase = createAsyncThunk(
 
       const response = await axiosInstance.put(
         `/cases/${caseData.id}`,
-        caseData,
-       
+        caseData
       );
       return response.data.case;
     } catch (error: any) {
