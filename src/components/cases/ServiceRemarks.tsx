@@ -586,12 +586,12 @@ export default function ServiceRemarks({
 
                         {(isSuperAdmin || hasDeletePermission) && (
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="xs"
-                            className="ml-2 mt-1"
+                            className=" text-red-500 hover:text-white hover:bg-red-500"
                             onClick={() => handleDeleteRemark(remark._id)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 " />
                           </Button>
                         )}
                       </div>
