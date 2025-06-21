@@ -60,7 +60,7 @@ const caseFormSchema = z.object({
   unitName: z.string().min(2, "Unit name must be at least 2 characters."),
   franchiseAddress: z.string().min(5, "Franchise address is required."),
   stateHead: z.string().optional(),
-  authorizedPerson: z.string().optional(),
+  authorizedPerson: z.string().min(2, "Authorized Person's name is required."), // Make this required
   services: z
     .array(
       z.object({
@@ -443,36 +443,39 @@ export default function AddCaseForm() {
         ? await axiosInstance.get(`/cases/${caseId}`).then((res) => res.data)
         : null;
       // Step 4: Prepare new service details
-     const newCaseServices = data.services
-  .filter((s) => s.selected)
-  .map((s, index) => {
-    let tags = [];
-    let oldService = null;
+      const newCaseServices = data.services
+        .filter((s) => s.selected)
+        .map((s, index) => {
+          let tags = [];
+          let oldService = null;
 
-    if (isEditing && originalCase) {
-      // Find by id, serviceId, or name
-      oldService = originalCase.services.find(
-        (os: Service) =>
-          (os.id && s.id && os.id === s.id) ||
-          (os.serviceId && s.serviceId && os.serviceId === s.serviceId) ||
-          os.name === s.name
-      );
-      if (oldService && oldService.tags) tags = oldService.tags;
-    }
+          if (isEditing && originalCase) {
+            // Find by id, serviceId, or name
+            oldService = originalCase.services.find(
+              (os: Service) =>
+                (os.id && s.id && os.id === s.id) ||
+                (os.serviceId && s.serviceId && os.serviceId === s.serviceId) ||
+                os.name === s.name
+            );
+            if (oldService && oldService.tags) tags = oldService.tags;
+          }
 
-    // Use old id/serviceId if present!
-    return {
-      _id: oldService?._id || s._id || `service-${index}-${Date.now()}`,
-      id: oldService?.id || s.id || `service-${index}-${Date.now()}`,
-      serviceId: oldService?.serviceId || s.serviceId || s.id || `service-${index}-${Date.now()}`,
-      name: s.name,
-      status: s.status || "To-be-Started",
-      remarks: s.remarks || [],
-      completionPercentage: s.completionPercentage ?? 0,
-      tags: s.tags || tags,
-    };
-  });
-
+          // Use old id/serviceId if present!
+          return {
+            _id: oldService?._id || s._id || `service-${index}-${Date.now()}`,
+            id: oldService?.id || s.id || `service-${index}-${Date.now()}`,
+            serviceId:
+              oldService?.serviceId ||
+              s.serviceId ||
+              s.id ||
+              `service-${index}-${Date.now()}`,
+            name: s.name,
+            status: s.status || "To-be-Started",
+            remarks: s.remarks || [],
+            completionPercentage: s.completionPercentage ?? 0,
+            tags: s.tags || tags,
+          };
+        });
 
       // Step 5: Delete remarks for deselected services (only when editing)
       if (isEditing && originalCase) {
