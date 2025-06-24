@@ -417,6 +417,9 @@ export default function AddCaseForm() {
 
   const onSubmit = async (data: CaseFormValues) => {
     try {
+       console.log("Form data before processing:", data); // Debug log
+
+   
       // Step 1: Handle owner creation if needed
       if (!ownerOptions.some((opt) => opt.value === data.ownerName)) {
         const createdOwner = await createOwner(data.ownerName);
@@ -492,7 +495,7 @@ export default function AddCaseForm() {
         // Delete remarks for each deselected service
         for (const service of deselectedServices) {
           try {
-            await axiosInstance.delete(`http://localhost:3000/api/remarks`, {
+            await axiosInstance.delete(`https://tumbledrybe.sharda.co.in/api/remarks`, {
               data: {
                 caseId: caseId,
                 serviceId: service.serviceId || service.id,
@@ -558,7 +561,7 @@ export default function AddCaseForm() {
         overallCompletionPercentage: 0,
         readBy: [],
       };
-
+  console.log("Final payload being sent:", casePayload); // Debug log
       // Step 8: Handle case creation/update
       if (isEditing) {
         const result = await dispatch(
