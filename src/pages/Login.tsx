@@ -16,8 +16,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState("");
 
-
-   useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       // If token exists, user is already logged in
@@ -40,7 +39,6 @@ const Login = () => {
         console.error("Service Worker is not ready", error);
       });
   }
-
 
   const subscribeToPushNotifications = async (
     userId: string,
@@ -153,76 +151,34 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl overflow-hidden shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
         {/* Decorative header */}
-        <div
-          className={`h-2 ${
-            isAdminLogin
-              ? "bg-gradient-to-r from-purple-600 to-indigo-600"
-              : "bg-gradient-to-r from-blue-500 to-cyan-400"
-          }`}
-        ></div>
+        <div className="bg-[#2EB873] h-3 w-full"></div>
 
         <div className="p-8">
           {/* Logo/Title */}
-          <div className="flex justify-center mb-6">
-            <div
-              className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                isAdminLogin ? "bg-purple-100" : "bg-blue-100"
-              } shadow-inner`}
-            >
-              {isAdminLogin ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-purple-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-blue-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              )}
+          {/* Logo/Title section */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="text-3xl font-bold text-[#2EB873] mb-1">
+              FCA - Tumbledry
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
-            {isAdminLogin ? "Admin Portal" : "Welcome Back"}
+          <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">
+            {isAdminLogin ? "Admin Dashboard" : "User Dashboard"}
           </h2>
-          <p className="text-center text-gray-500 mb-8">
-            {isAdminLogin ? "Secure system access" : "Login to continue"}
-          </p>
 
           {/* Role toggle */}
-          <div className="mb-8">
-            <div className="relative flex items-center bg-gray-100 rounded-full p-1">
+          <div className="mb-8 flex justify-center">
+            <div className="inline-flex rounded-md shadow-sm" role="group">
               <button
                 type="button"
                 onClick={() => setIsAdminLogin(true)}
-                className={`relative flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
                   isAdminLogin
-                    ? "bg-white text-purple-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-[#2EB873] text-white border-[#2EB873]"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
               >
                 Admin
@@ -230,10 +186,10 @@ const Login = () => {
               <button
                 type="button"
                 onClick={() => setIsAdminLogin(false)}
-                className={`relative flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-4 py-2 text-sm font-medium rounded-r-lg border ${
                   !isAdminLogin
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-[#2EB873] text-white border-[#2EB873]"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
               >
                 User
@@ -242,7 +198,7 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium flex items-center">
+            <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium flex items-center border border-red-100">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 mr-2"
@@ -386,11 +342,7 @@ const Login = () => {
             <div>
               <button
                 type="submit"
-                className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white ${
-                  isAdminLogin
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                    : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all`}
+                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-[#2EB873] hover:bg-[#1e6b52] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB873] transition"
               >
                 Log in
                 <svg
