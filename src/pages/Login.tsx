@@ -157,7 +157,6 @@ const Login = () => {
         <div className="bg-[#2EB873] h-3 w-full"></div>
 
         <div className="p-8">
-          {/* Logo/Title */}
           {/* Logo/Title section */}
           <div className="flex flex-col items-center mb-8">
             <div className="text-3xl font-bold text-[#2EB873] mb-1">
@@ -170,29 +169,35 @@ const Login = () => {
           </h2>
 
           {/* Role toggle */}
-          <div className="mb-8 flex justify-center">
-            <div className="inline-flex rounded-md shadow-sm" role="group">
+          <div className="mb-8">
+            <div className="relative flex items-center bg-gray-100 rounded-full p-1">
               <button
                 type="button"
                 onClick={() => setIsAdminLogin(true)}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
+                className={`relative flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all duration-300 ${
                   isAdminLogin
-                    ? "bg-[#2EB873] text-white border-[#2EB873]"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    ? "bg-[#2EB873] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Admin
+                {isAdminLogin && (
+                  <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-5/6 h-0.5 bg-white rounded-full"></span>
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => setIsAdminLogin(false)}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border ${
+                className={`relative flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all duration-300 ${
                   !isAdminLogin
-                    ? "bg-[#2EB873] text-white border-[#2EB873]"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    ? "bg-[#2EB873] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 User
+                {!isAdminLogin && (
+                  <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-5/6 h-0.5 bg-white rounded-full"></span>
+                )}
               </button>
             </div>
           </div>
@@ -342,7 +347,7 @@ const Login = () => {
             <div>
               <button
                 type="submit"
-                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-[#2EB873] hover:bg-[#1e6b52] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB873] transition"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-[#2EB873] hover:bg-[#1e6b52] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB873] transition"
               >
                 Log in
                 <svg
