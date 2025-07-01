@@ -295,38 +295,57 @@ const CaseServices: React.FC<CaseServicesProps> = ({
 
   // console.log(overallCompletionPercentage);
 
+  const handleStatusChange = async (serviceId: string, newStatus: string) => {
+    setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
 
-const handleStatusChange = async (serviceId: string, newStatus: string) => {
-  setUpdatingServices((prev) => ({ ...prev, [serviceId]: true }));
+    try {
+      const userStr = localStorage.getItem("user");
+      const userObj = userStr ? JSON.parse(userStr) : {};
 
-  try {
-    const userStr = localStorage.getItem("user");
-    const userObj = userStr ? JSON.parse(userStr) : {};
+      // 1. Only call the PATCH API!
+      const caseRes = await axiosInstance.patch(
+        `/cases/${caseId}/services/${serviceId}/status`,
+        { status: newStatus }
+      );
 
-    // 1. Only call the PATCH API!
-    const caseRes = await axiosInstance.patch(
-      `/cases/${caseId}/services/${serviceId}/status`,
-      { status: newStatus }
-    );
+      toast({
+        title: "Success",
+        description: "Service status updated successfully.",
+      });
 
-    toast({
-      title: "Success",
-      description: "Service status updated successfully.",
-    });
+      // Update local state or refetch case here if you want
+      if (onUpdate) onUpdate();
 
-    // Update local state or refetch case here if you want
-    if (onUpdate) onUpdate();
+      // --- Fetch assigned users ---
+      const assignedUsers = caseRes.data.assignedUsers || [];
+      const unitName = caseRes.data.unitName || caseName || "";
 
-    // --- Fetch assigned users ---
-    const assignedUsers = caseRes.data.assignedUsers || [];
-    const unitName = caseRes.data.unitName || caseName || "";
+      // --- Prepare notification ---
+      for (const user of assignedUsers) {
+        if (user.userId === userObj._id) continue;
+        try {
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId: user._id,
+            message: `Service "${
+              localServices.find((s) => s.id === serviceId)?.name
+            }" in case "${unitName}" was updated to "${newStatus}" by ${
+              userObj.name
+            }.`,
+            icon: "https://tumbledry.sharda.co.in/favicon.png",
+          });
+        } catch (notifyErr) {
+          console.error(
+            `Error sending notification to ${user._id}:`,
+            notifyErr
+          );
+        }
+      }
 
-    // --- Prepare notification ---
-    for (const user of assignedUsers) {
-      if (user.userId === userObj._id) continue;
+      // --- Super Admin Notification ---
+      const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
       try {
         await axiosInstance.post("/pushnotifications/send-notification", {
-          userId: user._id,
+          userId: SUPER_ADMIN_ID,
           message: `Service "${
             localServices.find((s) => s.id === serviceId)?.name
           }" in case "${unitName}" was updated to "${newStatus}" by ${
@@ -334,39 +353,24 @@ const handleStatusChange = async (serviceId: string, newStatus: string) => {
           }.`,
           icon: "https://tumbledry.sharda.co.in/favicon.png",
         });
-      } catch (notifyErr) {
-        console.error(`Error sending notification to ${user._id}:`, notifyErr);
+      } catch (superAdminErr) {
+        console.error(
+          "Error sending notification to Super Admin:",
+          superAdminErr
+        );
       }
-    }
-
-    // --- Super Admin Notification ---
-    const SUPER_ADMIN_ID = "68271c74487f3a8ea0dd6bdd";
-    try {
-      await axiosInstance.post("/pushnotifications/send-notification", {
-        userId: SUPER_ADMIN_ID,
-        message: `Service "${
-          localServices.find((s) => s.id === serviceId)?.name
-        }" in case "${unitName}" was updated to "${newStatus}" by ${
-          userObj.name
-        }.`,
-        icon: "https://tumbledry.sharda.co.in/favicon.png",
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update service status.",
+        variant: "destructive",
       });
-    } catch (superAdminErr) {
-      console.error("Error sending notification to Super Admin:", superAdminErr);
+      setLocalServices(services); // revert on failure
+    } finally {
+      setIsUpdating(false);
+      setUpdatingServices((prev) => ({ ...prev, [serviceId]: false }));
     }
-  } catch (err) {
-    toast({
-      title: "Error",
-      description: "Failed to update service status.",
-      variant: "destructive",
-    });
-    setLocalServices(services); // revert on failure
-  } finally {
-    setIsUpdating(false);
-    setUpdatingServices((prev) => ({ ...prev, [serviceId]: false }));
-  }
-};
-
+  };
 
   const visibleServices = showAll ? localServices : localServices.slice(0, 3);
   const displayCaseName = caseName || unitName || "Case Details";
@@ -435,15 +439,15 @@ const handleStatusChange = async (serviceId: string, newStatus: string) => {
           className="h-3 rounded"
           style={
             {
-              backgroundColor: ` "#00a4fc"}33`,
-              "--indicator-color": "#00a4fc",
+              backgroundColor: "#e6f9d5", // light green background
+              "--indicator-color": "#8dc63f", // Tumbledry green
             } as React.CSSProperties
           }
           indicatorClassName="bg-[var(--indicator-color)]"
         />
         <p
           className="text-xs text-right mt-1 font-medium"
-          style={{ color: "#02527d" }}
+          style={{ color: "#4b830d" }}
         >
           {progressValue.toFixed(2)}% Complete
         </p>

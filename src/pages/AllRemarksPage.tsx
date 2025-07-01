@@ -130,7 +130,7 @@ const fetchAllRemarks = async () => {
                     <li
                       key={remark._id}
                       className={`p-3 sm:p-4 border rounded-lg shadow-sm ${
-                        isUnread ? "bg-blue-50" : "bg-card"
+                        isUnread ? "bg-green-50" : "bg-card"
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">

@@ -28,7 +28,7 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
             />
           </div>
           <div>
-            <h1 className="m-0 text-2xl md:text-3xl font-bold text-[#1a365d] tracking-tight">
+            <h1 className="m-0 text-2xl md:text-3xl font-bold text-[#16751b] tracking-tight">
               Sharda Associates
             </h1>
             <p className="mt-1 flex items-center gap-2 text-base text-[#4a5568] font-medium">
@@ -52,7 +52,7 @@ function HeaderWithBranding({ currentUser }: HeaderWithBrandingProps) {
             className={`w-14 h-14 rounded-full flex items-center justify-center font-semibold text-white shadow-md border-2 border-white ${
               currentUser.avatar
                 ? ""
-                : "bg-blue-500"
+                : "bg-green-600"
             }`}
             style={
               currentUser.avatar

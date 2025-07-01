@@ -28,7 +28,8 @@ import {
   UserPlus,
   MessageSquare,
   Users2,
-  PieChart
+  PieChart,
+  AlertCircle
 } from "lucide-react"; // Added Users2
 
 
@@ -53,47 +54,46 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const STATUS_CONFIG: Record<StatusType, { color: string; lightColor: string; Icon: React.ElementType }> = {
   Pending: {
-    color: "hsl(0, 0%, 70%)",
+    color: "hsl(0, 0%, 70%)", // Keeping gray for pending
     lightColor: "hsl(0, 0%, 90%)",
     Icon: Hourglass,
   },
   "To be Started": {
-    color: "hsl(200, 80%, 60%)",
-    lightColor: "hsl(200, 80%, 90%)",
+    color: "hsl(150, 80%, 40%)", // Green
+    lightColor: "hsl(150, 80%, 90%)", // Light green
     Icon: Hourglass,
   },
   "New-Case": {
-   color: "hsl(200, 80%, 60%)",
-    lightColor: "hsl(200, 80%, 90%)",
+    color: "hsl(150, 80%, 40%)", // Green
+    lightColor: "hsl(150, 80%, 90%)", // Light green
     Icon: Hourglass,
   },
   "In-Progress": {
-    color: "hsl(210, 100%, 55%)",
-    lightColor: "hsl(210, 100%, 85%)",
+    color: "hsl(45, 100%, 50%)", // Amber/Yellow for in-progress
+    lightColor: "hsl(45, 100%, 85%)", // Light amber
     Icon: Zap,
   },
   Completed: {
-    color: "hsl(210, 100%, 40%)",
-    lightColor: "hsl(210, 100%, 75%)",
+    color: "hsl(150, 80%, 35%)", // Darker green for completed
+    lightColor: "hsl(150, 80%, 85%)", // Light green
     Icon: CheckCircle2,
   },
   Rejected: {
-    color: "hsl(0, 75%, 55%)",
+    color: "hsl(0, 75%, 55%)", // Keeping red for rejected
     lightColor: "hsl(0, 75%, 85%)",
     Icon: XCircle,
   },
   "Detail Required": {
-    color: "", // put actual colors if needed
-    lightColor: "",
-    Icon: XCircle, // replace with actual icon component
+    color: "hsl(30, 100%, 50%)", // Orange for attention needed
+    lightColor: "hsl(30, 100%, 85%)",
+    Icon: AlertCircle, // More appropriate icon
   },
   Total: {
-    color: "#3b82f6",
-    lightColor: "#bfdbfe",
+    color: "hsl(150, 80%, 40%)", // Green to match theme
+    lightColor: "hsl(150, 80%, 90%)",
     Icon: PieChart,
   },
 };
-
 
 export type ValidStatus = keyof typeof STATUS_CONFIG;
 

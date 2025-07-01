@@ -32,8 +32,10 @@ body {
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 15%;
 
-    --primary: 210 100% 55%; /* A vibrant, slightly lighter blue */
+     --primary: 150 60% 45%; /* Using your existing accent green as primary */
     --primary-foreground: 0 0% 100%; /* White */
+
+
 
     --secondary: 220 20% 92%; /* Softer secondary gray */
     --secondary-foreground: 220 20% 20%;
@@ -49,7 +51,7 @@ body {
 
     --border: 220 20% 85%; /* Softer border */
     --input: 220 20% 90%; /* Lighter input background for definition */
-    --ring: 210 100% 55%; /* Primary blue for rings */
+    --ring: 150 60% 45%; /* Primary green for rings */
 
     --radius: 0.75rem; /* Slightly larger radius for a softer feel */
 
@@ -63,12 +65,12 @@ body {
     /* Sidebar specific theme */
     --sidebar-background: 220 25% 12%; /* Darker, richer sidebar */
     --sidebar-foreground: 220 20% 85%; /* Lighter text for readability */
-    --sidebar-primary: 210 100% 65%; /* Brighter blue for active/hover on dark */
+    --sidebar-primary: 150 60% 55%; /* Brighter green for active/hover on dark */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 25% 22%; /* Hover state for sidebar items */
     --sidebar-accent-foreground: 210 100% 75%;
     --sidebar-border: 220 25% 25%;
-    --sidebar-ring: 210 100% 55%;
+    --sidebar-ring: 150 60% 45%;
   }
 
   .dark {
@@ -81,7 +83,7 @@ body {
     --popover: 220 25% 13%;
     --popover-foreground: 220 25% 95%;
 
-    --primary: 210 100% 60%; 
+    --primary: 150 60% 50%; 
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 20% 25%; 

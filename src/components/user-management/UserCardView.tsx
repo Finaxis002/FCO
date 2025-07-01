@@ -315,7 +315,7 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleEditUser(user)}
-                  className="text-blue-600 hover:!bg-blue-600 hover:!text-white flex items-center"
+                  className="text-green-600 hover:!bg-green-600 hover:!text-white flex items-center"
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   <span className="hidden xs:inline">Edit</span>
@@ -404,7 +404,7 @@ const UserCardView: React.FC<UserCardViewProps> = ({ refreshKey }) => {
                 value={resetPassword}
                 onChange={(e) => setResetPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring focus:ring-green-500"
               />
               <button
                 type="button"

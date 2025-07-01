@@ -554,8 +554,8 @@
                 <MessageSquarePlus className="h-5 w-5" />
                 {unreadRemarkCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-600"></span>
                   </span>
                 )}
                 <span className="sr-only">Toggle remarks</span>
@@ -568,7 +568,7 @@
               <DropdownMenuLabel className="flex justify-between items-center">
                 <span>Recent Remarks</span>
                 {unreadRemarkCount > 0 && (
-                  <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full">
                     {unreadRemarkCount} New
                   </span>
                 )}
@@ -586,7 +586,7 @@
                       className="flex items-start gap-2 p-2 w-full"
                     >
                       <Avatar className="h-8 w-8 mt-0.5 shrink-0">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                        <AvatarFallback className="bg-green-100 text-green-600">
                           {remark.userName
                             .split(" ")
                             .map((n: string) => n[0])
