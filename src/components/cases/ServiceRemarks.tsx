@@ -71,6 +71,9 @@ export default function ServiceRemarks({
   const [isAddingRemark, setIsAddingRemark] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRemarkAdded, setNewRemarkAdded] = useState(false);
+  const [dialogRemarkText, setDialogRemarkText] = useState("");
+const [inlineRemarkText, setInlineRemarkText] = useState("");
+
 
   const { toast } = useToast();
 
@@ -240,17 +243,44 @@ export default function ServiceRemarks({
         }
 
         const userId = user.id;
-        await axiosInstance.post("/pushnotifications/send-notification", {
-          userId,
-          message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`,
-        });
+        try {
+          await axiosInstance.post("/pushnotifications/send-notification", {
+            userId,
+            message: `New remark added in case "${caseName}" by ${currentUser.name}: ${newRemark.remark}.`,
+          });
+        } catch (error: any) {
+          // If no subscription found, just skip, don't throw
+          if (
+            error.response &&
+            error.response.data &&
+            error.response.data.message ===
+              "No subscriptions found for this user"
+          ) {
+            // Optionally log: console.log(`No push subscription for user ${userId}, skipping`);
+          } else {
+            // For other errors, you can log or handle differently if needed
+            console.error(`Failed to send notification to ${userId}:`, error);
+          }
+        }
       }
 
       // Notify Super Admin (hardcoded)
-      await axiosInstance.post("/pushnotifications/send-notification", {
-        userId: SUPER_ADMIN_ID,
-        message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}".`,
-      });
+      try {
+        await axiosInstance.post("/pushnotifications/send-notification", {
+          userId: SUPER_ADMIN_ID,
+          message: `New remark added in case "${caseName}" by ${currentUser.name}. Remark: "${newRemark.remark}".`,
+        });
+      } catch (error: any) {
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message === "No subscriptions found for this user"
+        ) {
+          // Ignore
+        } else {
+          console.error(`Failed to notify Super Admin:`, error);
+        }
+      }
     } catch (err) {
       alert((err as Error).message || "Error saving remark");
     } finally {
@@ -618,7 +648,7 @@ export default function ServiceRemarks({
               })}
             </div>
           </ScrollArea>
-          {canAddRemark && (
+          {canAddRemark && !isAddDialogOpen && (
             <div className="pt-4 border-t">
               <div className="flex gap-3">
                 <Avatar className="h-9 w-9">

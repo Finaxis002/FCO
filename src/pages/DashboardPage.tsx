@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import PageHeader from "@/components/ui/page-header";
 import { APP_NAME } from "@/lib/constants";
 import type {
@@ -16,7 +17,8 @@ import ComplianceStatusOverview from "@/components/dashboard/compliance-status-o
 import { Briefcase, Users, Clock, Loader } from "lucide-react"; // Removed Activity, BarChart3 for now
 import HeaderWithBranding from "@/components/dashboard/HeaderWithBranding";
 import useRoleWatcher from "@/components/dashboard/useRoleWatcher";
-import TestNotificationButton from "@/components/TestNotificationButton";
+import { fetchPermissions } from "@/features/permissionsSlice";
+import { RootState } from "@/store";
 
 interface CaseStats {
   totalCases: number;
@@ -34,13 +36,42 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user?._id;
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
+  const userRole = localStorage.getItem("userRole") || "";
 
   useRoleWatcher(token, userId);
 
-  // console.log("userwatcher token:", token);
+  const permissions = useSelector((state: RootState) => state.permissions.permissions);
+
+
+  const allCaseAccess =
+    userRole.toLowerCase() === "admin" ||
+    currentUser.role?.toLowerCase() === "super admin" ||
+    (permissions && permissions.allCaseAccess); // From Redux or however you fetch
+
+  const casesToCount = useMemo(() => {
+  if (allCaseAccess) {
+    return cases;
+  }
+  // Only assigned cases
+  return cases.filter((c) =>
+    c.assignedUsers?.some((user) => {
+      if (typeof user === "string") {
+        return user === currentUser._id || user === currentUser.userId || user === currentUser.name;
+      }
+      return (
+        user._id === currentUser._id ||
+        user.userId === currentUser.userId ||
+        user.name === currentUser.name
+      );
+    })
+  );
+}, [cases, allCaseAccess, currentUser]);
+
+
 
   useEffect(() => {
     document.title = `Dashboard | ${APP_NAME}`;
@@ -152,8 +183,7 @@ export default function DashboardPage() {
     fetchCases();
   }, []);
 
-  const currentUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
-  const userRole = localStorage.getItem("userRole") || "";
+  // (Moved currentUser and userRole declarations above)
 
   const isSuperAdmin =
     userRole.toLowerCase() === "admin" ||
@@ -177,32 +207,33 @@ export default function DashboardPage() {
     );
   }, [cases, currentUser, isSuperAdmin]);
 
-  const caseStats: CaseStats = useMemo(() => {
-    const totalCases = filteredCases.length;
-    const completedCases = filteredCases.filter(
-      (c) => c.status === "Completed"
-    ).length;
-    const NewCases = filteredCases.filter(
-      (c) => c.status === "New-Case"
-    ).length;
-    const inProgressCases = filteredCases.filter(
-      (c) => c.status === "In-Progress"
-    ).length;
-    const rejectedCases = filteredCases.filter(
-      (c) => c.status === "Rejected"
-    ).length;
-    const completionPercentage =
-      totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0;
+const caseStats: CaseStats = useMemo(() => {
+  const totalCases = casesToCount.length;
+  const completedCases = casesToCount.filter(
+    (c) => c.status === "Completed"
+  ).length;
+  const NewCases = casesToCount.filter(
+    (c) => c.status === "New-Case"
+  ).length;
+  const inProgressCases = casesToCount.filter(
+    (c) => c.status === "In-Progress"
+  ).length;
+  const rejectedCases = casesToCount.filter(
+    (c) => c.status === "Rejected"
+  ).length;
+  const completionPercentage =
+    totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0;
 
-    return {
-      totalCases,
-      completedCases,
-      NewCases,
-      inProgressCases,
-      rejectedCases,
-      completionPercentage,
-    };
-  }, [filteredCases]);
+  return {
+    totalCases,
+    completedCases,
+    NewCases,
+    inProgressCases,
+    rejectedCases,
+    completionPercentage,
+  };
+}, [casesToCount]);
+
 
   const handleStatCardClick = (filterStatus?: DashboardFilterStatus) => {
     navigate("/cases", {
