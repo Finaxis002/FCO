@@ -180,7 +180,7 @@ const Login = () => {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Admin
+                Admin 
                 {isAdminLogin && (
                   <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-5/6 h-0.5 bg-white rounded-full"></span>
                 )}
