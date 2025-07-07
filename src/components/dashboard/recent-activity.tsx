@@ -147,7 +147,7 @@ export default function RecentActivity({
                 `}
                   ></div>
 
-                  <div className="flex flex-col flex-grow min-w-0">
+                  <div className="flex flex-col flex-grow ">
                     <p className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                       {activity.title}
                     </p>
