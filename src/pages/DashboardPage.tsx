@@ -74,6 +74,7 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
+    if (!token) return; 
     document.title = `Dashboard | ${APP_NAME}`;
     const fetchData = async () => {
       setLoading(true);
@@ -268,6 +269,8 @@ const caseStats: CaseStats = useMemo(() => {
       </>
     );
   }
+
+  console.log("caseStats.totalCases " ,caseStats.totalCases )
 
   return (
     <>

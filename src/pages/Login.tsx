@@ -134,8 +134,12 @@ const Login = () => {
       localStorage.setItem("userRole", role);
       localStorage.setItem("user", JSON.stringify(fullUser));
 
-      // Call the subscribeToPushNotifications function after login
-      subscribeToPushNotifications(fullUser._id, token);
+      // Wait for push subscription to finish if needed, then:
+      subscribeToPushNotifications(fullUser._id, token).finally(() => {
+        // Force full reload to guarantee all state is fresh, or use navigate as needed
+        window.location.href =
+          role === "Admin" ? "/admin-dashboard" : "/user-dashboard";
+      });
 
       navigate(role === "Admin" ? "/admin-dashboard" : "/user-dashboard");
     } catch (err: any) {
@@ -180,7 +184,7 @@ const Login = () => {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Admin 
+                Admin
                 {isAdminLogin && (
                   <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-5/6 h-0.5 bg-white rounded-full"></span>
                 )}
