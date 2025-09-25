@@ -495,7 +495,7 @@
                       >
                         <RouterLink
                           to={
-                            notification.caseId
+                            notification.caseId && notification.type !== "deletion"
                               ? `/cases/${notification.caseId}`
                               : "/notifications"
                           }

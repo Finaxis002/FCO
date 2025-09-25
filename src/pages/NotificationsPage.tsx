@@ -352,7 +352,7 @@ export default function NotificationsPage() {
                     )}
                   </div>
                   <div className="mt-3 flex gap-2 flex-wrap">
-                    {notification.caseId && (
+                    {notification.caseId && notification.type !== "deletion" && (
                       <Button variant="outline" size="xs" asChild>
                         <RouterLink to={`/cases/${notification.caseId}`}>
                           <Eye className="mr-1.5 h-3.5 w-3.5" /> View Case
