@@ -125,6 +125,9 @@ export default function AddEditUserDialog({
       },
       isEditing
     );
+
+    // Reset form after successful submission
+    form.reset();
   }
 
   // console.log("roles", roles);
@@ -135,7 +138,6 @@ export default function AddEditUserDialog({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      modal={true}
     >
       <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[480px] p-4 sm:p-6 modal no-search">
         <DialogHeader>

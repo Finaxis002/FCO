@@ -50,12 +50,12 @@ export const deleteCase = createAsyncThunk(
 
 export const updateCase = createAsyncThunk(
   "case/updateCase",
-  async (caseData: Case, { rejectWithValue }) => {
+  async ({ id, ...caseData }: Case & { id: string }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token"); // get token from localStorage
 
       const response = await axiosInstance.put(
-        `/cases/${caseData.id}`,
+        `/cases/${id}`,
         caseData
       );
       return response.data.case;
@@ -92,7 +92,12 @@ const caseSlice = createSlice({
         state.error = null;
       })
       .addCase(addCase.fulfilled, (state, action) => {
-        state.cases.push(action.payload);
+        // Normalize _id to id for frontend use, same as getCases
+        const normalizedCase = {
+          ...action.payload,
+          id: action.payload._id,
+        };
+        state.cases.push(normalizedCase);
         state.loading = false;
       })
       .addCase(addCase.rejected, (state, action) => {
@@ -114,6 +119,28 @@ const caseSlice = createSlice({
         state.loading = false;
       })
       .addCase(getCases.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Update Case
+      .addCase(updateCase.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCase.fulfilled, (state, action) => {
+        // Normalize _id to id and update the case in state
+        const normalizedCase = {
+          ...action.payload,
+          id: action.payload._id,
+        };
+        const index = state.cases.findIndex((c) => c.id === normalizedCase.id);
+        if (index !== -1) {
+          state.cases[index] = normalizedCase;
+        }
+        state.loading = false;
+      })
+      .addCase(updateCase.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

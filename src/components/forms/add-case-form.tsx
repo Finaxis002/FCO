@@ -368,11 +368,16 @@ export default function AddCaseForm() {
       const newOption = { label: name, value: name }; // Create proper option object
       setOwnerOptions((prev) => [...prev, newOption]); // Add the complete option
       return name; // Return the name for consistency
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Owner creation error:", err);
+      // If owner already exists, that's not an error - just return the name
+      if (err.response?.data?.message === "Owner already exists") {
+        console.log("Owner already exists, continuing...");
+        return name;
+      }
       toast({
         title: "Error",
-        description: "Failed to create owner",
+        description: `Failed to create owner: ${err.response?.data?.message || err.message}`,
         variant: "destructive",
       });
       return null;
@@ -389,20 +394,26 @@ export default function AddCaseForm() {
       const newOption = { label: name, value: name };
       setClientOptions((prev) => [...prev, newOption]);
       return name;
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Client creation error:", err);
+      // If client already exists, that's not an error - just return the name
+      if (err.response?.data?.message === "Client already exists") {
+        console.log("Client already exists, continuing...");
+        return name;
+      }
       let errorMessage = "Unknown error";
       if (typeof err === "object" && err !== null) {
         if (
           "response" in err &&
-          typeof (err as any).response === "object" &&
-          (err as any).response !== null
+          typeof err.response === "object" &&
+          err.response !== null
         ) {
           errorMessage =
-            (err as any).response.data?.message ||
-            (err as any).message ||
+            err.response.data?.message ||
+            err.message ||
             "Unknown error";
         } else if ("message" in err) {
-          errorMessage = (err as any).message;
+          errorMessage = err.message;
         }
       }
       console.error("Client creation error:", errorMessage);
@@ -424,21 +435,32 @@ export default function AddCaseForm() {
       if (!ownerOptions.some((opt) => opt.value === data.ownerName)) {
         const createdOwner = await createOwner(data.ownerName);
         if (!createdOwner) {
-          throw new Error("Failed to create owner.");
-        }
-        // After creating, add to options if not already there
-        if (!ownerOptions.some((opt) => opt.value === createdOwner)) {
-          setOwnerOptions((prev) => [
-            ...prev,
-            { label: createdOwner, value: createdOwner },
-          ]);
+          toast({
+            title: "Warning",
+            description: "Owner creation failed, but continuing with case creation.",
+            variant: "default",
+          });
+        } else {
+          // After creating, add to options if not already there
+          if (!ownerOptions.some((opt) => opt.value === createdOwner)) {
+            setOwnerOptions((prev) => [
+              ...prev,
+              { label: createdOwner, value: createdOwner },
+            ]);
+          }
         }
       }
 
       // Step 2: Handle client creation if needed
       if (!clientOptions.some((opt) => opt.value === data.clientName)) {
         const createdClient = await createClient(data.clientName);
-        if (!createdClient) throw new Error("Failed to create client.");
+        if (!createdClient) {
+          toast({
+            title: "Warning",
+            description: "Client creation failed, but continuing with case creation.",
+            variant: "default",
+          });
+        }
       }
 
       // Step 3: Get original case data if editing
@@ -620,11 +642,11 @@ export default function AddCaseForm() {
           });
           navigate(`/cases/${result.payload._id || result.payload.id}`);
         } else {
-          throw new Error(
-            typeof result.payload === "string"
-              ? result.payload
-              : JSON.stringify(result.payload) || "Failed to add case"
-          );
+          console.error("Case creation failed:", result);
+          const errorMessage = typeof result.payload === "string"
+            ? result.payload
+            : result.error?.message || "Failed to create case";
+          throw new Error(errorMessage);
         }
       }
 

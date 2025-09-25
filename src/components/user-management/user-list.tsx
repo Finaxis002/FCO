@@ -123,7 +123,6 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
   }, []);
 
   // Backend base URL - adjust accordingly
-  const BASE_URL = "https://tumbledrybe.sharda.co.in/api/users";
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -157,6 +156,8 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
 
       if (isEditing && editingUser) {
         const userId = editingUser._id;
+        console.log("Editing user with ID:", userId);
+        console.log("Editing user data:", editingUser);
         const response = await axiosInstance.put(`users/${userId}`, payload);
         const data = response.data;
 
@@ -207,6 +208,7 @@ export default function UserList({ refreshKey }: { refreshKey?: any }) {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
+      console.log("Deleting user with ID:", userId);
       const response = await axiosInstance.delete(`users/${userId}`, {});
       toast({
         title: "User Deleted",

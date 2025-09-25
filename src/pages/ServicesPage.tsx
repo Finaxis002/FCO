@@ -353,7 +353,9 @@ export default function ServicesPage() {
         servicesWithEditTime.push({
           ...service,
           status:
-            service.status === "New-Case" ? "To be Started" : service.status,
+            service.status === "New-Case" || service.status === "To-be-Started"
+              ? "To be Started"
+              : service.status,
           parentCase,
           editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
         });
@@ -411,7 +413,9 @@ export default function ServicesPage() {
         servicesWithEditTime.push({
           ...service,
           status:
-            service.status === "New-Case" ? "To be Started" : service.status,
+            service.status === "New-Case" || service.status === "To-be-Started"
+              ? "To be Started"
+              : service.status,
           parentCase,
           editedAt: service.id === lastEdited.id ? lastEdited.editedAt : null,
         });

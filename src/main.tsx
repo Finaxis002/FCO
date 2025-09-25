@@ -17,7 +17,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <AuthProvider>    {/* <-- Wrap App here */}
             <App />
           </AuthProvider>
-        
           <Toaster />
         </BrowserRouter>
       </AppNameProvider>
