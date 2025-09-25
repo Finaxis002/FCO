@@ -18,6 +18,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useSearchParams, useLocation } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import CaseChat from "@/components/cases/case-chat"; // Import CaseChat
@@ -60,6 +61,7 @@ export default function CaseDetailPage({
   >([]);
 
   const navigate = useNavigate();
+  const { toast } = useToast();
 
  useEffect(() => {
   const fetchAllRemarks = async () => {
@@ -214,23 +216,34 @@ export default function CaseDetailPage({
   }, [caseData]);
 
  const fetchCaseById = async () => {
-  setLoading(true);
-  try {
-    const response = await axiosInstance.get(`/cases/${caseId}`);
-    setCaseData(response.data);
-  } catch (err) {
-    setCaseData(undefined);
-    
-    // Optional: More detailed error handling
-    if (axios.isAxiosError(err)) {
-      console.error("Failed to fetch case:", err.response?.data?.message || err.message);
-    } else {
-      console.error("Failed to fetch case:", err);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+   setLoading(true);
+   try {
+     const response = await axiosInstance.get(`/cases/${caseId}`);
+     setCaseData(response.data);
+   } catch (err) {
+     setCaseData(undefined);
+
+     // Optional: More detailed error handling
+     if (axios.isAxiosError(err)) {
+       console.error("Failed to fetch case:", err.response?.data?.message || err.message);
+
+       // If case not found, show toast and redirect to notifications
+       if (err.response?.status === 404) {
+         toast({
+           title: "Case Not Found",
+           description: "This case may have been deleted.",
+           variant: "destructive",
+         });
+         navigate("/notifications");
+         return;
+       }
+     } else {
+       console.error("Failed to fetch case:", err);
+     }
+   } finally {
+     setLoading(false);
+   }
+ };
 
   useEffect(() => {
     if (caseId) fetchCaseById();
