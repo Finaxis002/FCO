@@ -83,22 +83,41 @@ const [inlineRemarkText, setInlineRemarkText] = useState("");
 
     try {
       const token = localStorage.getItem("token");
-
-      // Choose API based on token availability
-      const url = token
-        ? `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`
-        : `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}`;
-
-      const headers: Record<string, string> = {
+      let url: string;
+      let headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (token) headers.Authorization = `Bearer ${token}`;
 
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error("Failed to load remarks");
+      if (token) {
+        url = `http://localhost:3000/api/cases/${caseId}/services/${serviceId}/remarks`;
+        headers.Authorization = `Bearer ${token}`;
+      } else {
+        url = `http://localhost:3000/api/cases/${caseId}/services/${serviceId}`;
+      }
 
-      const data: Remark[] = await res.json();
-      setRemarks(data);
+      let res = await fetch(url, { headers });
+
+      if (!res.ok) {
+        if (token && res.status === 401) {
+          // Token invalid, try public endpoint
+          url = `http://localhost:3000/api/cases/${caseId}/services/${serviceId}`;
+          headers = {
+            "Content-Type": "application/json",
+          };
+          res = await fetch(url, { headers });
+          if (!res.ok) throw new Error("Failed to load remarks");
+        } else {
+          throw new Error("Failed to load remarks");
+        }
+      }
+
+      const data = await res.json();
+      // Ensure readBy is present
+      const remarks = data.map((r: any) => ({
+        ...r,
+        readBy: r.readBy || [],
+      }));
+      setRemarks(remarks);
       setNewRemarkAdded(false);
     } catch (err) {
       setError((err as Error).message);
