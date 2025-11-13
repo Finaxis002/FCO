@@ -89,10 +89,10 @@ const [inlineRemarkText, setInlineRemarkText] = useState("");
       };
 
       if (token) {
-        url = `http://localhost:3000/api/cases/${caseId}/services/${serviceId}/remarks`;
+        url = `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}/remarks`;
         headers.Authorization = `Bearer ${token}`;
       } else {
-        url = `http://localhost:3000/api/cases/${caseId}/services/${serviceId}`;
+        url = `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}`;
       }
 
       let res = await fetch(url, { headers });
@@ -100,7 +100,7 @@ const [inlineRemarkText, setInlineRemarkText] = useState("");
       if (!res.ok) {
         if (token && res.status === 401) {
           // Token invalid, try public endpoint
-          url = `http://localhost:3000/api/cases/${caseId}/services/${serviceId}`;
+          url = `https://tumbledrybe.sharda.co.in/api/cases/${caseId}/services/${serviceId}`;
           headers = {
             "Content-Type": "application/json",
           };
