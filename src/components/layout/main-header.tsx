@@ -1,7 +1,8 @@
   import { Link as RouterLink } from "react-router-dom";
   import { useNavigate } from "react-router-dom";
   import type { RootState } from "../../store";
-  import { useSelector } from "react-redux";
+  import { useSelector, useDispatch } from "react-redux";
+  import { setSearchTerm } from "../../features/searchSlice";
   import { useState, useEffect, useRef } from "react";
   import {
     PanelLeft,
@@ -62,74 +63,18 @@
   };
 
   export default function MainHeader() {
-    const [recentNotifications, setRecentNotifications] = useState<
-      AppNotification[]
-    >([]);
-    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-    const [recentRemarks, setRecentRemarks] = useState<any[]>([]);
-    const [unreadRemarkCount, setUnreadRemarkCount] = useState(0);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
+      const dispatch = useDispatch();
+      const searchTerm = useSelector((state: RootState) => state.search.searchTerm);
+      const [recentNotifications, setRecentNotifications] = useState<
+        AppNotification[]
+      >([]);
+      const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+      const [recentRemarks, setRecentRemarks] = useState<any[]>([]);
+      const [unreadRemarkCount, setUnreadRemarkCount] = useState(0);
+      const [highlightRefs, setHighlightRefs] = useState<HTMLElement[]>([]);
+      const [currentIndex, setCurrentIndex] = useState(0);
 
-    // useEffect(() => {
-    //   document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
-    //     const parent = mark.parentNode;
-    //     if (!parent) return;
-    //     parent.replaceChild(
-    //       document.createTextNode(mark.textContent || ""),
-    //       mark
-    //     );
-    //     parent.normalize();
-    //   });
-
-    //   if (!searchTerm) {
-    //     setHighlightRefs([]);
-    //     setCurrentIndex(0);
-    //     return;
-    //   }
-
-    //   const escapedTerm = searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-    //   const regex = new RegExp(`(${escapedTerm})`, "gi");
-
-    //   const foundMarks: HTMLElement[] = [];
-
-    //   const walk = (node: Node) => {
-    //     if (
-    //       node.nodeType === 3 &&
-    //       node.parentNode &&
-    //       node.parentNode.nodeName !== "SCRIPT" &&
-    //       node.parentNode.nodeName !== "STYLE"
-    //     ) {
-    //       const text = node.nodeValue;
-    //       if (text && regex.test(text)) {
-    //         const span = document.createElement("span");
-    //         span.innerHTML = text.replace(
-    //           regex,
-    //           `<mark data-highlight style="background: yellow;">$1</mark>`
-    //         );
-    //         const fragment = document.createDocumentFragment();
-    //         while (span.firstChild) {
-    //           const child = span.firstChild;
-    //           if ((child as HTMLElement).tagName === "MARK")
-    //             foundMarks.push(child as HTMLElement);
-    //           fragment.appendChild(child);
-    //         }
-    //         node.parentNode.replaceChild(fragment, node);
-    //       }
-    //     } else if (node.nodeType === 1) {
-    //       for (let i = 0; i < node.childNodes.length; i++) {
-    //         walk(node.childNodes[i]);
-    //       }
-    //     }
-    //   };
-
-    //   walk(document.body);
-
-    //   setHighlightRefs(foundMarks);
-    //   setCurrentIndex(0);
-    // }, [searchTerm]);
-
+  
     useEffect(() => {
       // First, clear all previously highlighted text
       document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
@@ -149,8 +94,18 @@
         return;
       }
 
-      const escapedTerm = searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const regex = new RegExp(`(${escapedTerm})`, "gi");
+      // If on cases or services page, highlight table rows instead of text
+      if (window.location.pathname.startsWith('/cases') || window.location.pathname.startsWith('/services')) {
+        const tableRows = document.querySelectorAll('tbody tr');
+        const foundRows: HTMLElement[] = Array.from(tableRows) as HTMLElement[];
+        setHighlightRefs(foundRows);
+        setCurrentIndex(0);
+        return;
+      }
+
+      const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      const escapedWords = searchWords.map(word => word.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"));
+      const regexes = escapedWords.map(word => new RegExp(`(${word})`, "gi"));
 
       const foundMarks: HTMLElement[] = [];
 
@@ -191,13 +146,16 @@
           node.parentNode.nodeName !== "STYLE" &&
           node.parentNode.nodeName !== "MARK" // Skip already highlighted text
         ) {
-          const text = node.nodeValue;
-          if (text && regex.test(text)) {
+          const text = node.nodeValue || "";
+          const lowerText = text.toLowerCase();
+          const allWordsPresent = searchWords.every(word => lowerText.includes(word));
+          if (text && allWordsPresent) {
+            let replacedText = text;
+            regexes.forEach((regex, index) => {
+              replacedText = replacedText.replace(regex, `<mark data-highlight style="background: yellow;">$1</mark>`);
+            });
             const span = document.createElement("span");
-            span.innerHTML = text.replace(
-              regex,
-              `<mark data-highlight style="background: yellow;">$1</mark>`
-            );
+            span.innerHTML = replacedText;
             const fragment = document.createDocumentFragment();
             while (span.firstChild) {
               const child = span.firstChild;
@@ -230,18 +188,47 @@
           const el = highlightRefs[currentIndex];
           if (!el) return;
 
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.style.background = "orange";
+          // For marks, scroll to the parent table row if it exists, otherwise scroll to the mark
+          if (el.tagName === 'MARK') {
+            const row = el.closest('tr');
+            if (row) {
+              row.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          } else {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
 
-          highlightRefs.forEach((mark, idx) => {
-            if (idx !== currentIndex) mark.style.background = "yellow";
-          });
+          // If it's a table row, highlight the row
+          if (el.tagName === 'TR') {
+            el.style.backgroundColor = "#e3f2fd";
+            highlightRefs.forEach((row, idx) => {
+              if (idx !== currentIndex && row.tagName === 'TR') {
+                (row as HTMLElement).style.backgroundColor = "";
+              }
+            });
+          } else {
+            // For marks
+            el.style.background = "#e3f2fd";
+            highlightRefs.forEach((mark, idx) => {
+              if (idx !== currentIndex) mark.style.background = "yellow";
+            });
+          }
 
           setCurrentIndex((prev) => (prev + 1) % highlightRefs.length);
         } else if (e.key === "Escape") {
-          setSearchTerm("");
+          dispatch(setSearchTerm(""));
           setHighlightRefs([]);
           setCurrentIndex(0);
+
+          // Clear row highlights
+          document.querySelectorAll('tbody tr').forEach((row) => {
+            (row as HTMLElement).style.backgroundColor = "";
+          });
+          document.querySelectorAll('.service-card').forEach((card) => {
+            (card as HTMLElement).style.backgroundColor = "";
+          });
 
           document.querySelectorAll("mark[data-highlight]").forEach((mark) => {
             const parent = mark.parentNode;
@@ -434,7 +421,7 @@
                 placeholder="Search in page..."
                 className="w-full rounded-lg bg-muted pl-8 py-2 text-sm"
                 aria-label="Search cases"
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => dispatch(setSearchTerm(e.target.value))}
                 autoComplete="off"
                 id="global-search-input"
               />
@@ -681,3 +668,4 @@
       </header>
     );
   }
+

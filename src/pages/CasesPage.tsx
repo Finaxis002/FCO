@@ -16,6 +16,7 @@ import {
   List,
   LayoutGrid,
   Trash,
+  Search,
 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import CaseTable from "@/components/cases/case-table";
@@ -97,6 +98,11 @@ export default function CasesPage() {
   const [activeFilter, setActiveFilter] =
     useState<DashboardFilterStatus>("Total");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20); // Smaller page size for cases
+
   const location = useLocation();
   const navigate = useNavigate();
   const { caseId } = useParams();
@@ -105,12 +111,14 @@ export default function CasesPage() {
   const { cases: allCases, loading } = useSelector(
     (state: RootState) => state.case
   );
+  const searchTerm = useSelector((state: RootState) => state.search.searchTerm);
 
   useEffect(() => {
     dispatch(getCases());
   }, [dispatch]);
 
   useEffect(() => {
+     if (!currentUser || !caseId) return; 
     const fetchChats = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -284,6 +292,7 @@ export default function CasesPage() {
     //   activeFilter,
     //   permissions,
     //   currentUser,
+    //   searchTerm,
     // });
     if (!allCases || allCases.length === 0 || !currentUser) {
       // setFilteredCases([]);
@@ -394,9 +403,26 @@ export default function CasesPage() {
         );
       }
     }
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      casesToDisplay = casesToDisplay.filter((c) => {
+        const searchableText = [
+          c.srNo?.toString() || "",
+          c.unitName || "",
+          c.ownerName || "",
+          c.status || "",
+          ...(c.assignedUsers?.map(user => typeof user === "string" ? user : user?.name || "") || [])
+        ].join(" ").toLowerCase();
+
+        return searchWords.every(word => searchableText.includes(word));
+      });
+    }
+
     // console.log("Filtered cases count:", casesToDisplay.length);
     setFilteredCases(casesToDisplay);
-  }, [allCases, activeFilter, permissions, currentUser]);
+    setCurrentPage(1); // Reset to first page on filter change
+  }, [allCases, activeFilter, permissions, currentUser, searchTerm]);
 
   const handleDelete = async (caseId: string) => {
     if (window.confirm("Are you sure you want to delete this case?")) {
@@ -545,6 +571,10 @@ export default function CasesPage() {
     return <Skeleton />;
   }
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCases.length / pageSize);
+  const paginatedCases = filteredCases.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <>
       <PageHeader
@@ -563,7 +593,7 @@ export default function CasesPage() {
         <div>
           <div className="block sm:hidden">
             <CaseCardView
-              cases={filteredCases}
+              cases={paginatedCases}
               onDelete={handleDelete}
               unreadRemarks={unreadRemarks}
               unreadChats={unreadChats}
@@ -573,7 +603,7 @@ export default function CasesPage() {
           <div className="hidden sm:block">
             {viewMode === "table" ? (
               <CaseTable
-                cases={filteredCases}
+                cases={paginatedCases}
                 onDelete={handleDelete}
                 unreadRemarks={unreadRemarks}
                 unreadChats={unreadChats}
@@ -586,13 +616,43 @@ export default function CasesPage() {
               />
             ) : (
               <CaseCardView
-                cases={filteredCases}
+                cases={paginatedCases}
                 onDelete={handleDelete}
                 unreadRemarks={unreadRemarks}
                 unreadChats={unreadChats}
                 activeCaseId={caseId}
               />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {filteredCases.length > 0 && (
+        <div className="flex justify-between items-center mt-4 px-4">
+          <div className="text-sm text-gray-600">
+            Showing {paginatedCases.length} of {filteredCases.length} cases
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
           </div>
         </div>
       )}

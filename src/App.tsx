@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect} from "react";
 import AppLayout from "@/components/layout/app-layout";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ProtectedRoute from "@/components/routes/ProtectedRoute";
@@ -14,15 +14,13 @@ import SettingsPage from "./pages/SettingsPage";
 import OwnersPage from "./pages/OwnersPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
-import { APP_NAME } from "@/lib/constants";
 import EditCasePage from "./pages/EditCasePage";
 import ClientCaseDetailWrapper from "./pages/ClientCaseDetailWrapper";
 import AllRemarksPage from "./pages/AllRemarksPage";
 import ServicesPage from "./pages/ServicesPage";
 import { useAppName } from "@/contenxt/AppNameContext"; // <-- Import this
-import { fetchPermissions } from "@/features/permissionsSlice";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store";
 
 // Simplified PlaceholderPage for debugging
 

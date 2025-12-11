@@ -10,7 +10,7 @@ import { AppNameProvider } from "./contenxt/AppNameContext";
 import { AuthProvider } from "./contenxt/AuthProvider";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <Provider store={store}>
       <AppNameProvider>
         <BrowserRouter>
@@ -21,5 +21,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
       </AppNameProvider>
     </Provider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

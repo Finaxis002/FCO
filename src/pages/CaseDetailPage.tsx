@@ -261,11 +261,16 @@ export default function CaseDetailPage({
           title="Loading Case Details..."
           description="Please wait while we fetch the case information."
         >
-          <Button asChild variant="outline">
+          {/* <Button asChild variant="outline">
             <RouterLink to="/cases">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Cases
             </RouterLink>
-          </Button>
+          </Button> */}
+
+          <Button variant="outline" onClick={() => navigate(-1)}>
+  <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Cases
+</Button>
+
         </PageHeader>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">

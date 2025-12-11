@@ -58,6 +58,7 @@ export default function ServicesPage() {
   const { cases: allCases, loading } = useSelector(
     (state: RootState) => state.case
   );
+  const searchTerm = useSelector((state: RootState) => state.search.searchTerm);
 
   const [allServices, setAllServices] = useState<any[]>([]);
   const [filteredServices, setFilteredServices] = useState<any[]>([]);
@@ -78,6 +79,10 @@ export default function ServicesPage() {
   const [selectedServiceForTags, setSelectedServiceForTags] = useState<
     string | null
   >(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20); // Fixed page size, can make it configurable later
 
   const { permissions } = useSelector((state: RootState) => state.permissions);
 
@@ -102,8 +107,26 @@ export default function ServicesPage() {
     if (activeFilter !== "all") {
       filtered = filtered.filter((service) => service.status === activeFilter);
     }
+
+    // Apply global search filter
+    if (searchTerm.trim()) {
+      const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      filtered = filtered.filter((service) => {
+        const searchableText = [
+          service.name || "",
+          service.status || "",
+          service.parentCase?.unitName || "",
+          service.parentCase?.ownerName || "",
+          ...(service.parentCase?.assignedUsers?.map((user: any) => typeof user === "string" ? user : user?.name || "") || [])
+        ].join(" ").toLowerCase();
+
+        return searchWords.every(word => searchableText.includes(word));
+      });
+    }
+
     setFilteredServices(filtered);
-  }, [allServices, serviceFilter, statusFilter, activeFilter]);
+    setCurrentPage(1); // Reset to first page on filter change
+  }, [allServices, serviceFilter, statusFilter, activeFilter, searchTerm]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -170,6 +193,7 @@ export default function ServicesPage() {
       }
 
       setFilteredServices(filtered);
+      setCurrentPage(1); // Reset to first page on filter change
     }, 200); // Debounce
 
     return () => clearTimeout(timeout);
@@ -457,7 +481,9 @@ export default function ServicesPage() {
 
   console.log("case ID : ", caseId);
 
-
+  // Pagination logic
+  const totalPages = Math.ceil(filteredServices.length / pageSize);
+  const paginatedServices = filteredServices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <>
@@ -634,7 +660,7 @@ export default function ServicesPage() {
           {/* Mobile: Always CardView */}
           <div className="block sm:hidden">
             <ServiceCardView
-              services={filteredServices}
+              services={paginatedServices}
               onDelete={handleDelete}
               onViewRemarks={handleViewRemarks}
               onAddRemark={handleAddRemark}
@@ -652,7 +678,7 @@ export default function ServicesPage() {
           <div className="hidden sm:block">
             {viewMode === "table" ? (
               <ServiceTable
-                services={filteredServices}
+                services={paginatedServices}
                 onDelete={handleDelete}
                 onViewRemarks={handleViewRemarks}
                 onAddRemark={handleAddRemark}
@@ -667,7 +693,7 @@ export default function ServicesPage() {
               />
             ) : (
               <ServiceCardView
-                services={filteredServices}
+                services={paginatedServices}
                 onDelete={handleDelete}
                 onViewRemarks={handleViewRemarks}
                 onAddRemark={handleAddRemark}
@@ -684,9 +710,36 @@ export default function ServicesPage() {
           </div>
         </div>
       )}
+
+      {/* Pagination Controls */}
+      {filteredServices.length > 0 && (
+        <div className="flex justify-between items-center mt-4 px-4">
+          <div className="text-sm text-gray-600">
+            Showing {paginatedServices.length} of {filteredServices.length} services
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
-}
-function getPaginatedServices(arg0: { limit: number; offset: number }): any {
-  throw new Error("Function not implemented.");
 }

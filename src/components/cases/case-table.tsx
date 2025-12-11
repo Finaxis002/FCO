@@ -128,11 +128,15 @@ export default function CaseCardView({
     }
   };
 
-  const handleViewClick = async (caseId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    await markChatsRead(caseId);
-    navigate(`/cases/${caseId}`);
-  };
+ const handleViewClick = (caseId: string, e: React.MouseEvent) => {
+  e.preventDefault();
+  
+  // Don't wait for this API call - navigate immediately
+  // The API call can happen in the background
+  markChatsRead(caseId).catch(console.error);
+  
+  navigate(`/cases/${caseId}`);
+};
 
   const dispatch = useAppDispatch();
   useEffect(() => {
