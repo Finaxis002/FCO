@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import ReCAPTCHA from "react-google-recaptcha";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
 
 const RECAPTCHA_SITE_KEY = "6LfwLlMrAAAAAIFtLSnFxwGP_xfkeDU7xuz69sLa";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setLoginTime } = useAutoLogout();
 
   const [isAdminLogin, setIsAdminLogin] = useState(true);
   const [userId, setUserId] = useState("");
@@ -133,6 +135,9 @@ const Login = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("user", JSON.stringify(fullUser));
+
+      // Set login timestamp for auto logout
+      setLoginTime();
 
       // Wait for push subscription to finish if needed, then:
       subscribeToPushNotifications(fullUser._id, token).finally(() => {

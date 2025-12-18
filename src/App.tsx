@@ -21,6 +21,7 @@ import ServicesPage from "./pages/ServicesPage";
 import { useAppName } from "@/contenxt/AppNameContext"; // <-- Import this
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
 
 // Simplified PlaceholderPage for debugging
 
@@ -48,6 +49,9 @@ export default function App() {
   const location = useLocation();
   const { appName } = useAppName(); // <-- Use context value
   const dispatch = useDispatch<AppDispatch>();
+
+  // Initialize auto logout functionality
+  useAutoLogout();
 
   // if ("serviceWorker" in navigator) {
   //   navigator.serviceWorker

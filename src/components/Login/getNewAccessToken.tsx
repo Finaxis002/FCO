@@ -11,12 +11,18 @@ export async function getNewAccessToken() {
     );
     // Save new token in localStorage
     localStorage.setItem("token", res.data.token);
+    
+    // Update login time when token is refreshed
+    localStorage.setItem("loginTime", Date.now().toString());
+    
     return res.data.token;
   } catch (err) {
     // Could not refresh; need to login again
+    // Clear all authentication data including login time
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     localStorage.removeItem("user");
+    localStorage.removeItem("loginTime");
     return null;
   }
 }
