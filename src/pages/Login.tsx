@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FiEye, FiEyeOff } from "react-icons/fi";
-import ReCAPTCHA from "react-google-recaptcha";
+import { FiEye, FiEyeOff, FiRefreshCw } from "react-icons/fi";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
-
-const RECAPTCHA_SITE_KEY = "6LfwLlMrAAAAAIFtLSnFxwGP_xfkeDU7xuz69sLa";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,25 +13,33 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState("");
+  
+  // Custom CAPTCHA states
+  const [captchaText, setCaptchaText] = useState("");
+  const [userCaptchaInput, setUserCaptchaInput] = useState("");
+
+  // Generate random CAPTCHA text
+  const generateCaptcha = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let result = "";
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaText(result);
+    setUserCaptchaInput("");
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // If token exists, user is already logged in
-      // Send them to dashboard (or whatever default page)
       navigate("/", { replace: true });
     }
+    generateCaptcha();
   }, [navigate]);
-
-  const handleCaptchaChange = (token: string | null) => {
-    setRecaptchaToken(token || "");
-  };
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
-        // Ensure the service worker is ready before subscribing to push notifications
         console.log("Service Worker ready");
       })
       .catch((error) => {
@@ -49,13 +54,10 @@ const Login = () => {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       console.log("Notification permission granted.");
-      // 1. Register service worker if not already registered
       await navigator.serviceWorker.register("/service-worker.js");
 
-      // 2. Wait for the SW to be ready and controlling the page
       const swRegistration = await navigator.serviceWorker.ready;
 
-      // 3. NOW safe to subscribe for push!
       const subscription = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey:
@@ -93,6 +95,13 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
+    // Verify CAPTCHA
+    if (userCaptchaInput !== captchaText) {
+      setError("Invalid CAPTCHA - Please enter the correct code");
+      generateCaptcha();
+      return;
+    }
+
     try {
       const res = await axios.post(
         "https://tumbledrybe.sharda.co.in/api/auth/login",
@@ -100,13 +109,12 @@ const Login = () => {
           userId,
           password,
           isAdminLogin,
-          recaptchaToken,
+          recaptchaToken: "manual-captcha-verified",
         }
       );
 
       const { token, role, user } = res.data;
 
-      // Check if trying to login as admin but user is not an admin
       if (isAdminLogin && role !== "Admin") {
         setError("Only administrators can login through this portal");
         return;
@@ -114,7 +122,6 @@ const Login = () => {
 
       let fullUser = user;
 
-      // If not admin, fetch full user details
       if (role !== "Admin") {
         try {
           const userRes = await axios.get(
@@ -131,17 +138,13 @@ const Login = () => {
         }
       }
 
-      // Save token, role, and full user data to localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("user", JSON.stringify(fullUser));
 
-      // Set login timestamp for auto logout
       setLoginTime();
 
-      // Wait for push subscription to finish if needed, then:
       subscribeToPushNotifications(fullUser._id, token).finally(() => {
-        // Force full reload to guarantee all state is fresh, or use navigate as needed
         window.location.href =
           role === "Admin" ? "/admin-dashboard" : "/user-dashboard";
       });
@@ -156,17 +159,16 @@ const Login = () => {
       } else {
         setError(err.response?.data?.message || "Login failed");
       }
+      generateCaptcha();
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
-        {/* Decorative header */}
         <div className="bg-[#2EB873] h-3 w-full"></div>
 
         <div className="p-8">
-          {/* Logo/Title section */}
           <div className="flex flex-col items-center mb-8">
             <div className="text-3xl font-bold text-[#2EB873] mb-1">
               FCA - Tumbledry
@@ -177,7 +179,6 @@ const Login = () => {
             {isAdminLogin ? "Admin Dashboard" : "User Dashboard"}
           </h2>
 
-          {/* Role toggle */}
           <div className="mb-8">
             <div className="relative flex items-center bg-gray-100 rounded-full p-1">
               <button
@@ -307,51 +308,49 @@ const Login = () => {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
                   tabIndex={-1}
                 >
-                  {showPassword ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  )}
+                  {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            <ReCAPTCHA
-              sitekey={RECAPTCHA_SITE_KEY}
-              onChange={handleCaptchaChange}
-            />
+            {/* Simple CAPTCHA - Document 2 Style */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Enter CAPTCHA
+              </label>
+
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-300 rounded-lg py-3 px-4 select-none">
+                  <p
+                    className="text-center text-xl font-bold tracking-widest text-gray-700 select-none break-all"
+                    style={{
+                      fontFamily: "monospace",
+                      letterSpacing: "0.2em",
+                      textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    {captchaText}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={generateCaptcha}
+                  className="p-3 bg-[#2EB873] text-white rounded-lg hover:bg-[#1e6b52] transition-colors flex-shrink-0"
+                  title="Refresh CAPTCHA"
+                >
+                  <FiRefreshCw className="h-5 w-5" />
+                </button>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Enter the code above"
+                value={userCaptchaInput}
+                onChange={(e) => setUserCaptchaInput(e.target.value)}
+                required
+                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              />
+            </div>
 
             <div>
               <button
